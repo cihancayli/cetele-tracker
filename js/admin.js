@@ -3,10 +3,36 @@
 let currentWeek = DatabaseHelper.getWeekStartDate();
 let selectedGroupFilter = null;
 let charts = {};
+let currentUser = null;
+let userRegion = null;
 
 // Initialize Dashboard
 async function init() {
     try {
+        // Verify user authentication and authorization
+        currentUser = DatabaseHelper.getCurrentUser();
+
+        if (!currentUser) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Only allow ed, coordinator, or mentor roles
+        if (!['ed', 'coordinator', 'mentor'].includes(currentUser.role)) {
+            alert('Access denied. Admin portal is for administrators and mentors only.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Get user's region
+        userRegion = await DatabaseHelper.getUserRegion();
+
+        console.log('Admin logged in:', {
+            role: currentUser.role,
+            region: userRegion?.name,
+            division: currentUser.division
+        });
+
         // Load initial data
         await loadGroupFilters();
         await showSection('overview');
@@ -55,7 +81,23 @@ function showSection(sectionName) {
 // Load Group Filters
 async function loadGroupFilters() {
     try {
-        const groups = await DatabaseHelper.getGroups();
+        // Filter groups by user's region and division
+        let groups;
+
+        if (currentUser.role === 'ed') {
+            // ED sees all groups in their region
+            groups = await DatabaseHelper.getGroups(userRegion.id);
+        } else if (currentUser.role === 'coordinator' && currentUser.is_mentor) {
+            // Coordinator with mentor group sees their division
+            groups = await DatabaseHelper.getGroups(userRegion.id, currentUser.division);
+        } else if (currentUser.role === 'coordinator') {
+            // Coordinator-only sees their division
+            groups = await DatabaseHelper.getGroups(userRegion.id, currentUser.division);
+        } else if (currentUser.role === 'mentor') {
+            // Mentor sees only their own group
+            groups = await DatabaseHelper.getGroups(userRegion.id);
+            groups = groups.filter(g => g.mentor_id === currentUser.id);
+        }
 
         const filterSelects = [
             'overviewGroupFilter',

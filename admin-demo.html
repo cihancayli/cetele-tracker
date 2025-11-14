@@ -228,14 +228,45 @@
 
     <!-- Scripts -->
     <script>
+        // DEBUG: Log everything
+        console.log('%c🎬 ADMIN DEMO PAGE LOADING', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+        console.log('Step 1: Setting up demo mode...');
+
         // Auto-enable demo/debug mode
         localStorage.setItem('cetele_debug', 'true');
+
+        console.log('✓ Debug mode enabled:', localStorage.getItem('cetele_debug'));
+
+        // Monitor script loading
+        window.addEventListener('error', (e) => {
+            console.error('%c❌ ERROR DETECTED', 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px;');
+            console.error('Error:', e.message);
+            console.error('Source:', e.filename);
+            console.error('Line:', e.lineno);
+        }, true);
+
+        console.log('Step 2: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
+    <script>
+        console.log('Step 3: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
+        console.log('Step 4: Loading mock data...');
+    </script>
     <script src="js/mock-data.js"></script>
+    <script>
+        console.log('Step 5: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
+        console.log('Step 6: Loading db-helper...');
+    </script>
     <script src="js/db-helper.js"></script>
+    <script>
+        console.log('Step 7: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
+        console.log('Step 8: Loading auth.js...');
+    </script>
     <script src="js/auth.js"></script>
     <script>
+        console.log('Step 9: Auth.js loaded');
+        console.log('Step 10: Configuring demo-specific functions...');
+
         // Toggle Debug Mode
         function toggleDebugMode() {
             const isDebug = localStorage.getItem('cetele_debug') === 'true';
@@ -264,11 +295,17 @@
             }
         });
 
+        console.log('Step 11: Checking authentication...');
+
         // Check authentication before loading admin dashboard
         const session = checkAuth('admin');
+        console.log('Auth check result:', session);
+
         if (!session) {
+            console.warn('%c⚠️ NO SESSION - Redirecting to login', 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px;');
             // Will redirect to login automatically
         } else {
+            console.log('✓ Session valid:', session.identifier);
             // Update navbar with admin info
             document.addEventListener('DOMContentLoaded', () => {
                 const navTitle = document.querySelector('.nav-title');
@@ -277,7 +314,24 @@
                 }
             });
         }
+
+        console.log('Step 12: Loading admin.js...');
     </script>
     <script src="js/admin.js"></script>
+    <script>
+        console.log('Step 13: Admin.js loaded');
+        console.log('%c✅ ALL SCRIPTS LOADED', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+
+        // Check if page initialized
+        setTimeout(() => {
+            const loadingState = document.getElementById('loadingState');
+            if (loadingState && loadingState.style.display !== 'none') {
+                console.error('%c⚠️ PAGE STILL LOADING AFTER 3 SECONDS', 'background: #f59e0b; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+                console.error('Loading state is still visible. Check for JavaScript errors above.');
+            } else {
+                console.log('%c🎉 PAGE INITIALIZED SUCCESSFULLY', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+            }
+        }, 3000);
+    </script>
 </body>
 </html>

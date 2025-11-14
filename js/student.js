@@ -20,10 +20,21 @@ async function init() {
         currentStudentId = '1';
         sessionStorage.setItem('studentId', '1');
     } else {
-        // Check if student is logged in
-        currentStudentId = sessionStorage.getItem('studentId');
+        // Verify user session
+        const user = DatabaseHelper.getCurrentUser();
+        currentStudentId = DatabaseHelper.getSessionStudentId();
 
-        if (!currentStudentId) {
+        // If no session or not a student, redirect to login
+        if (!currentStudentId || !user || user.role !== 'student') {
+            window.location.href = 'student-login.html';
+            return;
+        }
+
+        // Verify student_id matches user's student_id
+        if (user.student_id && currentStudentId !== user.student_id.toString()) {
+            console.error('Session mismatch - student_id does not match user');
+            localStorage.removeItem('cetele_user');
+            sessionStorage.removeItem('studentId');
             window.location.href = 'student-login.html';
             return;
         }

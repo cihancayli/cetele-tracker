@@ -6,12 +6,43 @@ if (window.DatabaseHelper && window.DatabaseHelper.__isMock) {
 } else {
 
 class DatabaseHelper {
+    // ==================== AUTH & SESSION ====================
+
+    static getCurrentUser() {
+        const userStr = localStorage.getItem('cetele_user');
+        return userStr ? JSON.parse(userStr) : null;
+    }
+
+    static getSessionStudentId() {
+        return sessionStorage.getItem('studentId');
+    }
+
+    static async getUserRegion() {
+        const user = this.getCurrentUser();
+        if (!user || !user.region_id) return null;
+
+        const { data, error } = await supabase
+            .from('regions')
+            .select('*')
+            .eq('id', user.region_id)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
     // ==================== GROUPS ====================
 
-    static async createGroup(name, grade) {
+    static async createGroup(name, grade, mentorId = null, regionId = null, division = null) {
         const { data, error } = await supabase
             .from('groups')
-            .insert([{ name, grade }])
+            .insert([{
+                name,
+                grade,
+                mentor_id: mentorId,
+                region_id: regionId,
+                division: division
+            }])
             .select()
             .single();
 
@@ -19,11 +50,21 @@ class DatabaseHelper {
         return data;
     }
 
-    static async getGroups() {
-        const { data, error } = await supabase
+    static async getGroups(regionId = null, division = null) {
+        let query = supabase
             .from('groups')
-            .select('*')
+            .select('*, users!groups_mentor_id_fkey(username)')
             .order('name');
+
+        if (regionId) {
+            query = query.eq('region_id', regionId);
+        }
+
+        if (division) {
+            query = query.eq('division', division);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         return data;
@@ -53,14 +94,18 @@ class DatabaseHelper {
         return data;
     }
 
-    static async getStudents(groupId = null) {
+    static async getStudents(groupId = null, regionId = null) {
         let query = supabase
             .from('students')
-            .select('*, groups(name, grade)')
+            .select('*, groups(name, grade, division)')
             .order('name');
 
         if (groupId) {
             query = query.eq('group_id', groupId);
+        }
+
+        if (regionId) {
+            query = query.eq('region_id', regionId);
         }
 
         const { data, error } = await query;

@@ -158,13 +158,55 @@
 
     <!-- Scripts -->
     <script>
+        // DEBUG: Log everything
+        console.log('%c🎬 STUDENT DEMO PAGE LOADING', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+        console.log('Step 1: Setting up demo mode...');
+
         // Auto-enable demo/debug mode
         localStorage.setItem('cetele_debug', 'true');
         sessionStorage.setItem('studentId', '1'); // Demo student Emma Thompson
+
+        console.log('✓ Debug mode enabled:', localStorage.getItem('cetele_debug'));
+        console.log('✓ Student ID set:', sessionStorage.getItem('studentId'));
+
+        // Monitor script loading
+        window.addEventListener('error', (e) => {
+            console.error('%c❌ ERROR DETECTED', 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px;');
+            console.error('Error:', e.message);
+            console.error('Source:', e.filename);
+            console.error('Line:', e.lineno);
+        }, true);
+
+        console.log('Step 2: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
+    <script>
+        console.log('Step 3: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
+        console.log('Step 4: Loading mock data...');
+    </script>
     <script src="js/mock-data.js"></script>
+    <script>
+        console.log('Step 5: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
+        console.log('Step 6: Loading db-helper...');
+    </script>
     <script src="js/db-helper.js"></script>
+    <script>
+        console.log('Step 7: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
+        console.log('Step 8: Loading student.js...');
+    </script>
     <script src="js/student.js"></script>
+    <script>
+        console.log('Step 9: Student.js loaded');
+        console.log('%c✅ ALL SCRIPTS LOADED', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+
+        // Check if page initialized
+        setTimeout(() => {
+            const loadingState = document.getElementById('loadingState');
+            if (loadingState && loadingState.style.display !== 'none') {
+                console.error('%c⚠️ PAGE STILL LOADING AFTER 3 SECONDS', 'background: #f59e0b; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+                console.error('Loading state is still visible. Check for JavaScript errors above.');
+            }
+        }, 3000);
+    </script>
 </body>
 </html>
