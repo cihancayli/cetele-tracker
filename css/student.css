@@ -24,7 +24,7 @@ body::before {
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    filter: blur(80px) brightness(0.3);
+    filter: blur(40px) brightness(0.25);
     z-index: 0;
 }
 
