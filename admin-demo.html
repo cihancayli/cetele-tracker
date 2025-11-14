@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Cetele Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-icon">📊</span>
+                <span class="nav-title">Cetele Admin Dashboard</span>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-section-label">MAIN MENU</div>
+                <button class="nav-btn active" onclick="showSection('overview')">📈 Overview</button>
+                <button class="nav-btn" onclick="showSection('groups')">👥 Groups</button>
+                <button class="nav-btn" onclick="showSection('students')">🎓 Students</button>
+                <button class="nav-btn" onclick="showSection('weekly')">📅 Weekly View</button>
+                <button class="nav-btn" onclick="showSection('analytics')">📊 Analytics</button>
+
+                <div class="nav-section-label" style="margin-top: 2rem;">DEBUG</div>
+                <button class="nav-btn" id="debugToggle" onclick="toggleDebugMode()" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3);">
+                    🔧 Toggle Mock Data
+                </button>
+
+                <button class="nav-btn logout" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading dashboard...</p>
+        </div>
+
+        <!-- Overview Section -->
+        <section id="overviewSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>📈 Performance Overview</h1>
+                <div class="header-actions">
+                    <select id="overviewGroupFilter" class="filter-select" onchange="loadOverview()">
+                        <option value="">All Groups</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalStudents">0</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="activeStudents">0</div>
+                        <div class="stat-label">Active This Week</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="avgCompletion">0%</div>
+                        <div class="stat-label">Avg Completion</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="topPerformer">-</div>
+                        <div class="stat-label">Top Performer</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📊 Weekly Trends</h3>
+                    <canvas id="trendsChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🎯 Activity Completion</h3>
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="leaderboard-card">
+                <h2>🏆 Leaderboard</h2>
+                <div id="leaderboardContent"></div>
+            </div>
+        </section>
+
+        <!-- Groups Section -->
+        <section id="groupsSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>👥 Manage Groups</h1>
+                <button class="btn-primary" onclick="showAddGroupModal()">➕ Add Group</button>
+            </div>
+
+            <div id="groupsGrid" class="groups-grid"></div>
+        </section>
+
+        <!-- Students Section -->
+        <section id="studentsSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>🎓 Manage Students</h1>
+                <div class="header-actions">
+                    <select id="studentGroupFilter" class="filter-select" onchange="loadStudents()">
+                        <option value="">All Groups</option>
+                    </select>
+                    <button class="btn-primary" onclick="showAddStudentModal()">➕ Add Student</button>
+                </div>
+            </div>
+
+            <div id="studentsTable" class="data-table"></div>
+        </section>
+
+        <!-- Weekly View Section -->
+        <section id="weeklySection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>📅 Weekly View</h1>
+                <div class="week-selector">
+                    <button class="week-nav-btn" onclick="changeWeek(-1)">← Previous</button>
+                    <span class="current-week" id="currentWeekDisplay">Loading...</span>
+                    <button class="week-nav-btn" onclick="changeWeek(1)">Next →</button>
+                </div>
+            </div>
+
+            <div id="weeklyDataGrid" class="students-grid"></div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analyticsSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>📊 Advanced Analytics</h1>
+                <select id="analyticsGroupFilter" class="filter-select" onchange="loadAnalytics()">
+                    <option value="">All Groups</option>
+                </select>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📈 Student Progress Over Time</h3>
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🎯 Activity Breakdown</h3>
+                    <canvas id="activityBreakdownChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-top: 20px;">
+                <h3>📊 Individual Performance Cards</h3>
+                <div id="performanceCards" class="students-grid"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Group Modal -->
+    <div id="addGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Add New Group</h2>
+                <span class="close" onclick="closeModal('addGroupModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Group Name</label>
+                    <input type="text" id="groupName" class="form-input" placeholder="e.g., 10th Grade A">
+                </div>
+                <div class="form-group">
+                    <label>Grade</label>
+                    <input type="text" id="groupGrade" class="form-input" placeholder="e.g., 10th">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addGroupModal')">Cancel</button>
+                <button class="btn-primary" onclick="addGroup()">Add Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Add New Student</h2>
+                <span class="close" onclick="closeModal('addStudentModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <input type="text" id="studentName" class="form-input" placeholder="Full Name">
+                </div>
+                <div class="form-group">
+                    <label>Grade</label>
+                    <input type="text" id="studentGrade" class="form-input" placeholder="e.g., 10th">
+                </div>
+                <div class="form-group">
+                    <label>Group</label>
+                    <select id="studentGroup" class="form-input">
+                        <option value="">No Group</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+                <button class="btn-primary" onclick="addStudent()">Add Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Auto-enable demo/debug mode
+        localStorage.setItem('cetele_debug', 'true');
+    </script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/db-helper.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Toggle Debug Mode
+        function toggleDebugMode() {
+            const isDebug = localStorage.getItem('cetele_debug') === 'true';
+            if (isDebug) {
+                disableDebugMode();
+            } else {
+                enableDebugMode();
+            }
+            // Reload to apply changes
+            setTimeout(() => window.location.reload(), 500);
+        }
+
+        // Update debug button state
+        document.addEventListener('DOMContentLoaded', () => {
+            const debugBtn = document.getElementById('debugToggle');
+            const isDebug = localStorage.getItem('cetele_debug') === 'true';
+            if (debugBtn) {
+                if (isDebug) {
+                    debugBtn.textContent = '✅ Mock Data ON';
+                    debugBtn.style.background = 'rgba(34, 197, 94, 0.15)';
+                    debugBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                    debugBtn.style.color = '#86efac';
+                } else {
+                    debugBtn.textContent = '🔧 Mock Data OFF';
+                }
+            }
+        });
+
+        // Check authentication before loading admin dashboard
+        const session = checkAuth('admin');
+        if (!session) {
+            // Will redirect to login automatically
+        } else {
+            // Update navbar with admin info
+            document.addEventListener('DOMContentLoaded', () => {
+                const navTitle = document.querySelector('.nav-title');
+                if (navTitle && session.identifier) {
+                    navTitle.textContent = `Cetele Admin - ${session.identifier}`;
+                }
+            });
+        }
+    </script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
