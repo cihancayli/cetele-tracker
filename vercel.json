@@ -18,7 +18,7 @@
   ],
   "headers": [
     {
-      "source": "/student-demo.html",
+      "source": "/student-demo(|.html)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -27,7 +27,7 @@
       ]
     },
     {
-      "source": "/admin-demo.html",
+      "source": "/admin-demo(|.html)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -36,7 +36,7 @@
       ]
     },
     {
-      "source": "/demo.html",
+      "source": "/demo(|.html)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
