@@ -81,50 +81,61 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 3rem;
+            gap: 2rem;
         }
 
-        /* Animated Quote Container */
+        /* Animated Quote Container - Horizontal */
         .quote-container {
             position: relative;
-            min-height: 180px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
         .quote {
             position: absolute;
             opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            transform: translateX(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
             text-align: center;
             width: 100%;
             padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
 
         .quote.active {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
         }
 
         .quote-text {
-            font-size: 1.75rem;
+            font-size: 0.95rem;
             font-weight: 400;
-            color: #ffffff;
-            line-height: 1.5;
-            letter-spacing: 0.01em;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.95);
+            letter-spacing: 0.02em;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
             font-style: italic;
+            white-space: nowrap;
+        }
+
+        .quote-separator {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            font-weight: 300;
         }
 
         .quote-author {
-            font-size: 1rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
-            letter-spacing: 0.02em;
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.75);
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.01em;
+            white-space: nowrap;
         }
 
         /* Frosted Glass Button */
@@ -466,15 +477,25 @@
         /* Responsive */
         @media (max-width: 768px) {
             .quote-container {
-                min-height: 200px;
+                min-height: 70px;
+            }
+
+            .quote {
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
             .quote-text {
-                font-size: 1.25rem;
+                font-size: 0.85rem;
+                white-space: normal;
+            }
+
+            .quote-separator {
+                display: none;
             }
 
             .quote-author {
-                font-size: 0.9rem;
+                font-size: 0.75rem;
             }
 
             .get-started-btn {
@@ -504,43 +525,52 @@
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="hero-content">
-            <!-- Animated Quotes -->
+            <!-- Animated Quotes - Horizontal Layout -->
             <div class="quote-container">
                 <div class="quote active">
-                    <div class="quote-text">"Ümitsizlik en büyük zehirdir"</div>
-                    <div class="quote-author">Said Nursi - Despair is the greatest poison</div>
+                    <span class="quote-text">"Ümitsizlik en büyük zehirdir"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Said Nursi</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"Be in this world as if you were a stranger or a traveler"</div>
-                    <div class="quote-author">Prophet Muhammad (peace be upon him)</div>
+                    <span class="quote-text">"Be in this world as if you were a stranger"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Prophet Muhammad ﷺ</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"A person who is not renewed every day gradually decays"</div>
-                    <div class="quote-author">M. Fethullah Gulen</div>
+                    <span class="quote-text">"A person who is not renewed every day gradually decays"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">M. Fethullah Gulen</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"With hardship comes ease"</div>
-                    <div class="quote-author">Qur'an 94:6</div>
+                    <span class="quote-text">"With hardship comes ease"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Qur'an 94:6</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ"</div>
-                    <div class="quote-author">God is with the patient - Qur'an 2:153</div>
+                    <span class="quote-text">"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Qur'an 2:153</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"كُن فَيَكُونُ"</div>
-                    <div class="quote-author">Be, and it is - Qur'an 36:82</div>
+                    <span class="quote-text">"كُن فَيَكُونُ"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Qur'an 36:82</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"And We are closer to him than his jugular vein"</div>
-                    <div class="quote-author">Qur'an 50:16</div>
+                    <span class="quote-text">"We are closer to him than his jugular vein"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Qur'an 50:16</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"Verily in remembrance hearts find peace"</div>
-                    <div class="quote-author">Qur'an 13:28</div>
+                    <span class="quote-text">"In remembrance hearts find peace"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Qur'an 13:28</span>
                 </div>
                 <div class="quote">
-                    <div class="quote-text">"Elmas elmas olduğunu bilmeli"</div>
-                    <div class="quote-author">Said Nursi - A diamond must know it is a diamond</div>
+                    <span class="quote-text">"Elmas elmas olduğunu bilmeli"</span>
+                    <span class="quote-separator">—</span>
+                    <span class="quote-author">Said Nursi</span>
                 </div>
             </div>
 
