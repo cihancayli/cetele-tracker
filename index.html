@@ -23,15 +23,22 @@
             overflow-x: hidden;
             background: linear-gradient(to bottom,
                 #ffffff 0%,
-                #ffffff 65%,
-                #e0f2fe 72%,
-                #93c5fd 78%,
-                #3b82f6 83%,
-                #1e40af 87%,
-                #1e3a8a 90%,
-                #172554 93%,
-                #0f1f47 95%,
-                #0a1839 97%,
+                #ffffff 50%,
+                #fafcfe 55%,
+                #f5faff 60%,
+                #eff8ff 65%,
+                #e0f2fe 70%,
+                #bae6fd 75%,
+                #93c5fd 80%,
+                #60a5fa 84%,
+                #3b82f6 87%,
+                #2563eb 90%,
+                #1e40af 92%,
+                #1e3a8a 94%,
+                #172554 96%,
+                #0f1f47 97%,
+                #0a1839 98%,
+                #061729 99%,
                 #000035 100%
             );
             min-height: 100vh;
@@ -81,7 +88,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 8rem;
         }
 
         /* Animated Quote Container - Horizontal */
@@ -817,9 +824,9 @@
         <div class="terminal-page">
             <div class="terminal-header">highest table members:</div>
             <div class="member-list">
-                <div class="member" data-original="cihan cayli">cihan cayli</div><br>
-                <div class="member" data-original="senih tosun">senih tosun</div><br>
-                <div class="member" data-original="nihat karabulut">nihat karabulut</div>
+                <div class="member" data-original="cihan c.">cihan c.</div><br>
+                <div class="member" data-original="nihat k.">nihat k.</div><br>
+                <div class="member" data-original="senih t.">senih t.</div>
             </div>
             <button class="pause-flicker-btn" onclick="toggleFlicker()">pause flicker</button>
         </div>
@@ -1062,15 +1069,11 @@
             flickerInterval = setInterval(() => {
                 if (!flickerPaused) {
                     members.forEach(member => {
-                        // Randomly decide: show original or jumbled
-                        if (Math.random() > 0.5) {
-                            jumbleText(member);
-                        } else {
-                            restoreText(member);
-                        }
+                        // Always jumble - continuous matrix effect
+                        jumbleText(member);
                     });
                 }
-            }, 80); // Jumble every 80ms
+            }, 50); // Super fast - every 50ms
         }
 
         function toggleFlicker() {
