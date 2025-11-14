@@ -23,33 +23,39 @@
             overflow-x: hidden;
             background: linear-gradient(to bottom,
                 #ffffff 0%,
-                #ffffff 45%,
-                #fefeff 50%,
-                #fdfdff 52%,
-                #fbfcff 54%,
-                #f9fbff 56%,
-                #f7faff 58%,
-                #f5f9ff 60%,
-                #f0f7ff 62%,
-                #ebf5ff 64%,
-                #e5f3ff 66%,
-                #dff0ff 68%,
-                #d9eeff 70%,
-                #d0ebfe 72%,
-                #c7e7fd 74%,
-                #bde4fd 76%,
-                #b3e0fc 78%,
-                #a8dcfb 80%,
-                #9cd8fa 82%,
-                #8fd3f9 84%,
-                #7ec9f7 86%,
-                #6cbef5 88%,
-                #59b3f3 90%,
-                #47a8f1 92%,
-                #359cef 94%,
-                #2490ed 96%,
-                #1484eb 98%,
-                #0678e9 100%
+                #ffffff 40%,
+                #fefffe 42%,
+                #fdfffe 44%,
+                #fcfefe 46%,
+                #fbfefe 48%,
+                #fafefe 50%,
+                #f9fdfe 52%,
+                #f7fcfe 54%,
+                #f5fbfe 56%,
+                #f3fafe 58%,
+                #f0f9fe 60%,
+                #edf7fd 62%,
+                #e9f5fd 64%,
+                #e5f3fc 66%,
+                #e0f1fc 68%,
+                #dbeefb 70%,
+                #d5ebfa 72%,
+                #cfe8f9 74%,
+                #c8e5f8 76%,
+                #c0e1f6 78%,
+                #b8ddf5 80%,
+                #afd9f3 82%,
+                #a5d4f1 84%,
+                #9acfef 86%,
+                #8ec9ec 88%,
+                #5a9fd9 90%,
+                #3b82c6 92%,
+                #2563b3 94%,
+                #1e4a9f 96%,
+                #17368c 97%,
+                #0f2678 98%,
+                #0a1a64 99%,
+                #051150 100%
             );
             min-height: 100vh;
         }
@@ -98,7 +104,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 15rem;
+            gap: 20rem;
         }
 
         /* Animated Quote Container - Horizontal */
@@ -114,8 +120,8 @@
         .quote {
             position: absolute;
             opacity: 0;
-            transform: translateX(30px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
+            filter: blur(10px);
+            transition: opacity 1.2s ease, filter 1.2s ease;
             text-align: center;
             width: 100%;
             padding: 0 2rem;
@@ -128,11 +134,11 @@
 
         .quote.active {
             opacity: 1;
-            transform: translateX(0);
+            filter: blur(0px);
         }
 
         .quote-text {
-            font-size: 0.95rem;
+            font-size: 0.8rem;
             font-weight: 400;
             color: rgba(255, 255, 255, 0.95);
             letter-spacing: 0.02em;
@@ -142,13 +148,13 @@
 
         .quote-separator {
             color: rgba(255, 255, 255, 0.5);
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             font-weight: 300;
             flex-shrink: 0;
         }
 
         .quote-author {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             font-weight: 400;
             color: rgba(255, 255, 255, 0.75);
             text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
@@ -465,22 +471,26 @@
         }
 
         .contact-modal-content {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 2.5rem;
+            background: rgba(10, 15, 30, 0.98);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 3rem;
             max-width: 480px;
             width: 90%;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+            box-shadow:
+                0 32px 80px rgba(0, 0, 0, 0.7),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
         }
 
         .contact-modal h3 {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 400;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 2rem;
             text-transform: lowercase;
+            letter-spacing: 0.15em;
         }
 
         .contact-form {
@@ -491,26 +501,29 @@
 
         .contact-form input,
         .contact-form textarea {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.7rem;
             font-family: inherit;
             resize: vertical;
+            transition: all 0.3s ease;
         }
 
         .contact-form input::placeholder,
         .contact-form textarea::placeholder {
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.35);
             text-transform: lowercase;
         }
 
         .contact-form input:focus,
         .contact-form textarea:focus {
             outline: none;
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
         .contact-form-buttons {
@@ -521,34 +534,37 @@
 
         .contact-form button {
             flex: 1;
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-size: 0.7rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.65rem;
             text-transform: lowercase;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
+            letter-spacing: 0.1em;
         }
 
         .contact-form .submit-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .contact-form .submit-btn:hover {
             background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
         }
 
         .contact-form .cancel-btn {
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .contact-form .cancel-btn:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* Easter Egg - Spinning Copyright Symbol Only */
