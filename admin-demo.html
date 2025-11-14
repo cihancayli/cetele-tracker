@@ -295,15 +295,26 @@
             }
         });
 
-        console.log('Step 11: Checking authentication...');
+        console.log('Step 11: Creating demo session...');
+
+        // Create a fake session for demo mode to bypass auth checks
+        const demoSession = {
+            role: 'admin',
+            identifier: 'Demo Admin',
+            userId: 'demo-admin-id',
+            timestamp: Date.now()
+        };
+        localStorage.setItem('cetele_session', JSON.stringify(demoSession));
+        console.log('✓ Demo session created');
+
+        console.log('Step 12: Checking authentication...');
 
         // Check authentication before loading admin dashboard
         const session = checkAuth('admin');
         console.log('Auth check result:', session);
 
         if (!session) {
-            console.warn('%c⚠️ NO SESSION - Redirecting to login', 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px;');
-            // Will redirect to login automatically
+            console.warn('%c⚠️ NO SESSION - This should not happen in demo mode', 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px;');
         } else {
             console.log('✓ Session valid:', session.identifier);
             // Update navbar with admin info
@@ -315,11 +326,11 @@
             });
         }
 
-        console.log('Step 12: Loading admin.js...');
+        console.log('Step 13: Loading admin.js...');
     </script>
     <script src="js/admin.js"></script>
     <script>
-        console.log('Step 13: Admin.js loaded');
+        console.log('Step 14: Admin.js loaded');
         console.log('%c✅ ALL SCRIPTS LOADED', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
 
         // Check if page initialized

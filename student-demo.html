@@ -166,8 +166,28 @@
         localStorage.setItem('cetele_debug', 'true');
         sessionStorage.setItem('studentId', '1'); // Demo student Emma Thompson
 
+        // Create fake user session to bypass auth checks
+        const demoUser = {
+            id: 'demo-student-id',
+            role: 'student',
+            student_id: '1',
+            username: 'emma_demo'
+        };
+        localStorage.setItem('cetele_user', JSON.stringify(demoUser));
+
+        // Also create session for backward compatibility
+        const demoSession = {
+            role: 'student',
+            identifier: 'Emma Thompson (Demo)',
+            userId: '1',
+            timestamp: Date.now()
+        };
+        localStorage.setItem('cetele_session', JSON.stringify(demoSession));
+
         console.log('✓ Debug mode enabled:', localStorage.getItem('cetele_debug'));
         console.log('✓ Student ID set:', sessionStorage.getItem('studentId'));
+        console.log('✓ Demo user created:', demoUser);
+        console.log('✓ Demo session created');
 
         // Monitor script loading
         window.addEventListener('error', (e) => {
