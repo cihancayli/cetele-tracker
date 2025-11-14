@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -42,8 +43,7 @@
             position: relative;
             min-height: 100vh;
             display: flex;
-            align-items: flex-end;
-            padding-bottom: 8rem;
+            align-items: center;
             justify-content: center;
             background-image: url('assets/hero-bg.png');
             background-size: cover;
@@ -897,6 +897,7 @@
         </div>
     </div>
 
+    <script src="js/supabase-config.js"></script>
     <script>
         // Auto-cycling quotes
         let currentQuoteIndex = 0;
@@ -914,8 +915,8 @@
             quotes[currentQuoteIndex].classList.add('active');
         }
 
-        // Auto-cycle every 7 seconds
-        setInterval(cycleQuotes, 7000);
+        // Auto-cycle every 3 seconds
+        setInterval(cycleQuotes, 3000);
 
         function openModal() {
             const overlay = document.getElementById('modalOverlay');
@@ -1124,43 +1125,64 @@
             observer.observe(terminalPage, { attributes: true });
         });
 
-        // Form submission handlers (sends to ghancayli@gmail.com without revealing it)
-        function submitFeatureRequest(event) {
+        // Form submission handlers (saves to Supabase)
+        async function submitFeatureRequest(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
 
-            const subject = 'Cetele Feature Request';
-            const body = `Name: ${formData.get('name')}\n\nFeature Request:\n${formData.get('message')}`;
+            try {
+                const { data, error } = await supabase
+                    .from('feature_requests')
+                    .insert([
+                        {
+                            name: formData.get('name'),
+                            message: formData.get('message')
+                        }
+                    ]);
 
-            // Create mailto link without revealing the email in the UI
-            const mailtoLink = `mailto:ghancayli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            window.location.href = mailtoLink;
+                if (error) throw error;
 
-            // Close modal
-            setTimeout(() => {
+                // Show success message
+                alert('thank you! your feature request has been submitted.');
+
+                // Close modal
                 closeContactModal('featureRequestModal');
                 form.reset();
-            }, 100);
+            } catch (error) {
+                console.error('Error submitting feature request:', error);
+                alert('there was an error submitting your request. please try again.');
+            }
         }
 
-        function submitContact(event) {
+        async function submitContact(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
 
-            const subject = 'Cetele Contact Form';
-            const body = `Name: ${formData.get('name')}\nEmail: ${formData.get('email')}\n\nMessage:\n${formData.get('message')}`;
+            try {
+                const { data, error } = await supabase
+                    .from('contact_messages')
+                    .insert([
+                        {
+                            name: formData.get('name'),
+                            email: formData.get('email'),
+                            message: formData.get('message')
+                        }
+                    ]);
 
-            // Create mailto link without revealing the email in the UI
-            const mailtoLink = `mailto:ghancayli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            window.location.href = mailtoLink;
+                if (error) throw error;
 
-            // Close modal
-            setTimeout(() => {
+                // Show success message
+                alert('thank you! your message has been sent.');
+
+                // Close modal
                 closeContactModal('contactModal');
                 form.reset();
-            }, 100);
+            } catch (error) {
+                console.error('Error submitting contact message:', error);
+                alert('there was an error sending your message. please try again.');
+            }
         }
     </script>
 </body>

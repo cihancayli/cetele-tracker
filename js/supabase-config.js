@@ -89,6 +89,35 @@ CREATE POLICY "Allow read for anonymous" ON groups FOR SELECT USING (true);
 CREATE POLICY "Allow read for anonymous" ON students FOR SELECT USING (true);
 CREATE POLICY "Allow read for anonymous" ON activities FOR SELECT USING (true);
 CREATE POLICY "Allow read for anonymous" ON weekly_submissions FOR SELECT USING (true);
+
+-- Feature Requests table
+CREATE TABLE IF NOT EXISTS feature_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Contact Messages table
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE feature_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous users to insert (submit forms)
+CREATE POLICY "Allow insert for anonymous" ON feature_requests FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow insert for anonymous" ON contact_messages FOR INSERT WITH CHECK (true);
+
+-- Allow authenticated users to read
+CREATE POLICY "Allow read for authenticated" ON feature_requests FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow read for authenticated" ON contact_messages FOR SELECT USING (auth.role() = 'authenticated');
 `;
 
 console.log('Supabase configured. Run the schema SQL in Supabase SQL Editor to initialize database.');
