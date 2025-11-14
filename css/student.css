@@ -1,4 +1,4 @@
-/* Modern Frosted Glass Student Portal */
+/* Elegant Frosted Glass Student Portal */
 
 * {
     margin: 0;
@@ -8,31 +8,56 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #000;
+    background: #0a0b0e;
     color: #fff;
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
 }
 
-/* Background with gradient */
+/* Background with blurred image */
 body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('../assets/hero-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    filter: blur(80px) brightness(0.3);
+    z-index: 0;
+}
+
+/* Subtle overlay gradient */
+body::after {
     content: '';
     position: fixed;
     inset: 0;
     background: linear-gradient(
         135deg,
-        rgba(139, 92, 246, 0.15) 0%,
-        rgba(16, 185, 129, 0.15) 50%,
-        rgba(99, 102, 241, 0.15) 100%
+        rgba(139, 92, 246, 0.05) 0%,
+        rgba(16, 185, 129, 0.05) 50%,
+        rgba(99, 102, 241, 0.05) 100%
     );
-    z-index: 0;
-    animation: gradientShift 15s ease infinite;
+    z-index: 1;
+    animation: gradientShift 20s ease infinite;
 }
 
 @keyframes gradientShift {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50% { opacity: 0.6; }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Navbar - Frosted Glass */
