@@ -110,8 +110,34 @@ const MockDatabaseHelper = {
     }
 };
 
-// Use mock data if DatabaseHelper is not available or for demo mode
-if (typeof window !== 'undefined' && !window.DatabaseHelper) {
-    window.DatabaseHelper = MockDatabaseHelper;
-    console.log('📊 Using mock data for demo');
+// Debug mode - Check URL parameter or localStorage
+function isDebugMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('debug') === 'true' || localStorage.getItem('cetele_debug') === 'true';
+}
+
+// Enable debug mode from console: enableDebugMode()
+window.enableDebugMode = function() {
+    localStorage.setItem('cetele_debug', 'true');
+    console.log('✅ Debug mode enabled! Reload the page to use mock data.');
+    console.log('To disable: disableDebugMode()');
+};
+
+window.disableDebugMode = function() {
+    localStorage.removeItem('cetele_debug');
+    console.log('❌ Debug mode disabled! Reload the page to use real data.');
+};
+
+// Use mock data in debug mode
+if (typeof window !== 'undefined') {
+    if (isDebugMode()) {
+        window.DatabaseHelper = MockDatabaseHelper;
+        console.log('%c📊 MOCK DATA MODE ACTIVE', 'background: #8b5cf6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+        console.log('Students:', MOCK_DATA.students.length);
+        console.log('Groups:', MOCK_DATA.groups.length);
+        console.log('Activities:', MOCK_DATA.activities.length);
+        console.log('To disable: disableDebugMode()');
+    } else {
+        console.log('%cTo enable mock data: enableDebugMode() or add ?debug=true to URL', 'color: #8b5cf6; font-style: italic;');
+    }
 }
