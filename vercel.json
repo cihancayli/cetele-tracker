@@ -1,28 +1,19 @@
 {
   "version": 2,
   "name": "cetele-tracker",
-  "builds": [
+  "cleanUrls": true,
+  "rewrites": [
     {
-      "src": "*.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/admin",
+      "destination": "/admin.html"
     },
     {
-      "src": "/admin",
-      "dest": "/admin.html"
+      "source": "/student",
+      "destination": "/student.html"
     },
     {
-      "src": "/student",
-      "dest": "/student.html"
-    },
-    {
-      "src": "/login",
-      "dest": "/login.html"
+      "source": "/login",
+      "destination": "/login.html"
     }
   ],
   "headers": [
