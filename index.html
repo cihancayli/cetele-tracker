@@ -87,11 +87,11 @@
         /* Animated Quote Container - Horizontal */
         .quote-container {
             position: relative;
-            min-height: 50px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .quote {
@@ -106,7 +106,7 @@
             align-items: center;
             justify-content: center;
             gap: 1rem;
-            flex-wrap: wrap;
+            white-space: nowrap;
         }
 
         .quote.active {
@@ -369,21 +369,19 @@
         }
 
         .feature-card {
-            padding: 2.5rem;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 3rem 2.5rem;
+            min-height: 280px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid rgba(59, 130, 246, 0.1);
             border-radius: 24px;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         }
 
         .feature-card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-            background: rgba(255, 255, 255, 0.22);
-            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+            border-color: rgba(59, 130, 246, 0.2);
         }
 
         .feature-icon {
@@ -395,12 +393,12 @@
             font-size: 1.35rem;
             font-weight: 600;
             margin-bottom: 0.75rem;
-            color: #ffffff;
+            color: #0f172a;
             letter-spacing: -0.01em;
         }
 
         .feature-description {
-            color: rgba(255, 255, 255, 0.7);
+            color: #475569;
             line-height: 1.7;
             font-weight: 400;
             font-size: 0.98rem;
@@ -410,38 +408,45 @@
         footer {
             position: relative;
             z-index: 10;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
         }
 
         .footer-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 4rem 2rem;
+            padding: 3rem 2rem 2rem;
         }
 
         .footer-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            margin-bottom: 3rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 2rem;
+            max-width: 800px;
         }
 
-        .footer-section h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 1rem;
+        .footer-brand h3 {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+            text-transform: lowercase;
+            letter-spacing: 0.02em;
         }
 
-        .footer-section h4 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 1rem;
+        .footer-brand p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
+            text-transform: lowercase;
+            font-weight: 300;
         }
 
-        .footer-section p {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.125rem;
+        .footer-links-section h4 {
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.75rem;
+            text-transform: lowercase;
         }
 
         .footer-links {
@@ -451,29 +456,144 @@
         }
 
         .footer-links li {
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
+        .footer-links a,
+        .footer-links button {
+            color: rgba(255, 255, 255, 0.6);
             text-decoration: none;
             transition: color 0.3s ease;
-            font-size: 1rem;
+            font-size: 0.7rem;
+            text-transform: lowercase;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
         }
 
-        .footer-links a:hover {
-            color: #38bdf8;
+        .footer-links a:hover,
+        .footer-links button:hover {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .footer-bottom {
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .footer-bottom p {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.65rem;
+            text-transform: lowercase;
+            font-weight: 300;
+        }
+
+        /* Contact Modal */
+        .contact-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .contact-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .contact-modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+        }
+
+        .contact-modal h3 {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1.5rem;
+            text-transform: lowercase;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .contact-form input::placeholder,
+        .contact-form textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: lowercase;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .contact-form-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .contact-form button {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            text-transform: lowercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .contact-form .submit-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .contact-form .submit-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .contact-form .cancel-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.6);
-            font-size: 0.95rem;
+        }
+
+        .contact-form .cancel-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
         }
 
         /* Responsive */
@@ -675,36 +795,88 @@
         <div class="footer-container">
             <div class="footer-grid">
                 <!-- Brand Section -->
-                <div class="footer-section">
-                    <h3>Cetele</h3>
-                    <p>Track Your Spiritual Journey</p>
+                <div class="footer-brand">
+                    <h3>cetele.app</h3>
+                    <p>track your journey</p>
                 </div>
 
-                <!-- Company Section -->
-                <div class="footer-section">
-                    <h4>Company</h4>
+                <!-- Links Section -->
+                <div class="footer-links-section">
                     <ul class="footer-links">
-                        <li><a href="/about">About Us</a></li>
-                        <li><a href="/privacy">Privacy Policy</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact Section -->
-                <div class="footer-section">
-                    <h4>Contact</h4>
-                    <ul class="footer-links">
-                        <li><a href="mailto:info@cetele.app">info@cetele.app</a></li>
-                        <li><a href="/contact">Get in Touch</a></li>
+                        <li><button onclick="openAboutModal()">about us</button></li>
+                        <li><button onclick="openPrivacyModal()">privacy policy</button></li>
+                        <li><button onclick="openFeatureRequestModal()">feature request</button></li>
+                        <li><button onclick="openContactModal()">get in touch</button></li>
                     </ul>
                 </div>
             </div>
 
             <!-- Copyright -->
             <div class="footer-bottom">
-                <p>© 2025 Cetele. All rights reserved.</p>
+                <p>© 2025 cetele. all rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- Feature Request Modal -->
+    <div class="contact-modal" id="featureRequestModal">
+        <div class="contact-modal-content">
+            <h3>feature request</h3>
+            <form class="contact-form" onsubmit="submitFeatureRequest(event)">
+                <input type="text" name="name" placeholder="your name" required>
+                <textarea name="message" rows="6" placeholder="describe your feature idea..." required></textarea>
+                <div class="contact-form-buttons">
+                    <button type="button" class="cancel-btn" onclick="closeContactModal('featureRequestModal')">cancel</button>
+                    <button type="submit" class="submit-btn">send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Get in Touch Modal -->
+    <div class="contact-modal" id="contactModal">
+        <div class="contact-modal-content">
+            <h3>get in touch</h3>
+            <form class="contact-form" onsubmit="submitContact(event)">
+                <input type="text" name="name" placeholder="your name" required>
+                <input type="email" name="email" placeholder="your email" required>
+                <textarea name="message" rows="6" placeholder="your message..." required></textarea>
+                <div class="contact-form-buttons">
+                    <button type="button" class="cancel-btn" onclick="closeContactModal('contactModal')">cancel</button>
+                    <button type="submit" class="submit-btn">send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- About Us Modal -->
+    <div class="contact-modal" id="aboutModal">
+        <div class="contact-modal-content">
+            <h3>about us</h3>
+            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem; line-height: 1.6; text-transform: lowercase;">
+                made by a student for students. cetele helps track spiritual activities and personal growth through simple,
+                beautiful analytics. built with care to support your journey.
+            </p>
+            <div class="contact-form-buttons" style="margin-top: 1.5rem;">
+                <button type="button" class="submit-btn" onclick="closeContactModal('aboutModal')">close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div class="contact-modal" id="privacyModal">
+        <div class="contact-modal-content">
+            <h3>privacy policy</h3>
+            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem; line-height: 1.6; text-transform: lowercase;">
+                your data belongs to you. we collect only what's necessary to provide the service.
+                your spiritual journey data is stored securely and never shared with third parties.
+                you can request deletion of your data at any time.
+            </p>
+            <div class="contact-form-buttons" style="margin-top: 1.5rem;">
+                <button type="button" class="submit-btn" onclick="closeContactModal('privacyModal')">close</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Auto-cycling quotes
@@ -747,8 +919,84 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
+                closeAllContactModals();
             }
         });
+
+        // Contact modal functions
+        function openAboutModal() {
+            document.getElementById('aboutModal').classList.add('active');
+        }
+
+        function openPrivacyModal() {
+            document.getElementById('privacyModal').classList.add('active');
+        }
+
+        function openFeatureRequestModal() {
+            document.getElementById('featureRequestModal').classList.add('active');
+        }
+
+        function openContactModal() {
+            document.getElementById('contactModal').classList.add('active');
+        }
+
+        function closeContactModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function closeAllContactModals() {
+            document.querySelectorAll('.contact-modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.contact-modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Form submission handlers (sends to ghancayli@gmail.com without revealing it)
+        function submitFeatureRequest(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const subject = 'Cetele Feature Request';
+            const body = `Name: ${formData.get('name')}\n\nFeature Request:\n${formData.get('message')}`;
+
+            // Create mailto link without revealing the email in the UI
+            const mailtoLink = `mailto:ghancayli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+
+            // Close modal
+            setTimeout(() => {
+                closeContactModal('featureRequestModal');
+                form.reset();
+            }, 100);
+        }
+
+        function submitContact(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const subject = 'Cetele Contact Form';
+            const body = `Name: ${formData.get('name')}\nEmail: ${formData.get('email')}\n\nMessage:\n${formData.get('message')}`;
+
+            // Create mailto link without revealing the email in the UI
+            const mailtoLink = `mailto:ghancayli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+
+            // Close modal
+            setTimeout(() => {
+                closeContactModal('contactModal');
+                form.reset();
+            }, 100);
+        }
     </script>
 </body>
 </html>
