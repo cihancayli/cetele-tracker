@@ -3,188 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Portal — Cetele Tracker</title>
+    <title>My Cetele — Student Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <link rel="stylesheet" href="css/student.css">
 </head>
 <body>
-
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <span class="nav-icon">📚</span>
-                <span class="nav-title">Student Portal</span>
+    <!-- Header with Group Info -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-info">
+                <h1 id="groupTitle">Loading...</h1>
             </div>
-            <div class="nav-menu">
-                <span class="student-name-display" id="studentNameDisplay">Welcome!</span>
-                <button class="nav-btn" onclick="showSection('submit')">📝 Submit</button>
-                <button class="nav-btn" onclick="showSection('history')">📊 My Progress</button>
-                <button class="nav-btn logout" onclick="logout()">🚪 Logout</button>
+            <div class="header-stats">
+                <span id="studentName" class="student-name-header">Loading...</span>
+                <span class="stat-divider">•</span>
+                <span class="stat-item">🔥 <span id="streakCount">0</span> Week Streak</span>
+                <span class="stat-divider">•</span>
+                <span class="stat-item">⭐ Rank <span id="rankPosition">#-</span></span>
+                <span class="stat-divider">•</span>
+                <button class="btn-logout" onclick="logout()">Sign Out</button>
             </div>
         </div>
-    </nav>
+    </header>
 
+    <!-- Main Content -->
     <div class="container">
-        <!-- Student Selection (Initial) -->
-        <section id="selectStudentSection" class="content-section">
-            <div class="welcome-card">
-                <div class="welcome-icon">🎓</div>
-                <h1>Welcome to Cetele Tracker</h1>
-                <p>Select your name to continue</p>
-
-                <div class="student-select-container">
-                    <select id="studentSelect" class="student-select" onchange="selectStudent()">
-                        <option value="">-- Select Your Name --</option>
-                    </select>
-                </div>
-
-                <div class="or-divider">
-                    <span>OR</span>
-                </div>
-
-                <button class="btn-secondary" onclick="showNewStudentForm()">➕ I'm New - Add Me</button>
-
-                <div id="newStudentForm" style="display: none; margin-top: 2rem;">
-                    <div class="form-group">
-                        <label>Your Full Name</label>
-                        <input type="text" id="newStudentName" class="form-input" placeholder="Enter your full name">
-                    </div>
-                    <div class="form-group">
-                        <label>Grade</label>
-                        <input type="text" id="newStudentGrade" class="form-input" placeholder="e.g., 10th">
-                    </div>
-                    <div class="form-group">
-                        <label>Group (Optional)</label>
-                        <select id="newStudentGroup" class="form-input">
-                            <option value="">No Group</option>
-                        </select>
-                    </div>
-                    <button class="btn-primary" onclick="registerNewStudent()">Register & Continue</button>
-                </div>
+        <!-- Week Selector -->
+        <div class="week-selector">
+            <button class="week-nav-btn" onclick="changeWeek(-1)">← Previous Week</button>
+            <button class="week-current-btn" onclick="goToCurrentWeek()">📅 Current Week</button>
+            <div class="current-week">
+                <span class="week-label">Week of</span>
+                <span id="currentWeekDisplay" class="week-date">Loading...</span>
+                <span class="week-due">Due: <span id="dueDate">Loading...</span></span>
             </div>
-        </section>
+            <button class="week-nav-btn" onclick="changeWeek(1)">Next Week →</button>
+        </div>
 
-        <!-- Submit Section -->
-        <section id="submitSection" class="content-section" style="display: none;">
-            <div class="section-header">
-                <div>
-                    <h1>📝 Weekly Submission</h1>
-                    <p class="week-info">Week of <span id="currentWeek"></span></p>
-                </div>
-                <div class="score-display">
-                    <div class="score-circle">
-                        <span id="currentScore">0</span>
-                        <span class="score-total">/7</span>
-                    </div>
-                    <div class="score-label">Completed</div>
-                </div>
-            </div>
-
-            <div class="activities-container">
-                <div class="info-card">
-                    <span class="info-icon">ℹ️</span>
-                    <p>Check the activities you completed this week. Your progress is saved automatically!</p>
-                </div>
-
-                <div id="activitiesForm" class="activities-form"></div>
-
-                <div class="action-buttons">
-                    <button class="btn-primary btn-large" onclick="submitWeeklyData()">
-                        💾 Save My Progress
+        <!-- Group Cetele Table -->
+        <div class="cetele-table-card">
+            <div class="table-header-bar">
+                <h2>📋 Weekly Cetele</h2>
+                <div class="table-actions">
+                    <button id="editBtn" class="btn-edit" onclick="toggleEdit()" style="display: none;">
+                        ✏️ Edit
+                    </button>
+                    <button id="saveBtn" class="btn-save" onclick="saveCetele()" style="display: none;">
+                        ✓ Save Changes
                     </button>
                 </div>
-
-                <div id="submissionMessage" class="message" style="display: none;"></div>
-            </div>
-        </section>
-
-        <!-- History Section -->
-        <section id="historySection" class="content-section" style="display: none;">
-            <div class="section-header">
-                <h1>📊 My Progress</h1>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-content">
+            <div class="table-container">
+                <table id="ceteleTable" class="cetele-table">
+                    <thead>
+                        <tr>
+                            <th class="student-col">Student</th>
+                            <th id="activityHeaders"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ceteleTableBody">
+                        <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+            <!-- Progress Over Time Chart -->
+            <div class="chart-card">
+                <h3>📈 My Progress Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Consistency Tracker Chart -->
+            <div class="chart-card">
+                <h3>🔥 Consistency Tracker</h3>
+                <div class="chart-container">
+                    <canvas id="consistencyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="stats-dashboard">
+            <!-- Personal Stats -->
+            <div class="stats-card">
+                <h3>📊 My Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
                         <div class="stat-value" id="totalWeeks">0</div>
                         <div class="stat-label">Weeks Tracked</div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="totalCompletions">0</div>
-                        <div class="stat-label">Total Completions</div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="completionRate">0%</div>
+                        <div class="stat-label">Avg Completion</div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📈</div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="avgCompletion">0%</div>
-                        <div class="stat-label">Average Rate</div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="bestScore">0</div>
+                        <div class="stat-label">Best Score</div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="bestWeek">0</div>
-                        <div class="stat-label">Best Week</div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="currentStreak">0</div>
+                        <div class="stat-label">Current Streak</div>
                     </div>
                 </div>
             </div>
 
-            <div class="history-card">
-                <h2>📅 Weekly History</h2>
-                <div id="historyContent"></div>
+            <!-- Group Leaderboard -->
+            <div class="stats-card">
+                <h3>🏆 Group Leaderboard</h3>
+                <div id="leaderboardList" class="leaderboard-list">
+                    <!-- Leaderboard will be populated here -->
+                </div>
             </div>
 
-            <div class="encouragement-card">
-                <div class="encouragement-icon">🌟</div>
-                <div id="encouragementMessage"></div>
+            <!-- Top Performers -->
+            <div class="stats-card">
+                <h3>⭐ Top Performers This Week</h3>
+                <div id="topPerformers" class="top-performers">
+                    <!-- Top performers will be populated here -->
+                </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Group Comparison Chart -->
+        <div class="chart-card-full">
+            <h3>👥 Group Comparison</h3>
+            <div class="chart-container">
+                <canvas id="groupComparisonChart"></canvas>
+            </div>
+        </div>
     </div>
 
-    <!-- Success Animation Overlay -->
-    <div id="successOverlay" class="success-overlay" style="display: none;">
-        <div class="success-animation">
-            <div class="success-checkmark">
-                <div class="check-icon">
-                    <span class="icon-line line-tip"></span>
-                    <span class="icon-line line-long"></span>
-                    <div class="icon-circle"></div>
-                    <div class="icon-fix"></div>
-                </div>
-            </div>
-            <h2>Awesome Work!</h2>
-            <p>Your progress has been saved.</p>
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content success-modal">
+            <div class="success-icon">✓</div>
+            <h3>Cetele Saved!</h3>
+            <p>Your weekly activities have been recorded.</p>
+            <button class="btn-primary" onclick="closeSuccessModal()">Done</button>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="js/supabase-config.js"></script>
+    <script src="js/mock-data.js"></script>
     <script src="js/db-helper.js"></script>
-    <script src="js/auth.js"></script>
-    <script>
-        // Check if coming from registration
-        const urlParams = new URLSearchParams(window.location.search);
-        const isRegistering = urlParams.get('register') === 'true';
-
-        if (!isRegistering) {
-            // Check authentication for existing students
-            const session = checkAuth('student');
-            if (session && session.userId) {
-                // Set the student ID for the app
-                currentStudentId = session.userId;
-                localStorage.setItem('studentId', session.userId);
-            }
-        }
-    </script>
     <script src="js/student.js"></script>
 </body>
 </html>

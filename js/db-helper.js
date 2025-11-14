@@ -1,5 +1,10 @@
 // Database Helper Functions
 
+// Skip if mock data is active
+if (window.DatabaseHelper && window.DatabaseHelper.__isMock) {
+    console.log('Skipping real DatabaseHelper - using mock data');
+} else {
+
 class DatabaseHelper {
     // ==================== GROUPS ====================
 
@@ -314,4 +319,7 @@ class DatabaseHelper {
 
         return weeks;
     }
+}
+
+// Close the else block
 }

@@ -2,387 +2,831 @@
 
 let currentStudentId = null;
 let currentStudent = null;
-let currentWeek = DatabaseHelper.getWeekStartDate();
+let currentWeek = null;
 let activities = [];
-let selectedActivities = {};
+let isEditing = false;
+let groupStudents = [];
+let allSubmissions = [];
+let charts = {};
 
 // Initialize
 async function init() {
+    // Check for demo mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = urlParams.get('demo') === 'true';
+
+    if (isDemo) {
+        // Auto-login with demo student (Emma Thompson - student id 1)
+        currentStudentId = '1';
+        sessionStorage.setItem('studentId', '1');
+    } else {
+        // Check if student is logged in
+        currentStudentId = sessionStorage.getItem('studentId');
+
+        if (!currentStudentId) {
+            window.location.href = 'student-login.html';
+            return;
+        }
+    }
+
     try {
-        await loadActivities();
-        await loadStudentsList();
-        checkStoredStudent();
+        // Load student data
+        currentStudent = await DatabaseHelper.getStudentById(currentStudentId);
+        activities = await DatabaseHelper.getActivities();
+        currentWeek = DatabaseHelper.getWeekStartDate();
+
+        // Update header
+        updateHeader();
+
+        // Load data
+        await loadAllData();
     } catch (error) {
         console.error('Initialization error:', error);
+        alert('Error loading student portal. Please try again.');
     }
 }
 
-// Check if student is stored in localStorage
-function checkStoredStudent() {
-    const storedStudentId = localStorage.getItem('studentId');
-    if (storedStudentId) {
-        loadStoredStudent(storedStudentId);
-    }
+async function loadAllData() {
+    await Promise.all([
+        loadCeteleTable(),
+        loadPersonalStats(),
+        loadLeaderboard(),
+        loadTopPerformers(),
+        renderProgressChart(),
+        renderConsistencyChart(),
+        renderGroupComparisonChart()
+    ]);
+
+    // Update week navigation buttons
+    updateWeekNavigationState();
 }
 
-async function loadStoredStudent(studentId) {
+function updateHeader() {
+    // Update group title
+    const groupName = currentStudent.groups?.name || 'No Group';
+    const grade = currentStudent.groups?.grade || currentStudent.grade;
+    document.getElementById('groupTitle').textContent = `${groupName} - ${grade}`;
+
+    // Update student name (First name + Last initial)
+    const nameParts = currentStudent.name.split(' ');
+    const firstName = nameParts[0];
+    const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0) + '.' : '';
+    document.getElementById('studentName').textContent = `${firstName} ${lastInitial}`;
+
+    // Update week display
+    updateWeekDisplay();
+}
+
+function updateWeekDisplay() {
+    const weekDate = new Date(currentWeek);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    const formattedDate = weekDate.toLocaleDateString('en-US', options);
+
+    document.getElementById('currentWeekDisplay').textContent = formattedDate;
+
+    // Calculate due date (Sunday)
+    const dueDate = new Date(weekDate);
+    dueDate.setDate(dueDate.getDate() + 6);
+    const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    document.getElementById('dueDate').textContent = dueDateStr;
+}
+
+async function loadCeteleTable() {
     try {
-        const student = await DatabaseHelper.getStudentById(studentId);
-        if (student) {
-            currentStudentId = studentId;
-            currentStudent = student;
-            document.getElementById('studentNameDisplay').textContent = student.name;
-            document.getElementById('selectStudentSection').style.display = 'none';
-            showSection('submit');
+        // Get group students
+        if (currentStudent.group_id) {
+            groupStudents = await DatabaseHelper.getStudents(currentStudent.group_id);
+        } else {
+            groupStudents = [currentStudent];
         }
-    } catch (error) {
-        console.error('Error loading stored student:', error);
-        localStorage.removeItem('studentId');
-    }
-}
 
-// Load students list for selection
-async function loadStudentsList() {
-    try {
-        const students = await DatabaseHelper.getStudents();
-        const select = document.getElementById('studentSelect');
+        // Get all submissions for this week
+        allSubmissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
 
-        students.forEach(student => {
-            const option = document.createElement('option');
-            option.value = student.id;
-            option.textContent = `${student.name} - ${student.grade}`;
-            select.appendChild(option);
+        console.log('📋 Loading table:', {
+            week: currentWeek,
+            groupStudents: groupStudents.length,
+            submissions: allSubmissions.length,
+            allSubmissions: allSubmissions
         });
 
-        // Also populate group select for new student form
-        const groups = await DatabaseHelper.getGroups();
-        const groupSelect = document.getElementById('newStudentGroup');
+        // Build table headers
+        const headerRow = document.querySelector('#ceteleTable thead tr');
+        let headersHTML = '<th class="student-col">Student</th>';
+        activities.forEach(activity => {
+            headersHTML += `<th class="activity-col" title="${activity.description}">${activity.name}<br><small>${activity.description}</small></th>`;
+        });
+        headerRow.innerHTML = headersHTML;
 
-        groups.forEach(group => {
-            const option = document.createElement('option');
-            option.value = group.id;
-            option.textContent = `${group.name} - ${group.grade}`;
-            groupSelect.appendChild(option);
+        // Build table body
+        const tbody = document.getElementById('ceteleTableBody');
+        tbody.innerHTML = '';
+
+        // Check if current student has submitted
+        const mySubmission = allSubmissions.find(s => s.student_id == currentStudentId);
+        const hasSubmitted = !!mySubmission;
+
+        console.log('👤 My submission:', mySubmission);
+
+        groupStudents.forEach(student => {
+            const submission = allSubmissions.find(s => s.student_id === student.id);
+            const isCurrentStudent = student.id == currentStudentId;
+
+            const row = document.createElement('tr');
+            row.className = isCurrentStudent ? 'current-student-row' : '';
+            row.dataset.studentId = student.id;
+
+            // Student name cell
+            let nameCell = `<td class="student-name-cell">`;
+            if (isCurrentStudent) {
+                nameCell += `<strong>${student.name} (You)</strong>`;
+            } else {
+                nameCell += student.name;
+            }
+            nameCell += `</td>`;
+
+            // Activity cells
+            let activityCells = '';
+            activities.forEach(activity => {
+                const completed = submission?.activity_completions?.[activity.id];
+
+                if (isCurrentStudent) {
+                    console.log(`🔍 Activity ${activity.id} (${activity.name}):`, completed);
+
+                    // Editable for current student
+                    let cellClass = '';
+                    if (completed === true) cellClass = 'cell-yes';
+                    else if (completed === false) cellClass = 'cell-no';
+
+                    activityCells += `
+                        <td class="activity-cell ${cellClass}">
+                            <select
+                                class="activity-select"
+                                data-activity-id="${activity.id}"
+                                ${!isEditing ? 'disabled' : ''}
+                            >
+                                <option value="">-</option>
+                                <option value="yes" ${completed === true ? 'selected' : ''}>Yes</option>
+                                <option value="no" ${completed === false ? 'selected' : ''}>No</option>
+                            </select>
+                        </td>
+                    `;
+                } else {
+                    // Read-only for other students
+                    let displayValue = '-';
+                    let cellClass = '';
+
+                    if (completed === true) {
+                        displayValue = 'Yes';
+                        cellClass = 'cell-yes';
+                    } else if (completed === false) {
+                        displayValue = 'No';
+                        cellClass = 'cell-no';
+                    } else {
+                        cellClass = 'cell-empty';
+                    }
+
+                    activityCells += `<td class="activity-cell ${cellClass}"><span class="cell-badge">${displayValue}</span></td>`;
+                }
+            });
+
+            row.innerHTML = nameCell + activityCells;
+            tbody.appendChild(row);
+        });
+
+        // Update edit/save button visibility
+        updateButtonState(hasSubmitted);
+
+        // Add event listeners to dropdowns for color updates
+        document.querySelectorAll('.current-student-row .activity-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const cell = this.closest('td');
+                cell.classList.remove('cell-yes', 'cell-no', 'cell-empty');
+
+                if (this.value === 'yes') {
+                    cell.classList.add('cell-yes');
+                } else if (this.value === 'no') {
+                    cell.classList.add('cell-no');
+                } else {
+                    cell.classList.add('cell-empty');
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading cetele table:', error);
+    }
+}
+
+function updateButtonState(hasSubmitted) {
+    const editBtn = document.getElementById('editBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    if (hasSubmitted) {
+        editBtn.style.display = 'block';
+        saveBtn.style.display = 'none';
+        isEditing = false;
+    } else {
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'block';
+        isEditing = true;
+        enableEditing();
+    }
+}
+
+function toggleEdit() {
+    isEditing = !isEditing;
+    const editBtn = document.getElementById('editBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    if (isEditing) {
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'block';
+        enableEditing();
+    } else {
+        editBtn.style.display = 'block';
+        saveBtn.style.display = 'none';
+        disableEditing();
+    }
+}
+
+function enableEditing() {
+    const selects = document.querySelectorAll('.current-student-row .activity-select');
+    selects.forEach(select => select.disabled = false);
+}
+
+function disableEditing() {
+    const selects = document.querySelectorAll('.current-student-row .activity-select');
+    selects.forEach(select => select.disabled = true);
+}
+
+async function saveCetele() {
+    try {
+        // Collect activity completions
+        const activityCompletions = {};
+        const selects = document.querySelectorAll('.current-student-row .activity-select');
+
+        selects.forEach(select => {
+            const activityId = parseInt(select.dataset.activityId);
+            const value = select.value;
+
+            if (value === 'yes') {
+                activityCompletions[activityId] = true;
+            } else if (value === 'no') {
+                activityCompletions[activityId] = false;
+            } else {
+                activityCompletions[activityId] = null;
+            }
+        });
+
+        console.log('💾 Saving cetele:', {
+            studentId: currentStudentId,
+            week: currentWeek,
+            completions: activityCompletions
+        });
+
+        // Submit to database
+        const result = await DatabaseHelper.submitWeeklyData(
+            currentStudentId,
+            currentWeek,
+            activityCompletions
+        );
+
+        console.log('✅ Save result:', result);
+
+        // Show success modal
+        showSuccessModal();
+
+        // Reload all data
+        await loadAllData();
+
+        console.log('📊 Data reloaded, submissions:', allSubmissions);
+
+        // Disable editing
+        isEditing = false;
+        disableEditing();
+        document.getElementById('editBtn').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'none';
+
+    } catch (error) {
+        console.error('Error saving cetele:', error);
+        alert('Error saving your cetele. Please try again.');
+    }
+}
+
+async function loadPersonalStats() {
+    try {
+        // Get all student submissions
+        const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
+
+        // Calculate stats
+        const totalWeeks = allMySubmissions.length;
+        let totalCompletions = 0;
+        let bestScore = 0;
+
+        allMySubmissions.forEach(sub => {
+            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            totalCompletions += score;
+            if (score > bestScore) bestScore = score;
+        });
+
+        const avgCompletion = totalWeeks > 0
+            ? Math.round((totalCompletions / (totalWeeks * activities.length)) * 100)
+            : 0;
+
+        // Calculate streak
+        const streak = calculateStreak(allMySubmissions);
+
+        // Calculate rank
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id);
+        const myRank = leaderboard.findIndex(item => item.id === currentStudentId) + 1;
+
+        // Update UI
+        document.getElementById('totalWeeks').textContent = totalWeeks;
+        document.getElementById('completionRate').textContent = avgCompletion + '%';
+        document.getElementById('bestScore').textContent = bestScore + '/' + activities.length;
+        document.getElementById('currentStreak').textContent = streak;
+        document.getElementById('streakCount').textContent = streak;
+        document.getElementById('rankPosition').textContent = myRank > 0 ? '#' + myRank : '#-';
+
+    } catch (error) {
+        console.error('Error loading personal stats:', error);
+    }
+}
+
+function calculateStreak(submissions) {
+    if (submissions.length === 0) return 0;
+
+    // Sort submissions by date descending
+    const sorted = submissions.sort((a, b) =>
+        new Date(b.week_start_date) - new Date(a.week_start_date)
+    );
+
+    let streak = 0;
+    let expectedWeek = DatabaseHelper.getWeekStartDate();
+
+    for (const sub of sorted) {
+        const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+
+        if (subWeek === expectedWeek) {
+            streak++;
+            // Move to previous week
+            const prevWeek = new Date(expectedWeek);
+            prevWeek.setDate(prevWeek.getDate() - 7);
+            expectedWeek = DatabaseHelper.getWeekStartDate(prevWeek);
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+async function loadLeaderboard() {
+    try {
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, 10);
+        const container = document.getElementById('leaderboardList');
+        container.innerHTML = '';
+
+        leaderboard.forEach((item, index) => {
+            const isCurrentStudent = item.id === currentStudentId;
+            const percentage = Math.round(item.percentage || 0);
+
+            const div = document.createElement('div');
+            div.className = `leaderboard-item ${isCurrentStudent ? 'current-student' : ''}`;
+
+            let medal = '';
+            if (index === 0) medal = '🥇';
+            else if (index === 1) medal = '🥈';
+            else if (index === 2) medal = '🥉';
+            else medal = `<span class="rank-number">#${index + 1}</span>`;
+
+            div.innerHTML = `
+                <div class="leaderboard-rank">${medal}</div>
+                <div class="leaderboard-name">${item.name}${isCurrentStudent ? ' (You)' : ''}</div>
+                <div class="leaderboard-score">${item.score} pts</div>
+                <div class="leaderboard-bar">
+                    <div class="leaderboard-fill" style="width: ${percentage}%"></div>
+                </div>
+            `;
+
+            container.appendChild(div);
         });
     } catch (error) {
-        console.error('Error loading students list:', error);
+        console.error('Error loading leaderboard:', error);
     }
 }
 
-// Select student
-async function selectStudent() {
-    const selectEl = document.getElementById('studentSelect');
-    const studentId = selectEl.value;
-
-    if (!studentId) return;
-
+async function loadTopPerformers() {
     try {
-        const student = await DatabaseHelper.getStudentById(studentId);
-        currentStudentId = studentId;
-        currentStudent = student;
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
 
-        // Store in localStorage
-        localStorage.setItem('studentId', studentId);
+        // Calculate scores for this week
+        const performers = submissions.map(sub => {
+            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            return {
+                student: sub.students,
+                score: score,
+                percentage: Math.round((score / activities.length) * 100)
+            };
+        });
 
-        document.getElementById('studentNameDisplay').textContent = student.name;
-        document.getElementById('selectStudentSection').style.display = 'none';
-        showSection('submit');
-    } catch (error) {
-        console.error('Error selecting student:', error);
-        alert('Error loading student data. Please try again.');
-    }
-}
+        // Sort by score and get top 5
+        performers.sort((a, b) => b.score - a.score);
+        const topPerformers = performers.slice(0, 5);
 
-// Show new student form
-function showNewStudentForm() {
-    document.getElementById('newStudentForm').style.display = 'block';
-}
+        const container = document.getElementById('topPerformers');
+        container.innerHTML = '';
 
-// Register new student
-async function registerNewStudent() {
-    try {
-        const name = document.getElementById('newStudentName').value.trim();
-        const grade = document.getElementById('newStudentGrade').value.trim();
-        const groupId = document.getElementById('newStudentGroup').value || null;
-
-        if (!name || !grade) {
-            alert('Please enter your name and grade');
+        if (topPerformers.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #94a3b8;">No submissions yet this week</p>';
             return;
         }
 
-        const student = await DatabaseHelper.createStudent(name, grade, groupId);
-        currentStudentId = student.id;
-        currentStudent = student;
+        topPerformers.forEach((performer, index) => {
+            const isCurrentStudent = performer.student?.id === currentStudentId;
 
-        // Store in localStorage
-        localStorage.setItem('studentId', student.id);
+            const div = document.createElement('div');
+            div.className = `top-performer-item ${isCurrentStudent ? 'current-student' : ''}`;
 
-        document.getElementById('studentNameDisplay').textContent = student.name;
-        document.getElementById('selectStudentSection').style.display = 'none';
-        showSection('submit');
-
-        // Reload students list
-        await loadStudentsList();
-    } catch (error) {
-        console.error('Error registering student:', error);
-        alert('Error creating student account. Please try again.');
-    }
-}
-
-// Load activities
-async function loadActivities() {
-    try {
-        activities = await DatabaseHelper.getActivities();
-
-        // If no activities exist, create defaults
-        if (activities.length === 0) {
-            activities = await DatabaseHelper.initializeDefaultActivities();
-        }
-    } catch (error) {
-        console.error('Error loading activities:', error);
-    }
-}
-
-// Section Navigation
-function showSection(sectionName) {
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.style.display = 'none';
-    });
-
-    const section = document.getElementById(`${sectionName}Section`);
-    if (section) {
-        section.style.display = 'block';
-    }
-
-    switch (sectionName) {
-        case 'submit':
-            loadSubmitSection();
-            break;
-        case 'history':
-            loadHistorySection();
-            break;
-    }
-}
-
-// ==================== SUBMIT SECTION ====================
-
-async function loadSubmitSection() {
-    if (!currentStudentId) {
-        document.getElementById('selectStudentSection').style.display = 'block';
-        document.getElementById('submitSection').style.display = 'none';
-        return;
-    }
-
-    try {
-        // Update week display
-        document.getElementById('currentWeek').textContent = DatabaseHelper.formatDate(currentWeek);
-
-        // Load existing submission if any
-        const existingSubmission = await DatabaseHelper.getWeeklySubmission(currentStudentId, currentWeek);
-
-        if (existingSubmission) {
-            selectedActivities = existingSubmission.activity_completions;
-        } else {
-            selectedActivities = {};
-            activities.forEach(activity => {
-                selectedActivities[activity.name] = false;
-            });
-        }
-
-        renderActivitiesForm();
-        updateScore();
-    } catch (error) {
-        console.error('Error loading submit section:', error);
-    }
-}
-
-function renderActivitiesForm() {
-    const container = document.getElementById('activitiesForm');
-    container.innerHTML = '';
-
-    activities.forEach(activity => {
-        const isChecked = selectedActivities[activity.name] === true;
-
-        const item = document.createElement('div');
-        item.className = `activity-item ${isChecked ? 'checked' : ''}`;
-        item.onclick = () => toggleActivity(activity.name);
-
-        item.innerHTML = `
-            <div class="activity-checkbox"></div>
-            <div class="activity-content">
-                <div class="activity-name">${activity.name}</div>
-                <div class="activity-description">${activity.description || ''}</div>
-            </div>
-        `;
-
-        container.appendChild(item);
-    });
-}
-
-function toggleActivity(activityName) {
-    selectedActivities[activityName] = !selectedActivities[activityName];
-    renderActivitiesForm();
-    updateScore();
-}
-
-function updateScore() {
-    const completedCount = Object.values(selectedActivities).filter(v => v === true).length;
-    document.getElementById('currentScore').textContent = completedCount;
-}
-
-async function submitWeeklyData() {
-    if (!currentStudentId) {
-        alert('Please select your name first');
-        return;
-    }
-
-    try {
-        await DatabaseHelper.submitWeeklyData(currentStudentId, currentWeek, selectedActivities);
-
-        // Show success animation
-        showSuccessAnimation();
-
-        // Show success message
-        const messageEl = document.getElementById('submissionMessage');
-        messageEl.textContent = 'Your progress has been saved successfully!';
-        messageEl.className = 'message success';
-        messageEl.style.display = 'block';
-
-        setTimeout(() => {
-            messageEl.style.display = 'none';
-        }, 3000);
-    } catch (error) {
-        console.error('Error submitting data:', error);
-
-        const messageEl = document.getElementById('submissionMessage');
-        messageEl.textContent = 'Error saving your progress. Please try again.';
-        messageEl.className = 'message error';
-        messageEl.style.display = 'block';
-    }
-}
-
-function showSuccessAnimation() {
-    const overlay = document.getElementById('successOverlay');
-    overlay.style.display = 'flex';
-
-    setTimeout(() => {
-        overlay.style.display = 'none';
-    }, 2500);
-}
-
-// ==================== HISTORY SECTION ====================
-
-async function loadHistorySection() {
-    if (!currentStudentId) {
-        alert('Please select your name first');
-        showSection('submit');
-        return;
-    }
-
-    try {
-        const stats = await DatabaseHelper.getStudentStats(currentStudentId);
-        const submissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
-
-        // Update stats
-        document.getElementById('totalWeeks').textContent = stats.totalWeeks;
-        document.getElementById('totalCompletions').textContent = stats.totalCompletions;
-        document.getElementById('avgCompletion').textContent = Math.round(stats.averageCompletion) + '%';
-
-        const bestWeekScore = stats.weeklyScores.length > 0
-            ? Math.max(...stats.weeklyScores.map(w => w.score))
-            : 0;
-        document.getElementById('bestWeek').textContent = bestWeekScore;
-
-        // Render history
-        renderHistory(submissions);
-
-        // Show encouragement
-        showEncouragement(stats);
-    } catch (error) {
-        console.error('Error loading history:', error);
-    }
-}
-
-function renderHistory(submissions) {
-    const container = document.getElementById('historyContent');
-
-    if (submissions.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--text-dim);">No submissions yet. Start tracking your progress!</p>';
-        return;
-    }
-
-    container.innerHTML = '';
-
-    submissions.forEach(sub => {
-        const score = Object.values(sub.activity_completions).filter(v => v === true).length;
-        const percentage = Math.round((score / activities.length) * 100);
-
-        const item = document.createElement('div');
-        item.className = 'history-item';
-
-        let activitiesHTML = '';
-        activities.forEach(activity => {
-            const completed = sub.activity_completions[activity.name];
-            const icon = completed === true ? '✅' : completed === false ? '❌' : '➖';
-
-            activitiesHTML += `
-                <div class="history-activity">
-                    <span class="history-activity-icon">${icon}</span>
-                    <span>${activity.name}</span>
+            div.innerHTML = `
+                <div class="performer-rank">${index + 1}</div>
+                <div class="performer-info">
+                    <div class="performer-name">${performer.student?.name || 'Unknown'}${isCurrentStudent ? ' (You)' : ''}</div>
+                    <div class="performer-score">${performer.score}/${activities.length} completed (${performer.percentage}%)</div>
                 </div>
             `;
+
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Error loading top performers:', error);
+    }
+}
+
+function changeWeek(direction) {
+    const date = new Date(currentWeek);
+    date.setDate(date.getDate() + (direction * 7));
+    const newWeek = DatabaseHelper.getWeekStartDate(date);
+
+    // Check if week is allowed
+    if (!isWeekAllowed(newWeek)) {
+        return; // Don't change week
+    }
+
+    currentWeek = newWeek;
+    updateWeekDisplay();
+    loadAllData();
+}
+
+function goToCurrentWeek() {
+    currentWeek = DatabaseHelper.getWeekStartDate();
+    updateWeekDisplay();
+    loadAllData();
+}
+
+function isWeekAllowed(weekString) {
+    const weekDate = new Date(weekString);
+    const today = new Date();
+
+    // Calculate the Saturday of the week at midnight
+    const saturdayOfWeek = new Date(weekDate);
+    saturdayOfWeek.setDate(saturdayOfWeek.getDate() + 5); // Monday + 5 = Saturday
+    saturdayOfWeek.setHours(0, 0, 0, 0);
+
+    // Week is accessible if today is >= Saturday of that week
+    return today >= saturdayOfWeek;
+}
+
+function updateWeekNavigationState() {
+    const prevBtn = document.querySelector('.week-nav-btn:first-child');
+    const nextBtn = document.querySelector('.week-nav-btn:last-child');
+
+    // Check previous week
+    const prevWeekDate = new Date(currentWeek);
+    prevWeekDate.setDate(prevWeekDate.getDate() - 7);
+    const prevWeek = DatabaseHelper.getWeekStartDate(prevWeekDate);
+
+    if (!isWeekAllowed(prevWeek)) {
+        prevBtn.disabled = true;
+        prevBtn.style.opacity = '0.4';
+        prevBtn.style.cursor = 'not-allowed';
+    } else {
+        prevBtn.disabled = false;
+        prevBtn.style.opacity = '1';
+        prevBtn.style.cursor = 'pointer';
+    }
+
+    // Check next week
+    const nextWeekDate = new Date(currentWeek);
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    const nextWeek = DatabaseHelper.getWeekStartDate(nextWeekDate);
+
+    if (!isWeekAllowed(nextWeek)) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.4';
+        nextBtn.style.cursor = 'not-allowed';
+    } else {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+    }
+}
+
+// ==================== CHARTS ====================
+
+async function renderProgressChart() {
+    try {
+        const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
+
+        // Get last 8 weeks
+        const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+        const weeklyScores = weeks.map(week => {
+            const submission = allMySubmissions.find(sub => {
+                const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+                return subWeek === week;
+            });
+
+            if (!submission) return 0;
+
+            const completions = Object.values(submission.activity_completions).filter(v => v === true).length;
+            return Math.round((completions / activities.length) * 100);
         });
 
-        item.innerHTML = `
-            <div class="history-header">
-                <div class="history-week">Week of ${DatabaseHelper.formatDate(sub.week_start_date)}</div>
-                <div class="history-score">${score}/${activities.length} (${percentage}%)</div>
-            </div>
-            <div class="history-activities">
-                ${activitiesHTML}
-            </div>
-        `;
+        const ctx = document.getElementById('progressChart');
+        if (!ctx) return;
 
-        container.appendChild(item);
-    });
-}
+        if (charts.progress) {
+            charts.progress.destroy();
+        }
 
-function showEncouragement(stats) {
-    const messageEl = document.getElementById('encouragementMessage');
-    let message = '';
-
-    const avgCompletion = Math.round(stats.averageCompletion);
-
-    if (avgCompletion >= 90) {
-        message = '🌟 Outstanding work! You\'re absolutely crushing it! Keep up this incredible momentum!';
-    } else if (avgCompletion >= 75) {
-        message = '🔥 Great job! You\'re doing really well. You\'re on the path to excellence!';
-    } else if (avgCompletion >= 60) {
-        message = '💪 Good effort! You\'re making solid progress. Keep pushing forward!';
-    } else if (avgCompletion >= 40) {
-        message = '📈 You\'re getting there! Every week is a new opportunity to improve. Stay committed!';
-    } else if (stats.totalWeeks > 0) {
-        message = '🌱 Every journey starts with a single step. You\'ve started - now keep building!';
-    } else {
-        message = '✨ Welcome! Start your journey today and watch yourself grow week by week!';
+        charts.progress = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: weeks.map(w => DatabaseHelper.formatDate(w)),
+                datasets: [{
+                    label: 'Completion %',
+                    data: weeklyScores,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 11, 14, 0.9)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(139, 92, 246, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: value => value + '%'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#94a3b8'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error rendering progress chart:', error);
     }
-
-    messageEl.innerHTML = `<p>${message}</p>`;
 }
 
-// ==================== LOGOUT ====================
+async function renderConsistencyChart() {
+    try {
+        const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
+
+        // Get last 8 weeks
+        const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+
+        // Calculate completion rate for each week
+        const completionRates = weeks.map(week => {
+            const submission = allMySubmissions.find(sub => {
+                const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+                return subWeek === week;
+            });
+
+            if (!submission) return 0;
+
+            const completions = Object.values(submission.activity_completions).filter(v => v === true).length;
+            return completions;
+        });
+
+        const ctx = document.getElementById('consistencyChart');
+        if (!ctx) return;
+
+        if (charts.consistency) {
+            charts.consistency.destroy();
+        }
+
+        // Create gradient colors based on completion
+        const backgroundColors = completionRates.map(count => {
+            const percentage = (count / activities.length) * 100;
+            if (percentage >= 80) return '#10b981';
+            if (percentage >= 60) return '#f59e0b';
+            if (percentage >= 40) return '#ef4444';
+            return '#64748b';
+        });
+
+        charts.consistency = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: weeks.map(w => DatabaseHelper.formatDate(w).split(',')[0]), // Short date
+                datasets: [{
+                    label: 'Activities Completed',
+                    data: completionRates,
+                    backgroundColor: backgroundColors,
+                    borderRadius: 8,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 11, 14, 0.9)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(139, 92, 246, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const percentage = Math.round((context.parsed.y / activities.length) * 100);
+                                return `${context.parsed.y}/${activities.length} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: activities.length,
+                        ticks: {
+                            color: '#94a3b8',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error rendering consistency chart:', error);
+    }
+}
+
+async function renderGroupComparisonChart() {
+    try {
+        if (!currentStudent.group_id) return;
+
+        const students = await DatabaseHelper.getStudents(currentStudent.group_id);
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
+
+        const studentNames = students.map(s => s.name);
+        const scores = students.map(student => {
+            const submission = submissions.find(sub => sub.student_id === student.id);
+            if (!submission) return 0;
+            return Object.values(submission.activity_completions).filter(v => v === true).length;
+        });
+
+        const ctx = document.getElementById('groupComparisonChart');
+        if (!ctx) return;
+
+        if (charts.comparison) {
+            charts.comparison.destroy();
+        }
+
+        // Highlight current student's bar
+        const backgroundColors = students.map(student =>
+            student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)'
+        );
+
+        charts.comparison = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: studentNames,
+                datasets: [{
+                    label: 'Activities Completed',
+                    data: scores,
+                    backgroundColor: backgroundColors,
+                    borderColor: students.map(student =>
+                        student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.5)'
+                    ),
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 11, 14, 0.9)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(139, 92, 246, 0.3)',
+                        borderWidth: 1,
+                        padding: 12
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: activities.length,
+                        ticks: {
+                            color: '#94a3b8',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error rendering group comparison chart:', error);
+    }
+}
+
+function showSuccessModal() {
+    const modal = document.getElementById('successModal');
+    modal.classList.add('show');
+}
+
+function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    modal.classList.remove('show');
+}
 
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('studentId');
-        currentStudentId = null;
-        currentStudent = null;
-        document.getElementById('selectStudentSection').style.display = 'block';
-        document.getElementById('submitSection').style.display = 'none';
-        document.getElementById('historySection').style.display = 'none';
-        location.reload();
-    }
+    sessionStorage.removeItem('studentId');
+    window.location.href = 'student-login.html';
 }
 
 // Initialize when page loads
-window.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', init);

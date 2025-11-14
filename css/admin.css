@@ -744,19 +744,30 @@ tr:hover td {
     .nav-menu {
         width: 100%;
         justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .nav-btn {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.875rem;
     }
 
     .section-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 1rem;
     }
 
     .section-header h1 {
-        font-size: 2rem;
+        font-size: 1.75rem;
     }
 
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 1.25rem;
     }
 
     .charts-grid {
@@ -764,7 +775,49 @@ tr:hover td {
     }
 
     .modal-content {
-        padding: 2rem;
+        padding: 2rem 1.5rem;
+        max-width: 95%;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group button {
+        width: 100%;
+    }
+
+    .data-table {
+        font-size: 0.85rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem 0.5rem;
+    }
+
+    .section-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+    }
+
+    .nav-btn {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
     }
 }
 

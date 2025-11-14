@@ -24,13 +24,13 @@ const MOCK_DATA = {
     ],
 
     activities: [
-        { id: 1, name: 'Prayer 5 times daily', type: 'spiritual', order_index: 1 },
-        { id: 2, name: 'Read Quran', type: 'spiritual', order_index: 2 },
-        { id: 3, name: 'Physical Exercise', type: 'physical', order_index: 3 },
-        { id: 4, name: 'Study/Homework', type: 'academic', order_index: 4 },
-        { id: 5, name: 'Help Family', type: 'social', order_index: 5 },
-        { id: 6, name: 'Good Deed', type: 'social', order_index: 6 },
-        { id: 7, name: 'No Screen Before Bed', type: 'health', order_index: 7 },
+        { id: 1, name: 'Kitap', description: '35 pages', type: 'reading', order_index: 1 },
+        { id: 2, name: 'Risale Sohbet 1', description: 'First session', type: 'discussion', order_index: 2 },
+        { id: 3, name: 'Risale Sohbet 2', description: 'Second session', type: 'discussion', order_index: 3 },
+        { id: 4, name: 'Kuran', description: '7 pages', type: 'reading', order_index: 4 },
+        { id: 5, name: 'Kaset/Video', description: '60 minutes', type: 'media', order_index: 5 },
+        { id: 6, name: 'Teheccud', description: '3 times', type: 'prayer', order_index: 6 },
+        { id: 7, name: 'SWB/Dhikr', description: '101/day', type: 'prayer', order_index: 7 },
     ],
 
     weeklySubmissions: [
@@ -50,6 +50,8 @@ const MOCK_DATA = {
 
 // Mock Database Helper
 const MockDatabaseHelper = {
+    __isMock: true,
+
     async getStudents(groupFilter = null) {
         let students = [...MOCK_DATA.students];
         if (groupFilter) {
@@ -102,11 +104,122 @@ const MockDatabaseHelper = {
         return leaderboard.slice(0, limit);
     },
 
-    getWeekStartDate() {
+    getWeekStartDate(date = new Date()) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d.setDate(diff));
+        return monday.toISOString().split('T')[0];
+    },
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    },
+
+    async getStudentById(studentId) {
+        const student = MOCK_DATA.students.find(s => s.id == studentId);
+        if (!student) return null;
+
+        // Add group information
+        const group = MOCK_DATA.groups.find(g => g.id === student.group_id);
+        return {
+            ...student,
+            groups: group
+        };
+    },
+
+    async getWeeklySubmission(studentId, weekStartDate) {
+        const submission = MOCK_DATA.weeklySubmissions.find(sub => {
+            const subDate = new Date(sub.week_start_date);
+            const compareDate = new Date(weekStartDate);
+            return sub.student_id == studentId &&
+                   subDate.toDateString() === compareDate.toDateString();
+        });
+        return submission || null;
+    },
+
+    async submitWeeklyData(studentId, weekStartDate, activityCompletions) {
+        // Normalize the date string
+        const weekDateStr = weekStartDate instanceof Date ? weekStartDate.toDateString() : new Date(weekStartDate).toDateString();
+
+        // Find existing submission
+        const existingIndex = MOCK_DATA.weeklySubmissions.findIndex(sub => {
+            const subDate = new Date(sub.week_start_date);
+            return sub.student_id == studentId && subDate.toDateString() === weekDateStr;
+        });
+
+        const submission = {
+            id: existingIndex >= 0 ? MOCK_DATA.weeklySubmissions[existingIndex].id : MOCK_DATA.weeklySubmissions.length + 1,
+            student_id: parseInt(studentId),
+            week_start_date: new Date(weekStartDate),
+            activity_completions: activityCompletions,
+            created_at: new Date()
+        };
+
+        console.log('📝 Submitting:', {
+            studentId,
+            weekDateStr,
+            existingIndex,
+            activityCompletions,
+            submission
+        });
+
+        if (existingIndex >= 0) {
+            MOCK_DATA.weeklySubmissions[existingIndex] = submission;
+            console.log('✏️ Updated existing submission at index', existingIndex);
+        } else {
+            MOCK_DATA.weeklySubmissions.push(submission);
+            console.log('➕ Added new submission');
+        }
+
+        console.log('📦 All submissions now:', MOCK_DATA.weeklySubmissions.length);
+
+        return submission;
+    },
+
+    async getAllSubmissionsForWeek(weekStartDate, groupId = null) {
+        let submissions = MOCK_DATA.weeklySubmissions.filter(sub => {
+            const subDate = new Date(sub.week_start_date);
+            const compareDate = new Date(weekStartDate);
+            return subDate.toDateString() === compareDate.toDateString();
+        });
+
+        // Add student and group data to submissions
+        submissions = submissions.map(sub => {
+            const student = MOCK_DATA.students.find(s => s.id === sub.student_id);
+            const group = student ? MOCK_DATA.groups.find(g => g.id === student.group_id) : null;
+            return {
+                ...sub,
+                students: student ? { ...student, groups: group } : null
+            };
+        });
+
+        // Filter by group if specified
+        if (groupId) {
+            submissions = submissions.filter(sub => sub.students?.group_id == groupId);
+        }
+
+        return submissions;
+    },
+
+    async getAllSubmissionsForStudent(studentId) {
+        return MOCK_DATA.weeklySubmissions
+            .filter(sub => sub.student_id == studentId)
+            .sort((a, b) => new Date(b.week_start_date) - new Date(a.week_start_date));
+    },
+
+    getLastNWeeks(n) {
+        const weeks = [];
         const today = new Date();
-        const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(today.setDate(diff));
+
+        for (let i = 0; i < n; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - (i * 7));
+            weeks.push(this.getWeekStartDate(date));
+        }
+
+        return weeks;
     }
 };
 
@@ -128,16 +241,27 @@ window.disableDebugMode = function() {
     console.log('❌ Debug mode disabled! Reload the page to use real data.');
 };
 
-// Use mock data in debug mode
+// Use mock data in debug mode - Override DatabaseHelper immediately
 if (typeof window !== 'undefined') {
     if (isDebugMode()) {
+        // Store the real DatabaseHelper if it exists
+        if (window.DatabaseHelper) {
+            window.RealDatabaseHelper = window.DatabaseHelper;
+        }
+
+        // Override with mock data
         window.DatabaseHelper = MockDatabaseHelper;
+
         console.log('%c📊 MOCK DATA MODE ACTIVE', 'background: #8b5cf6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
         console.log('Students:', MOCK_DATA.students.length);
         console.log('Groups:', MOCK_DATA.groups.length);
         console.log('Activities:', MOCK_DATA.activities.length);
-        console.log('To disable: disableDebugMode()');
+        console.log('Submissions:', MOCK_DATA.weeklySubmissions.length);
+        console.log('%cTo disable: disableDebugMode() or click the sidebar button', 'color: #8b5cf6; font-style: italic;');
     } else {
-        console.log('%cTo enable mock data: enableDebugMode() or add ?debug=true to URL', 'color: #8b5cf6; font-style: italic;');
+        console.log('%cTo enable mock data:', 'color: #8b5cf6; font-weight: bold;');
+        console.log('  1. Click "Toggle Mock Data" in sidebar');
+        console.log('  2. Type: enableDebugMode()');
+        console.log('  3. Add ?debug=true to URL');
     }
 }
