@@ -23,39 +23,16 @@
             overflow-x: hidden;
             background: linear-gradient(to bottom,
                 #ffffff 0%,
-                #ffffff 40%,
-                #fefffe 42%,
-                #fdfffe 44%,
-                #fcfefe 46%,
-                #fbfefe 48%,
-                #fafefe 50%,
-                #f9fdfe 52%,
-                #f7fcfe 54%,
-                #f5fbfe 56%,
-                #f3fafe 58%,
-                #f0f9fe 60%,
-                #edf7fd 62%,
-                #e9f5fd 64%,
-                #e5f3fc 66%,
-                #e0f1fc 68%,
-                #dbeefb 70%,
-                #d5ebfa 72%,
-                #cfe8f9 74%,
-                #c8e5f8 76%,
-                #c0e1f6 78%,
-                #b8ddf5 80%,
-                #afd9f3 82%,
-                #a5d4f1 84%,
-                #9acfef 86%,
-                #8ec9ec 88%,
-                #5a9fd9 90%,
-                #3b82c6 92%,
-                #2563b3 94%,
-                #1e4a9f 96%,
-                #17368c 97%,
-                #0f2678 98%,
-                #0a1a64 99%,
-                #051150 100%
+                #ffffff 65%,
+                #e0f2fe 72%,
+                #93c5fd 78%,
+                #3b82f6 83%,
+                #1e40af 87%,
+                #1e3a8a 90%,
+                #172554 93%,
+                #0f1f47 95%,
+                #0a1839 97%,
+                #000035 100%
             );
             min-height: 100vh;
         }
@@ -65,7 +42,8 @@
             position: relative;
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
+            padding-bottom: 8rem;
             justify-content: center;
             background-image: url('assets/hero-bg.png');
             background-size: cover;
@@ -104,7 +82,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 20rem;
+            gap: 6rem;
         }
 
         /* Animated Quote Container - Horizontal */
@@ -451,46 +429,52 @@
             font-weight: 300;
         }
 
-        /* Contact Modal */
+        /* Contact Modal - Frosted Glass Overlay */
         .contact-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 2000;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: backdrop-filter 0.6s ease, opacity 0.6s ease;
         }
 
         .contact-modal.active {
             display: flex;
             opacity: 1;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .contact-modal-content {
-            background: rgba(10, 15, 30, 0.98);
-            backdrop-filter: blur(60px);
-            -webkit-backdrop-filter: blur(60px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
             padding: 3rem;
-            max-width: 480px;
+            max-width: 500px;
             width: 90%;
-            box-shadow:
-                0 32px 80px rgba(0, 0, 0, 0.7),
-                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .contact-modal h3 {
             font-size: 0.75rem;
             font-weight: 400;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(0, 0, 0, 0.7);
             margin-bottom: 2rem;
             text-transform: lowercase;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.1em;
+        }
+
+        .contact-modal p {
+            font-size: 0.75rem;
+            line-height: 1.6;
+            color: rgba(0, 0, 0, 0.6);
         }
 
         .contact-form {
@@ -501,12 +485,12 @@
 
         .contact-form input,
         .contact-form textarea {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            padding: 1rem 1.25rem;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 0.7rem;
+            padding: 1rem;
+            color: rgba(0, 0, 0, 0.9);
+            font-size: 0.75rem;
             font-family: inherit;
             resize: vertical;
             transition: all 0.3s ease;
@@ -514,16 +498,15 @@
 
         .contact-form input::placeholder,
         .contact-form textarea::placeholder {
-            color: rgba(255, 255, 255, 0.35);
+            color: rgba(0, 0, 0, 0.4);
             text-transform: lowercase;
         }
 
         .contact-form input:focus,
         .contact-form textarea:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.7);
+            border-color: rgba(0, 0, 0, 0.2);
         }
 
         .contact-form-buttons {
@@ -536,35 +519,31 @@
             flex: 1;
             padding: 1rem;
             border-radius: 12px;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             text-transform: lowercase;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
-            letter-spacing: 0.1em;
         }
 
         .contact-form .submit-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.95);
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: white;
         }
 
         .contact-form .submit-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.85);
         }
 
         .contact-form .cancel-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.7);
         }
 
         .contact-form .cancel-btn:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.7);
         }
 
         /* Easter Egg - Spinning Copyright Symbol Only */
@@ -893,7 +872,7 @@
     <div class="contact-modal" id="aboutModal">
         <div class="contact-modal-content">
             <h3>about us</h3>
-            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem; line-height: 1.6; text-transform: lowercase;">
+            <p>
                 made by a student for students. cetele helps track spiritual activities and personal growth through simple,
                 beautiful analytics. built with care to support your journey.
             </p>
@@ -907,7 +886,7 @@
     <div class="contact-modal" id="privacyModal">
         <div class="contact-modal-content">
             <h3>privacy policy</h3>
-            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem; line-height: 1.6; text-transform: lowercase;">
+            <p>
                 your data belongs to you. we collect only what's necessary to provide the service.
                 your spiritual journey data is stored securely and never shared with third parties.
                 you can request deletion of your data at any time.
