@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Weekly Submission</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/student.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-icon">📚</span>
+                <span class="nav-title">Student Portal</span>
+            </div>
+            <div class="nav-menu">
+                <span class="student-name-display" id="studentNameDisplay">Welcome!</span>
+                <button class="nav-btn" onclick="showSection('submit')">📝 Submit</button>
+                <button class="nav-btn" onclick="showSection('history')">📊 My Progress</button>
+                <button class="nav-btn logout" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Student Selection (Initial) -->
+        <section id="selectStudentSection" class="content-section">
+            <div class="welcome-card">
+                <div class="welcome-icon">🎓</div>
+                <h1>Welcome to Cetele Tracker</h1>
+                <p>Select your name to continue</p>
+
+                <div class="student-select-container">
+                    <select id="studentSelect" class="student-select" onchange="selectStudent()">
+                        <option value="">-- Select Your Name --</option>
+                    </select>
+                </div>
+
+                <div class="or-divider">
+                    <span>OR</span>
+                </div>
+
+                <button class="btn-secondary" onclick="showNewStudentForm()">➕ I'm New - Add Me</button>
+
+                <div id="newStudentForm" style="display: none; margin-top: 2rem;">
+                    <div class="form-group">
+                        <label>Your Full Name</label>
+                        <input type="text" id="newStudentName" class="form-input" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Grade</label>
+                        <input type="text" id="newStudentGrade" class="form-input" placeholder="e.g., 10th">
+                    </div>
+                    <div class="form-group">
+                        <label>Group (Optional)</label>
+                        <select id="newStudentGroup" class="form-input">
+                            <option value="">No Group</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="registerNewStudent()">Register & Continue</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Submit Section -->
+        <section id="submitSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <div>
+                    <h1>📝 Weekly Submission</h1>
+                    <p class="week-info">Week of <span id="currentWeek"></span></p>
+                </div>
+                <div class="score-display">
+                    <div class="score-circle">
+                        <span id="currentScore">0</span>
+                        <span class="score-total">/7</span>
+                    </div>
+                    <div class="score-label">Completed</div>
+                </div>
+            </div>
+
+            <div class="activities-container">
+                <div class="info-card">
+                    <span class="info-icon">ℹ️</span>
+                    <p>Check the activities you completed this week. Your progress is saved automatically!</p>
+                </div>
+
+                <div id="activitiesForm" class="activities-form"></div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary btn-large" onclick="submitWeeklyData()">
+                        💾 Save My Progress
+                    </button>
+                </div>
+
+                <div id="submissionMessage" class="message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section id="historySection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>📊 My Progress</h1>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalWeeks">0</div>
+                        <div class="stat-label">Weeks Tracked</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalCompletions">0</div>
+                        <div class="stat-label">Total Completions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="avgCompletion">0%</div>
+                        <div class="stat-label">Average Rate</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="bestWeek">0</div>
+                        <div class="stat-label">Best Week</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-card">
+                <h2>📅 Weekly History</h2>
+                <div id="historyContent"></div>
+            </div>
+
+            <div class="encouragement-card">
+                <div class="encouragement-icon">🌟</div>
+                <div id="encouragementMessage"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Success Animation Overlay -->
+    <div id="successOverlay" class="success-overlay" style="display: none;">
+        <div class="success-animation">
+            <div class="success-checkmark">
+                <div class="check-icon">
+                    <span class="icon-line line-tip"></span>
+                    <span class="icon-line line-long"></span>
+                    <div class="icon-circle"></div>
+                    <div class="icon-fix"></div>
+                </div>
+            </div>
+            <h2>Awesome Work!</h2>
+            <p>Your progress has been saved.</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/db-helper.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Check if coming from registration
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRegistering = urlParams.get('register') === 'true';
+
+        if (!isRegistering) {
+            // Check authentication for existing students
+            const session = checkAuth('student');
+            if (session && session.userId) {
+                // Set the student ID for the app
+                currentStudentId = session.userId;
+                localStorage.setItem('studentId', session.userId);
+            }
+        }
+    </script>
+    <script src="js/student.js"></script>
+</body>
+</html>

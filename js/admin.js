@@ -1,0 +1,740 @@
+// Admin Dashboard JavaScript
+
+let currentWeek = DatabaseHelper.getWeekStartDate();
+let selectedGroupFilter = null;
+let charts = {};
+
+// Initialize Dashboard
+async function init() {
+    try {
+        // Load initial data
+        await loadGroupFilters();
+        await showSection('overview');
+
+        // Hide loading state
+        document.getElementById('loadingState').style.display = 'none';
+    } catch (error) {
+        console.error('Initialization error:', error);
+        alert('Error loading dashboard. Please refresh the page.');
+    }
+}
+
+// Section Navigation
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.style.display = 'none';
+    });
+
+    // Show selected section
+    const section = document.getElementById(`${sectionName}Section`);
+    if (section) {
+        section.style.display = 'block';
+    }
+
+    // Load section data
+    switch (sectionName) {
+        case 'overview':
+            loadOverview();
+            break;
+        case 'groups':
+            loadGroups();
+            break;
+        case 'students':
+            loadStudents();
+            break;
+        case 'weekly':
+            loadWeeklyView();
+            break;
+        case 'analytics':
+            loadAnalytics();
+            break;
+    }
+}
+
+// Load Group Filters
+async function loadGroupFilters() {
+    try {
+        const groups = await DatabaseHelper.getGroups();
+
+        const filterSelects = [
+            'overviewGroupFilter',
+            'studentGroupFilter',
+            'analyticsGroupFilter',
+            'studentGroup'
+        ];
+
+        filterSelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                // Keep the first option (All Groups or No Group)
+                const firstOption = select.options[0].cloneNode(true);
+                select.innerHTML = '';
+                select.appendChild(firstOption);
+
+                groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.id;
+                    option.textContent = `${group.name} - ${group.grade}`;
+                    select.appendChild(option);
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error loading group filters:', error);
+    }
+}
+
+// ==================== OVERVIEW SECTION ====================
+
+async function loadOverview() {
+    try {
+        const groupFilter = document.getElementById('overviewGroupFilter').value || null;
+        const leaderboard = await DatabaseHelper.getLeaderboard(groupFilter);
+        const students = await DatabaseHelper.getStudents(groupFilter);
+        const activities = await DatabaseHelper.getActivities();
+
+        // Update stats
+        document.getElementById('totalStudents').textContent = students.length;
+
+        // Get this week's submissions
+        const thisWeekSubmissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, groupFilter);
+        document.getElementById('activeStudents').textContent = thisWeekSubmissions.length;
+
+        // Calculate average completion
+        if (leaderboard.length > 0) {
+            const avgCompletion = leaderboard.reduce((sum, item) => sum + item.percentage, 0) / leaderboard.length;
+            document.getElementById('avgCompletion').textContent = Math.round(avgCompletion) + '%';
+        } else {
+            document.getElementById('avgCompletion').textContent = '0%';
+        }
+
+        // Top performer
+        if (leaderboard.length > 0) {
+            document.getElementById('topPerformer').textContent = leaderboard[0].student.name.split(' ')[0];
+        } else {
+            document.getElementById('topPerformer').textContent = '-';
+        }
+
+        // Render leaderboard
+        renderLeaderboard(leaderboard);
+
+        // Render charts
+        await renderTrendsChart(groupFilter);
+        await renderActivityChart(groupFilter);
+
+    } catch (error) {
+        console.error('Error loading overview:', error);
+    }
+}
+
+function renderLeaderboard(leaderboard) {
+    const container = document.getElementById('leaderboardContent');
+    container.innerHTML = '';
+
+    if (leaderboard.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-dim);">No data available</p>';
+        return;
+    }
+
+    leaderboard.forEach((item, index) => {
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+        const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+        const element = document.createElement('div');
+        element.className = 'leaderboard-item';
+        element.innerHTML = `
+            <div class="rank-badge ${rankClass}">${rankIcon}</div>
+            <div class="leaderboard-name">${item.student.name}</div>
+            <div class="leaderboard-score">${Math.round(item.percentage)}%</div>
+        `;
+        container.appendChild(element);
+    });
+}
+
+async function renderTrendsChart(groupFilter) {
+    const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+    const activities = await DatabaseHelper.getActivities();
+
+    const weeklyAverages = await Promise.all(weeks.map(async week => {
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(week, groupFilter);
+        if (submissions.length === 0) return 0;
+
+        const totalScore = submissions.reduce((sum, sub) => {
+            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            return sum + score;
+        }, 0);
+
+        return Math.round((totalScore / (submissions.length * activities.length)) * 100);
+    }));
+
+    const ctx = document.getElementById('trendsChart');
+    if (!ctx) return;
+
+    if (charts.trends) {
+        charts.trends.destroy();
+    }
+
+    charts.trends = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weeks.map(w => DatabaseHelper.formatDate(w)),
+            datasets: [{
+                label: 'Average Completion %',
+                data: weeklyAverages,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#e2e8f0' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: value => value + '%'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+async function renderActivityChart(groupFilter) {
+    const activities = await DatabaseHelper.getActivities();
+    const allSubmissions = await DatabaseHelper.getAllSubmissions();
+
+    const filteredSubmissions = groupFilter
+        ? allSubmissions.filter(sub => sub.students.group_id === groupFilter)
+        : allSubmissions;
+
+    const activityStats = activities.map(activity => {
+        let completed = 0;
+        let total = 0;
+
+        filteredSubmissions.forEach(sub => {
+            if (sub.activity_completions[activity.name] !== undefined) {
+                if (sub.activity_completions[activity.name] === true) {
+                    completed++;
+                }
+                total++;
+            }
+        });
+
+        return total > 0 ? Math.round((completed / total) * 100) : 0;
+    });
+
+    const ctx = document.getElementById('activityChart');
+    if (!ctx) return;
+
+    if (charts.activity) {
+        charts.activity.destroy();
+    }
+
+    charts.activity = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: activities.map(a => a.name),
+            datasets: [{
+                label: 'Completion Rate %',
+                data: activityStats,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(102, 126, 234, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: value => value + '%'
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// ==================== GROUPS SECTION ====================
+
+async function loadGroups() {
+    try {
+        const groups = await DatabaseHelper.getGroups();
+        const container = document.getElementById('groupsGrid');
+        container.innerHTML = '';
+
+        if (groups.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-dim); grid-column: 1/-1;">No groups found. Add your first group!</p>';
+            return;
+        }
+
+        for (const group of groups) {
+            const students = await DatabaseHelper.getStudents(group.id);
+            const stats = await DatabaseHelper.getGroupStats(group.id, currentWeek);
+
+            const avgCompletion = stats.length > 0
+                ? Math.round(stats.reduce((sum, s) => sum + s.percentage, 0) / stats.length)
+                : 0;
+
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            card.innerHTML = `
+                <div class="group-header">
+                    <div>
+                        <div class="group-name">${group.name}</div>
+                        <div style="color: var(--text-dim); font-size: 0.9rem;">${group.grade}</div>
+                    </div>
+                    <div class="group-badge">${students.length} students</div>
+                </div>
+                <div class="group-stats">
+                    <div class="group-stat">
+                        <div class="group-stat-value">${avgCompletion}%</div>
+                        <div class="group-stat-label">Avg Completion</div>
+                    </div>
+                    <div class="group-stat">
+                        <div class="group-stat-value">${stats.filter(s => s.percentage > 0).length}</div>
+                        <div class="group-stat-label">Active</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+    } catch (error) {
+        console.error('Error loading groups:', error);
+    }
+}
+
+function showAddGroupModal() {
+    document.getElementById('addGroupModal').style.display = 'block';
+}
+
+async function addGroup() {
+    try {
+        const name = document.getElementById('groupName').value.trim();
+        const grade = document.getElementById('groupGrade').value.trim();
+
+        if (!name || !grade) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        await DatabaseHelper.createGroup(name, grade);
+        alert('Group added successfully!');
+
+        closeModal('addGroupModal');
+        document.getElementById('groupName').value = '';
+        document.getElementById('groupGrade').value = '';
+
+        await loadGroupFilters();
+        await loadGroups();
+    } catch (error) {
+        console.error('Error adding group:', error);
+        alert('Error adding group. Please try again.');
+    }
+}
+
+// ==================== STUDENTS SECTION ====================
+
+async function loadStudents() {
+    try {
+        const groupFilter = document.getElementById('studentGroupFilter').value || null;
+        const students = await DatabaseHelper.getStudents(groupFilter);
+        const container = document.getElementById('studentsTable');
+
+        if (students.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 2rem;">No students found. Add your first student!</p>';
+            return;
+        }
+
+        let tableHTML = `
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Grade</th>
+                            <th>Group</th>
+                            <th>Total Score</th>
+                            <th>Avg Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        for (const student of students) {
+            const stats = await DatabaseHelper.getStudentStats(student.id);
+            tableHTML += `
+                <tr>
+                    <td>${student.name}</td>
+                    <td>${student.grade}</td>
+                    <td>${student.groups?.name || 'No Group'}</td>
+                    <td>${stats.totalCompletions}</td>
+                    <td>${Math.round(stats.averageCompletion)}%</td>
+                </tr>
+            `;
+        }
+
+        tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = tableHTML;
+    } catch (error) {
+        console.error('Error loading students:', error);
+    }
+}
+
+function showAddStudentModal() {
+    document.getElementById('addStudentModal').style.display = 'block';
+}
+
+async function addStudent() {
+    try {
+        const name = document.getElementById('studentName').value.trim();
+        const grade = document.getElementById('studentGrade').value.trim();
+        const groupId = document.getElementById('studentGroup').value || null;
+
+        if (!name || !grade) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        await DatabaseHelper.createStudent(name, grade, groupId);
+        alert('Student added successfully!');
+
+        closeModal('addStudentModal');
+        document.getElementById('studentName').value = '';
+        document.getElementById('studentGrade').value = '';
+        document.getElementById('studentGroup').value = '';
+
+        await loadStudents();
+    } catch (error) {
+        console.error('Error adding student:', error);
+        alert('Error adding student. Please try again.');
+    }
+}
+
+// ==================== WEEKLY VIEW ====================
+
+async function loadWeeklyView() {
+    try {
+        document.getElementById('currentWeekDisplay').textContent = DatabaseHelper.formatDate(currentWeek);
+
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
+        const activities = await DatabaseHelper.getActivities();
+        const container = document.getElementById('weeklyDataGrid');
+
+        if (submissions.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-dim); grid-column: 1/-1;">No submissions for this week</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        submissions.forEach(sub => {
+            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            const percentage = Math.round((score / activities.length) * 100);
+
+            const card = document.createElement('div');
+            card.className = 'student-card';
+
+            let activitiesHTML = '';
+            activities.forEach(activity => {
+                const completed = sub.activity_completions[activity.name];
+                const iconClass = completed === true ? 'completed' : 'incomplete';
+                const icon = completed === true ? '✓' : '✗';
+
+                activitiesHTML += `
+                    <div class="activity-badge">
+                        <div class="activity-icon ${iconClass}">${icon}</div>
+                        <span>${activity.name}</span>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="student-header">
+                    <div>
+                        <div class="student-name">${sub.students.name}</div>
+                        <div class="student-group">${sub.students.groups?.name || 'No Group'}</div>
+                    </div>
+                </div>
+                <div class="activities-grid">
+                    ${activitiesHTML}
+                </div>
+                <div class="score-bar">
+                    <div class="score-label">
+                        <span>Week Score</span>
+                        <span>${score}/${activities.length}</span>
+                    </div>
+                    <div class="score-progress">
+                        <div class="score-fill" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading weekly view:', error);
+    }
+}
+
+function changeWeek(direction) {
+    const date = new Date(currentWeek);
+    date.setDate(date.getDate() + (direction * 7));
+    currentWeek = DatabaseHelper.getWeekStartDate(date);
+    loadWeeklyView();
+}
+
+// ==================== ANALYTICS ====================
+
+async function loadAnalytics() {
+    try {
+        const groupFilter = document.getElementById('analyticsGroupFilter').value || null;
+        await renderProgressChart(groupFilter);
+        await renderActivityBreakdownChart(groupFilter);
+        await renderPerformanceCards(groupFilter);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
+}
+
+async function renderProgressChart(groupFilter) {
+    const students = await DatabaseHelper.getStudents(groupFilter);
+    const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+
+    const datasets = await Promise.all(students.slice(0, 5).map(async (student, index) => {
+        const weeklyData = await Promise.all(weeks.map(async week => {
+            const submission = await DatabaseHelper.getWeeklySubmission(student.id, week);
+            if (!submission) return 0;
+            const activities = await DatabaseHelper.getActivities();
+            const score = Object.values(submission.activity_completions).filter(v => v === true).length;
+            return Math.round((score / activities.length) * 100);
+        }));
+
+        const colors = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+
+        return {
+            label: student.name,
+            data: weeklyData,
+            borderColor: colors[index],
+            backgroundColor: colors[index] + '20',
+            borderWidth: 2,
+            tension: 0.4
+        };
+    }));
+
+    const ctx = document.getElementById('progressChart');
+    if (!ctx) return;
+
+    if (charts.progress) {
+        charts.progress.destroy();
+    }
+
+    charts.progress = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weeks.map(w => DatabaseHelper.formatDate(w)),
+            datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#e2e8f0' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: value => value + '%'
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+async function renderActivityBreakdownChart(groupFilter) {
+    const activities = await DatabaseHelper.getActivities();
+    const allSubmissions = await DatabaseHelper.getAllSubmissions();
+
+    const filteredSubmissions = groupFilter
+        ? allSubmissions.filter(sub => sub.students.group_id === groupFilter)
+        : allSubmissions;
+
+    const activityData = activities.map(activity => {
+        let completed = 0;
+        filteredSubmissions.forEach(sub => {
+            if (sub.activity_completions[activity.name] === true) {
+                completed++;
+            }
+        });
+        return completed;
+    });
+
+    const ctx = document.getElementById('activityBreakdownChart');
+    if (!ctx) return;
+
+    if (charts.breakdown) {
+        charts.breakdown.destroy();
+    }
+
+    charts.breakdown = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: activities.map(a => a.name),
+            datasets: [{
+                data: activityData,
+                backgroundColor: [
+                    '#6366f1',
+                    '#8b5cf6',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#06b6d4',
+                    '#ec4899'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#e2e8f0' }
+                }
+            }
+        }
+    });
+}
+
+async function renderPerformanceCards(groupFilter) {
+    const leaderboard = await DatabaseHelper.getLeaderboard(groupFilter);
+    const activities = await DatabaseHelper.getActivities();
+    const container = document.getElementById('performanceCards');
+
+    container.innerHTML = '';
+
+    for (const item of leaderboard.slice(0, 10)) {
+        const submissions = await DatabaseHelper.getAllSubmissionsForStudent(item.student.id);
+
+        let activitiesHTML = '';
+        activities.forEach(activity => {
+            let completedCount = 0;
+            submissions.forEach(sub => {
+                if (sub.activity_completions[activity.name] === true) {
+                    completedCount++;
+                }
+            });
+
+            activitiesHTML += `
+                <div class="activity-badge">
+                    <div class="activity-icon ${completedCount > 0 ? 'completed' : 'incomplete'}">
+                        ${completedCount}
+                    </div>
+                    <span>${activity.name}</span>
+                </div>
+            `;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        card.innerHTML = `
+            <div class="student-header">
+                <div>
+                    <div class="student-name">${item.student.name}</div>
+                    <div class="student-group">${item.student.groups?.name || 'No Group'}</div>
+                </div>
+            </div>
+            <div class="activities-grid">
+                ${activitiesHTML}
+            </div>
+            <div class="score-bar">
+                <div class="score-label">
+                    <span>Overall Score</span>
+                    <span>${Math.round(item.percentage)}%</span>
+                </div>
+                <div class="score-progress">
+                    <div class="score-fill" style="width: ${item.percentage}%"></div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(card);
+    }
+}
+
+// ==================== MODAL FUNCTIONS ====================
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function (event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+
+// ==================== LOGOUT ====================
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'index.html';
+    }
+}
+
+// Initialize when page loads
+window.addEventListener('DOMContentLoaded', init);
