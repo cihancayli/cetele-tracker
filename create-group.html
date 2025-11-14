@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Group — Cetele</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url('assets/hero-bg.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(15px) brightness(0.3);
+            z-index: -1;
+        }
+
+        /* Frosted Glass Container */
+        .signup-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+            -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow:
+                0 24px 64px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            animation: slideIn 0.6s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .signup-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+
+        .signup-header p {
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        /* Form */
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+
+        /* Role Selection Cards */
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .role-card {
+            position: relative;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .role-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .role-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .role-card input[type="radio"]:checked + .role-content {
+            color: #ffffff;
+        }
+
+        .role-card input[type="radio"]:checked ~ .role-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .role-card.selected {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .role-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .info-box.show {
+            display: block;
+        }
+
+        .info-box strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Back Link */
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-link a {
+            color: rgba(255, 255, 255, 0.65);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #ffffff;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .signup-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .signup-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .role-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .role-card {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-header">
+            <h1>Create New Group</h1>
+            <p>Enter your region code to get started</p>
+        </div>
+
+        <form class="signup-form" id="signupForm" onsubmit="handleSignup(event)">
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Region Code -->
+            <div class="form-group">
+                <label for="regionCode">Region Code *</label>
+                <input
+                    type="text"
+                    id="regionCode"
+                    placeholder="Enter your region or ED code"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label>I am a... *</label>
+                <div class="role-selector">
+                    <div class="role-card" onclick="selectRole('coordinator')">
+                        <input type="radio" name="role" value="coordinator" id="roleCoordinator">
+                        <div class="role-content">
+                            <div class="role-icon">📊</div>
+                            <div class="role-label">Coordinator</div>
+                        </div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('mentor')">
+                        <input type="radio" name="role" value="mentor" id="roleMentor">
+                        <div class="role-content">
+                            <div class="role-icon">👨‍🏫</div>
+                            <div class="role-label">Mentor</div>
+                        </div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('both')">
+                        <input type="radio" name="role" value="both" id="roleBoth">
+                        <div class="role-content">
+                            <div class="role-icon">⭐</div>
+                            <div class="role-label">Both</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box" id="infoBox"></div>
+
+            <!-- Username -->
+            <div class="form-group">
+                <label for="username">Username *</label>
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Choose a username"
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <!-- Email (optional) -->
+            <div class="form-group">
+                <label for="email">Email (optional)</label>
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="your.email@example.com"
+                    autocomplete="email"
+                >
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Create a strong password"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password *</label>
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="Re-enter your password"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <!-- Group Name (for mentors) -->
+            <div class="form-group" id="groupNameSection" style="display: none;">
+                <label for="groupName">Group Name *</label>
+                <input
+                    type="text"
+                    id="groupName"
+                    placeholder="e.g., 10th Grade Group A"
+                >
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Create Account
+            </button>
+
+            <!-- Back Link -->
+            <div class="back-link">
+                <a href="index.html">← Back to Home</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let selectedRole = null;
+
+        function selectRole(role) {
+            selectedRole = role;
+
+            // Update UI
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Update radio button
+            document.getElementById('role' + role.charAt(0).toUpperCase() + role.slice(1)).checked = true;
+
+            // Show appropriate info
+            const infoBox = document.getElementById('infoBox');
+            const groupNameSection = document.getElementById('groupNameSection');
+
+            if (role === 'coordinator') {
+                infoBox.innerHTML = '<strong>Coordinator:</strong> You will have access to view all groups in your region. You can also create your own mentor group if needed.';
+                infoBox.classList.add('show');
+                groupNameSection.style.display = 'none';
+            } else if (role === 'mentor') {
+                infoBox.innerHTML = '<strong>Mentor:</strong> You will create a new group and receive a mentor code to share with your students.';
+                infoBox.classList.add('show');
+                groupNameSection.style.display = 'block';
+                document.getElementById('groupName').required = true;
+            } else if (role === 'both') {
+                infoBox.innerHTML = '<strong>Both:</strong> You will have coordinator access to all groups in your region AND your own mentor group.';
+                infoBox.classList.add('show');
+                groupNameSection.style.display = 'block';
+                document.getElementById('groupName').required = true;
+            }
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('errorMessage');
+            errorBox.textContent = message;
+            errorBox.classList.add('show');
+        }
+
+        function hideError() {
+            const errorBox = document.getElementById('errorMessage');
+            errorBox.classList.remove('show');
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            hideError();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            try {
+                // Get form values
+                const regionCode = document.getElementById('regionCode').value.trim();
+                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('email').value.trim() || null;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const groupName = document.getElementById('groupName').value.trim() || null;
+
+                // Validation
+                if (!selectedRole) {
+                    throw new Error('Please select your role');
+                }
+
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+
+                if (password.length < 6) {
+                    throw new Error('Password must be at least 6 characters');
+                }
+
+                if ((selectedRole === 'mentor' || selectedRole === 'both') && !groupName) {
+                    throw new Error('Please enter a group name');
+                }
+
+                // Verify region code
+                const { data: codeData, error: codeError } = await supabase
+                    .from('region_codes')
+                    .select('*')
+                    .eq('code', regionCode)
+                    .maybeSingle();
+
+                const { data: edCodeData, error: edCodeError } = await supabase
+                    .from('ed_code')
+                    .select('*')
+                    .eq('code', regionCode)
+                    .maybeSingle();
+
+                const isEdCode = edCodeData && !edCodeError;
+                const isRegionCode = codeData && !codeError;
+
+                if (!isEdCode && !isRegionCode) {
+                    throw new Error('Invalid region or ED code');
+                }
+
+                // Determine actual role
+                let actualRole = selectedRole;
+                let region = null;
+                let isCoordinator = false;
+                let isMentor = false;
+
+                if (isEdCode) {
+                    actualRole = 'ed';
+                    isCoordinator = false;
+                    isMentor = false;
+                } else {
+                    region = codeData.region_name;
+                    if (selectedRole === 'coordinator') {
+                        actualRole = 'coordinator';
+                        isCoordinator = true;
+                        isMentor = false;
+                    } else if (selectedRole === 'mentor') {
+                        actualRole = 'mentor';
+                        isCoordinator = false;
+                        isMentor = true;
+                    } else if (selectedRole === 'both') {
+                        actualRole = 'coordinator';
+                        isCoordinator = true;
+                        isMentor = true;
+                    }
+                }
+
+                // Hash password (simple for now - in production use bcrypt)
+                const passwordHash = btoa(password); // Base64 encoding (NOT secure for production!)
+
+                // Check if username exists
+                const { data: existingUser } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('username', username)
+                    .maybeSingle();
+
+                if (existingUser) {
+                    throw new Error('Username already taken');
+                }
+
+                // Create user
+                const { data: newUser, error: userError } = await supabase
+                    .from('users')
+                    .insert([{
+                        username,
+                        email,
+                        password_hash: passwordHash,
+                        role: actualRole,
+                        region,
+                        is_coordinator: isCoordinator,
+                        is_mentor: isMentor
+                    }])
+                    .select()
+                    .single();
+
+                if (userError) throw userError;
+
+                // Create group if mentor
+                if (isMentor && groupName) {
+                    const { data: newGroup, error: groupError } = await supabase
+                        .from('groups')
+                        .insert([{
+                            name: groupName,
+                            grade: region || 'Mixed',
+                            mentor_id: newUser.id,
+                            region: region
+                        }])
+                        .select()
+                        .single();
+
+                    if (groupError) throw groupError;
+
+                    // Update mentor code with group_id
+                    const { data: mentorCode, error: mentorCodeError } = await supabase
+                        .from('mentor_codes')
+                        .update({ group_id: newGroup.id })
+                        .eq('mentor_id', newUser.id)
+                        .select()
+                        .single();
+
+                    if (mentorCodeError) throw mentorCodeError;
+
+                    // Store mentor code for display
+                    localStorage.setItem('new_mentor_code', mentorCode.code);
+                }
+
+                // Store user session
+                localStorage.setItem('cetele_user', JSON.stringify(newUser));
+
+                // Success - redirect based on role
+                alert('Account created successfully!');
+                if (actualRole === 'ed') {
+                    window.location.href = 'admin.html'; // ED dashboard
+                } else if (isCoordinator && !isMentor) {
+                    window.location.href = 'admin.html'; // Coordinator dashboard
+                } else if (isMentor) {
+                    window.location.href = 'mentor-success.html'; // Show mentor code
+                }
+
+            } catch (error) {
+                console.error('Signup error:', error);
+                showError(error.message || 'An error occurred during signup');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        }
+    </script>
+</body>
+</html>

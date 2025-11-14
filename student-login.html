@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Sign In — Cetele Tracker</title>
+    <title>Student Portal — Cetele</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -16,17 +16,15 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0a0b0e;
-            color: #e2e8f0;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 2rem;
             position: relative;
             overflow: hidden;
         }
 
-        /* Background with blurred image */
         body::before {
             content: '';
             position: fixed;
@@ -34,24 +32,29 @@
             background-image: url('assets/hero-bg.png');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
-            filter: blur(40px) brightness(0.25);
-            z-index: 0;
+            filter: blur(15px) brightness(0.3);
+            z-index: -1;
         }
 
-        .login-container {
-            position: relative;
-            z-index: 1;
+        .auth-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+            -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 480px;
             width: 100%;
-            max-width: 420px;
-            padding: 2rem;
-            animation: fadeInUp 0.6s ease;
+            box-shadow:
+                0 24px 64px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            animation: slideIn 0.6s ease;
         }
 
-        @keyframes fadeInUp {
+        @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -59,135 +62,195 @@
             }
         }
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(30px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 3rem 2.5rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .logo {
+        .auth-header {
             text-align: center;
             margin-bottom: 2rem;
         }
 
         .logo-icon {
             font-size: 3rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         h1 {
-            font-size: 1.75rem;
+            font-size: 2rem;
             font-weight: 600;
-            text-align: center;
+            color: #ffffff;
             margin-bottom: 0.5rem;
-            color: #f8fafc;
+            letter-spacing: -0.02em;
         }
 
         .subtitle {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        /* Toggle Between Login and Signup */
+        .mode-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            padding: 0.375rem;
             margin-bottom: 2rem;
         }
 
+        .mode-btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 50px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Form */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
         .form-group {
-            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         label {
-            display: block;
+            color: rgba(255, 255, 255, 0.9);
             font-size: 0.875rem;
             font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #cbd5e1;
         }
 
-        select, input {
-            width: 100%;
+        input, select {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
             padding: 0.875rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #f8fafc;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            color: #ffffff;
+            font-size: 0.95rem;
             font-family: inherit;
+            transition: all 0.3s ease;
         }
 
-        select:focus, input:focus {
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus, select:focus {
             outline: none;
-            border-color: rgba(139, 92, 246, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        select {
+            cursor: pointer;
         }
 
         select option {
-            background: #1e293b;
-            color: #e2e8f0;
+            background: #1a1a2e;
+            color: #ffffff;
         }
 
-        .btn-primary {
-            width: 100%;
+        /* Error/Info Messages */
+        .message-box {
+            border-radius: 12px;
             padding: 1rem;
-            background: linear-gradient(135deg, #8b5cf6, #6366f1);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
             font-size: 0.875rem;
             display: none;
         }
 
-        .admin-link {
+        .message-box.show {
+            display: block;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .info-message {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Back Link */
+        .back-link {
             text-align: center;
             margin-top: 1.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-        .admin-link a {
-            color: #8b5cf6;
+        .back-link a {
+            color: rgba(255, 255, 255, 0.65);
             text-decoration: none;
             font-size: 0.875rem;
-            transition: color 0.2s;
+            transition: color 0.3s ease;
         }
 
-        .admin-link a:hover {
-            color: #a78bfa;
+        .back-link a:hover {
+            color: #ffffff;
         }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
-            .login-container {
-                padding: 1rem;
-            }
-
-            .login-card {
+            .auth-container {
                 padding: 2rem 1.5rem;
             }
 
@@ -198,121 +261,321 @@
             .logo-icon {
                 font-size: 2.5rem;
             }
-
-            .btn-primary {
-                padding: 0.875rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 1.5rem 1rem;
-            }
-
-            h1 {
-                font-size: 1.25rem;
-            }
-
-            .subtitle {
-                font-size: 0.85rem;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="logo">
-                <div class="logo-icon">📋</div>
-                <h1>Student Sign In</h1>
-                <p class="subtitle">Access your weekly cetele</p>
-            </div>
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="logo-icon">🎓</div>
+            <h1>Student Portal</h1>
+            <p class="subtitle">Access your weekly cetele</p>
+        </div>
 
-            <div id="errorMessage" class="error-message"></div>
+        <!-- Toggle between Login and Sign Up -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="loginModeBtn" onclick="switchMode('login')">
+                Sign In
+            </button>
+            <button class="mode-btn" id="signupModeBtn" onclick="switchMode('signup')">
+                Create Account
+            </button>
+        </div>
 
-            <form id="studentLoginForm" onsubmit="handleLogin(event)">
+        <!-- Messages -->
+        <div class="error-message message-box" id="errorMessage"></div>
+        <div class="info-message message-box" id="infoMessage"></div>
+
+        <!-- Login Form -->
+        <form class="auth-form" id="authForm" onsubmit="handleSubmit(event)">
+            <!-- LOGIN SECTION -->
+            <div class="form-section active" id="loginSection">
                 <div class="form-group">
-                    <label for="studentSelect">Select Your Name</label>
-                    <select id="studentSelect" required>
-                        <option value="">Choose your name...</option>
-                    </select>
+                    <label for="loginUsername">Username</label>
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                    >
                 </div>
 
-                <button type="submit" class="btn-primary">
-                    Sign In
-                </button>
-            </form>
-
-            <div class="admin-link">
-                <a href="admin.html">Admin Portal →</a>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                    >
+                </div>
             </div>
+
+            <!-- SIGNUP SECTION -->
+            <div class="form-section" id="signupSection">
+                <div class="form-group">
+                    <label for="mentorCode">Mentor Code *</label>
+                    <input
+                        type="text"
+                        id="mentorCode"
+                        placeholder="Enter mentor code (e.g., MTR-1234)"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input
+                        type="text"
+                        id="fullName"
+                        placeholder="Your full name"
+                        autocomplete="name"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="signupUsername">Username *</label>
+                    <input
+                        type="text"
+                        id="signupUsername"
+                        placeholder="Choose a username"
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPassword">Password *</label>
+                    <input
+                        type="password"
+                        id="signupPassword"
+                        placeholder="Create a password (min 6 characters)"
+                        autocomplete="new-password"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        placeholder="Re-enter your password"
+                        autocomplete="new-password"
+                    >
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Sign In
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">← Back to Home</a>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
-    <script src="js/mock-data.js"></script>
-    <script src="js/db-helper.js"></script>
     <script>
-        // Load students into dropdown
-        async function loadStudents() {
-            try {
-                const students = await DatabaseHelper.getStudents();
-                const select = document.getElementById('studentSelect');
+        let currentMode = 'login';
 
-                // Group students by grade
-                const studentsByGrade = {};
-                students.forEach(student => {
-                    if (!studentsByGrade[student.grade]) {
-                        studentsByGrade[student.grade] = [];
-                    }
-                    studentsByGrade[student.grade].push(student);
-                });
+        function switchMode(mode) {
+            currentMode = mode;
 
-                // Add students grouped by grade
-                Object.keys(studentsByGrade).sort().forEach(grade => {
-                    const optgroup = document.createElement('optgroup');
-                    optgroup.label = `${grade} Grade`;
+            // Update buttons
+            document.getElementById('loginModeBtn').classList.toggle('active', mode === 'login');
+            document.getElementById('signupModeBtn').classList.toggle('active', mode === 'signup');
 
-                    studentsByGrade[grade].forEach(student => {
-                        const option = document.createElement('option');
-                        option.value = student.id;
-                        option.textContent = student.name;
-                        optgroup.appendChild(option);
-                    });
+            // Update sections
+            document.getElementById('loginSection').classList.toggle('active', mode === 'login');
+            document.getElementById('signupSection').classList.toggle('active', mode === 'signup');
 
-                    select.appendChild(optgroup);
-                });
-            } catch (error) {
-                console.error('Error loading students:', error);
-                showError('Failed to load students. Please refresh the page.');
-            }
-        }
+            // Update submit button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
 
-        function handleLogin(event) {
-            event.preventDefault();
-
-            const studentId = document.getElementById('studentSelect').value;
-
-            if (!studentId) {
-                showError('Please select your name');
-                return;
-            }
-
-            // Store student session
-            sessionStorage.setItem('studentId', studentId);
-
-            // Redirect to student dashboard
-            window.location.href = 'student.html';
+            // Clear messages
+            hideMessages();
         }
 
         function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            const errorBox = document.getElementById('errorMessage');
+            errorBox.textContent = message;
+            errorBox.classList.add('show');
         }
 
-        // Load students when page loads
-        document.addEventListener('DOMContentLoaded', loadStudents);
+        function showInfo(message) {
+            const infoBox = document.getElementById('infoMessage');
+            infoBox.textContent = message;
+            infoBox.classList.add('show');
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('infoMessage').classList.remove('show');
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            hideMessages();
+
+            if (currentMode === 'login') {
+                await handleLogin();
+            } else {
+                await handleSignup();
+            }
+        }
+
+        async function handleLogin() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing In...';
+
+            try {
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value;
+
+                if (!username || !password) {
+                    throw new Error('Please enter both username and password');
+                }
+
+                // Query user from database
+                const { data: user, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('role', 'student')
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!user) {
+                    throw new Error('Invalid username or password');
+                }
+
+                // Verify password (simple base64 check - NOT secure for production!)
+                const storedPassword = atob(user.password_hash);
+                if (storedPassword !== password) {
+                    throw new Error('Invalid username or password');
+                }
+
+                // Store session
+                localStorage.setItem('cetele_user', JSON.stringify(user));
+                sessionStorage.setItem('studentId', user.student_id);
+
+                // Redirect to student dashboard
+                window.location.href = 'student.html';
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message || 'Login failed. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+        }
+
+        async function handleSignup() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            try {
+                const mentorCode = document.getElementById('mentorCode').value.trim();
+                const fullName = document.getElementById('fullName').value.trim();
+                const username = document.getElementById('signupUsername').value.trim();
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                // Validation
+                if (!mentorCode || !fullName || !username || !password) {
+                    throw new Error('Please fill in all required fields');
+                }
+
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+
+                if (password.length < 6) {
+                    throw new Error('Password must be at least 6 characters');
+                }
+
+                // Verify mentor code exists
+                const { data: mentorCodeData, error: codeError } = await supabase
+                    .from('mentor_codes')
+                    .select('*, groups(id, name, grade, region)')
+                    .eq('code', mentorCode)
+                    .eq('is_active', true)
+                    .maybeSingle();
+
+                if (codeError || !mentorCodeData) {
+                    throw new Error('Invalid mentor code');
+                }
+
+                // Check if username already exists
+                const { data: existingUser } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('username', username)
+                    .maybeSingle();
+
+                if (existingUser) {
+                    throw new Error('Username already taken');
+                }
+
+                // Create student entry first
+                const { data: newStudent, error: studentError } = await supabase
+                    .from('students')
+                    .insert([{
+                        name: fullName,
+                        grade: mentorCodeData.groups.grade,
+                        group_id: mentorCodeData.groups.id
+                    }])
+                    .select()
+                    .single();
+
+                if (studentError) throw studentError;
+
+                // Hash password (simple base64 - NOT secure for production!)
+                const passwordHash = btoa(password);
+
+                // Create user account
+                const { data: newUser, error: userError } = await supabase
+                    .from('users')
+                    .insert([{
+                        username,
+                        password_hash: passwordHash,
+                        role: 'student',
+                        student_id: newStudent.id,
+                        mentor_id: mentorCodeData.mentor_id
+                    }])
+                    .select()
+                    .single();
+
+                if (userError) throw userError;
+
+                // Update student with user_id
+                await supabase
+                    .from('students')
+                    .update({ user_id: newUser.id })
+                    .eq('id', newStudent.id);
+
+                // Store session
+                localStorage.setItem('cetele_user', JSON.stringify(newUser));
+                sessionStorage.setItem('studentId', newStudent.id);
+
+                // Success
+                showInfo('Account created successfully! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = 'student.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Signup error:', error);
+                showError(error.message || 'Signup failed. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        }
     </script>
 </body>
 </html>
