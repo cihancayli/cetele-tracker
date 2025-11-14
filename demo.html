@@ -142,7 +142,7 @@
         <!-- Student Portal Panel -->
         <div id="studentPanel" class="demo-panel active">
             <div class="iframe-container">
-                <iframe src="student-demo.html" title="Student Portal Demo" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                <iframe id="studentIframe" title="Student Portal Demo" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
             </div>
             <div style="text-align: center; margin-top: 1rem;">
                 <a href="student-demo.html" target="_blank" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">
@@ -154,7 +154,7 @@
         <!-- Admin Dashboard Panel -->
         <div id="adminPanel" class="demo-panel">
             <div class="iframe-container">
-                <iframe src="admin-demo.html" title="Admin Dashboard Demo" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                <iframe id="adminIframe" title="Admin Dashboard Demo" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
             </div>
             <div style="text-align: center; margin-top: 1rem;">
                 <a href="admin-demo.html" target="_blank" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">
@@ -167,6 +167,30 @@
     <script>
         // Enable debug mode for demo
         localStorage.setItem('cetele_debug', 'true');
+
+        // Set iframe sources AFTER page loads to ensure correct URL
+        window.addEventListener('DOMContentLoaded', () => {
+            // Get the current hostname (will be www.cetele.app or cetele.app)
+            const currentHost = window.location.host;
+            const protocol = window.location.protocol;
+            const baseUrl = `${protocol}//${currentHost}`;
+
+            console.log('Setting iframe sources with baseUrl:', baseUrl);
+
+            // Set iframe sources
+            const studentIframe = document.getElementById('studentIframe');
+            const adminIframe = document.getElementById('adminIframe');
+
+            if (studentIframe) {
+                studentIframe.src = `${baseUrl}/student-demo.html`;
+                console.log('Student iframe src set to:', studentIframe.src);
+            }
+
+            if (adminIframe) {
+                adminIframe.src = `${baseUrl}/admin-demo.html`;
+                console.log('Admin iframe src set to:', adminIframe.src);
+            }
+        });
 
         function switchTab(tabName) {
             // Update tab buttons
