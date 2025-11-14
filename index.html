@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetele - Track Your Spiritual Journey</title>
+    <title>Cetele — Track Your Spiritual Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,12 +15,13 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             overflow-x: hidden;
-            background: #ffffff;
+            background: #000;
+            color: #fff;
         }
 
-        /* Hero Section with Background Image */
+        /* Hero Section */
         .hero-section {
             position: relative;
             min-height: 100vh;
@@ -27,106 +31,135 @@
             background-image: url('assets/hero-bg.png');
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
 
-        /* Fade to white at bottom */
+        /* Dark gradient overlay */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.5),
+                rgba(0, 0, 0, 0.7)
+            );
+            z-index: 1;
+        }
+
+        /* Fade to white gradient at bottom */
         .hero-section::after {
             content: '';
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 30%;
-            background: linear-gradient(to bottom, transparent, white);
+            height: 40%;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 40%,
+                rgba(255, 255, 255, 0.9) 80%,
+                #ffffff 100%
+            );
             pointer-events: none;
-        }
-
-        /* Dark overlay for text readability */
-        .hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: 1;
+            z-index: 2;
         }
 
         /* Content */
         .hero-content {
             position: relative;
-            z-index: 2;
+            z-index: 3;
             text-align: center;
             padding: 2rem;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
         .hero-title {
-            font-size: 4.5rem;
-            font-weight: 700;
-            color: white;
+            font-size: 5.5rem;
+            font-weight: 300;
+            color: #ffffff;
             margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
             line-height: 1.1;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-            animation: fadeInUp 0.8s ease;
+            animation: fadeInUp 1s ease both;
+        }
+
+        .hero-title strong {
+            font-weight: 600;
         }
 
         .hero-subtitle {
-            font-size: 1.5rem;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 3rem;
-            font-weight: 400;
-            line-height: 1.6;
-            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 0.8s ease 0.2s backwards;
+            font-size: 1.35rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            animation: fadeInUp 1s ease 0.15s both;
         }
 
-        /* Get Started Button */
+        /* Frosted Glass Button */
         .get-started-btn {
+            position: relative;
             display: inline-flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 1rem 2.5rem;
-            background: rgba(255, 255, 255, 0.95);
-            color: #1a1a1a;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
+            padding: 1.1rem 3rem;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            border-radius: 100px;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            animation: fadeInUp 0.8s ease 0.4s backwards;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.25),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            animation: fadeInUp 1s ease 0.3s both;
+            letter-spacing: 0.02em;
         }
 
         .get-started-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            background: white;
+            box-shadow:
+                0 12px 48px rgba(0, 0, 0, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.2);
         }
 
         .get-started-btn:active {
             transform: translateY(0);
         }
 
+        .arrow-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .get-started-btn:hover .arrow-icon {
+            transform: translateX(4px);
+        }
+
         /* Modal Overlay */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.4s ease;
         }
 
         .modal-overlay.active {
@@ -134,22 +167,53 @@
             opacity: 1;
         }
 
-        /* Modal Container */
+        /* Frosted Glass Modal */
         .modal-container {
-            background: white;
-            border-radius: 24px;
-            padding: 3rem;
-            max-width: 480px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 28px;
+            padding: 3.5rem;
+            max-width: 520px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            transform: scale(0.9) translateY(20px);
+            box-shadow:
+                0 24px 64px rgba(0, 0, 0, 0.4),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            transform: scale(0.92) translateY(30px);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .modal-overlay.active .modal-container {
             transform: scale(1) translateY(0);
             opacity: 1;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1.75rem;
+            right: 1.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
         }
 
         .modal-header {
@@ -158,38 +222,17 @@
         }
 
         .modal-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
+            font-size: 2.25rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
         }
 
         .modal-subtitle {
-            color: #666;
+            color: rgba(255, 255, 255, 0.65);
             font-size: 1rem;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #666;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s ease;
-        }
-
-        .close-modal:hover {
-            background: #f0f0f0;
-            color: #1a1a1a;
+            font-weight: 300;
         }
 
         /* Option Cards */
@@ -200,46 +243,132 @@
         }
 
         .option-card {
-            padding: 1.75rem;
-            border: 2px solid #e5e5e5;
-            border-radius: 16px;
+            position: relative;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             color: inherit;
             display: block;
+            overflow: hidden;
+        }
+
+        .option-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.05),
+                transparent
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .option-card:hover {
-            border-color: #000;
-            background: #fafafa;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .option-card:hover::before {
+            opacity: 1;
         }
 
         .option-icon {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
 
         .option-title {
-            font-size: 1.25rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.01em;
         }
 
         .option-description {
-            color: #666;
+            color: rgba(255, 255, 255, 0.6);
             font-size: 0.95rem;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        /* Features Section */
+        .features-section {
+            background: #ffffff;
+            padding: 8rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .features-container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .features-title {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 600;
+            color: #0a0a0a;
+            margin-bottom: 4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            background: #fafafa;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .feature-icon {
+            font-size: 2.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .feature-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #0a0a0a;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-description {
+            color: #666;
+            line-height: 1.7;
+            font-weight: 400;
+            font-size: 0.98rem;
         }
 
         /* Animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(40px);
             }
             to {
                 opacity: 1;
@@ -247,98 +376,45 @@
             }
         }
 
-        /* Features Section */
-        .features-section {
-            background: white;
-            padding: 6rem 2rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .features-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .features-title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 3rem;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            padding: 2rem;
-            border-radius: 16px;
-            background: #fafafa;
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #1a1a1a;
-        }
-
-        .feature-description {
-            color: #666;
-            line-height: 1.6;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .hero-title {
-                font-size: 2.5rem;
+                font-size: 3rem;
             }
 
             .hero-subtitle {
-                font-size: 1.1rem;
+                font-size: 1.15rem;
+            }
+
+            .get-started-btn {
+                padding: 1rem 2.5rem;
             }
 
             .modal-container {
-                padding: 2rem;
+                padding: 2.5rem;
             }
 
             .features-title {
-                font-size: 2rem;
+                font-size: 2.25rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
             }
         }
 
-        /* Arrow Icon */
-        .arrow-icon {
-            display: inline-block;
-            transition: transform 0.3s ease;
-        }
-
-        .get-started-btn:hover .arrow-icon {
-            transform: translateX(4px);
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
         }
     </style>
 </head>
 <body>
     <!-- Hero Section -->
     <div class="hero-section">
-        <div class="hero-overlay"></div>
         <div class="hero-content">
-            <h1 class="hero-title">Track Your Spiritual Journey</h1>
-            <p class="hero-subtitle">Empower students to monitor their growth with beautiful analytics and meaningful insights</p>
+            <h1 class="hero-title">Track Your <strong>Spiritual Journey</strong></h1>
+            <p class="hero-subtitle">Empower growth with beautiful analytics and meaningful insights</p>
             <button class="get-started-btn" onclick="openModal()">
                 Get Started
                 <span class="arrow-icon">→</span>
@@ -346,9 +422,9 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Frosted Glass Modal -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
-        <div class="modal-container" style="position: relative;">
+        <div class="modal-container">
             <button class="close-modal" onclick="closeModal()">×</button>
 
             <div class="modal-header">
@@ -361,7 +437,7 @@
                     <div class="option-icon">👨‍💼</div>
                     <div class="option-title">Admin Portal</div>
                     <div class="option-description">
-                        Access comprehensive analytics, manage groups and students, and track performance across all participants
+                        Access comprehensive analytics, manage groups and students, track performance across all participants
                     </div>
                 </a>
 
@@ -369,7 +445,7 @@
                     <div class="option-icon">🎓</div>
                     <div class="option-title">Student Portal</div>
                     <div class="option-description">
-                        Submit your weekly activities, track your personal progress, and view your achievement history
+                        Submit weekly activities, track personal progress, and view achievement history
                     </div>
                 </a>
             </div>
@@ -452,7 +528,6 @@
             }
         }
 
-        // Close modal with Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
