@@ -83,6 +83,39 @@
             font-weight: 300;
         }
 
+        /* Welcome Message (dynamic) */
+        .welcome-message {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: none;
+        }
+
+        .welcome-message.show {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-message h3 {
+            color: #ffffff;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .welcome-message p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.875rem;
+        }
+
         /* Form */
         .signup-form {
             display: flex;
@@ -126,15 +159,6 @@
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
         }
 
-        select {
-            cursor: pointer;
-        }
-
-        select option {
-            background: #1a1a2e;
-            color: #ffffff;
-        }
-
         /* Role Selection Cards */
         .role-selector {
             display: grid;
@@ -162,15 +186,6 @@
         .role-card:hover {
             background: rgba(255, 255, 255, 0.12);
             border-color: rgba(255, 255, 255, 0.35);
-        }
-
-        .role-card input[type="radio"]:checked + .role-content {
-            color: #ffffff;
-        }
-
-        .role-card input[type="radio"]:checked ~ .role-card {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .role-card.selected {
@@ -274,6 +289,12 @@
             color: #ffffff;
         }
 
+        /* ED-only role card */
+        .role-card.ed-only {
+            grid-column: 1 / -1;
+            padding: 1.5rem;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .signup-container {
@@ -298,50 +319,37 @@
     <div class="signup-container">
         <div class="signup-header">
             <h1>Create New Group</h1>
-            <p>Enter your region code to get started</p>
+            <p>Enter your access code to get started</p>
         </div>
 
         <form class="signup-form" id="signupForm" onsubmit="handleSignup(event)">
             <!-- Error Message -->
             <div class="error-message" id="errorMessage"></div>
 
+            <!-- Welcome Message (shown after code verification) -->
+            <div class="welcome-message" id="welcomeMessage">
+                <h3 id="welcomeTitle">Welcome</h3>
+                <p id="welcomeSubtitle"></p>
+            </div>
+
             <!-- Region Code -->
             <div class="form-group">
-                <label for="regionCode">Region Code *</label>
+                <label for="regionCode">Access Code *</label>
                 <input
                     type="text"
                     id="regionCode"
-                    placeholder="Enter your region or ED code"
+                    placeholder="Enter your ED or region code"
                     required
                     autocomplete="off"
+                    onblur="verifyCode()"
                 >
             </div>
 
-            <!-- Role Selection -->
-            <div class="form-group">
+            <!-- Role Selection (hidden initially, shown after code verification) -->
+            <div class="form-group" id="roleSection" style="display: none;">
                 <label>I am a... *</label>
-                <div class="role-selector">
-                    <div class="role-card" onclick="selectRole('coordinator')">
-                        <input type="radio" name="role" value="coordinator" id="roleCoordinator">
-                        <div class="role-content">
-                            <div class="role-icon">📊</div>
-                            <div class="role-label">Coordinator</div>
-                        </div>
-                    </div>
-                    <div class="role-card" onclick="selectRole('mentor')">
-                        <input type="radio" name="role" value="mentor" id="roleMentor">
-                        <div class="role-content">
-                            <div class="role-icon">👨‍🏫</div>
-                            <div class="role-label">Mentor</div>
-                        </div>
-                    </div>
-                    <div class="role-card" onclick="selectRole('both')">
-                        <input type="radio" name="role" value="both" id="roleBoth">
-                        <div class="role-content">
-                            <div class="role-icon">⭐</div>
-                            <div class="role-label">Both</div>
-                        </div>
-                    </div>
+                <div class="role-selector" id="roleSelector">
+                    <!-- Dynamically populated based on code type -->
                 </div>
             </div>
 
@@ -420,6 +428,133 @@
     <script src="js/supabase-config.js"></script>
     <script>
         let selectedRole = null;
+        let codeData = null; // Stores verified code data (region info)
+
+        async function verifyCode() {
+            const code = document.getElementById('regionCode').value.trim();
+            if (!code) return;
+
+            hideError();
+
+            try {
+                // Query regions table to check if this is an ED, HS, or MS code
+                const { data: regions, error } = await supabase
+                    .from('regions')
+                    .select('*');
+
+                if (error) throw error;
+
+                // Find matching code
+                let matchedRegion = null;
+                let codeType = null;
+
+                for (const region of regions) {
+                    if (region.ed_code === code) {
+                        matchedRegion = region;
+                        codeType = 'ed';
+                        break;
+                    } else if (region.hs_code === code) {
+                        matchedRegion = region;
+                        codeType = 'hs';
+                        break;
+                    } else if (region.ms_code === code) {
+                        matchedRegion = region;
+                        codeType = 'ms';
+                        break;
+                    }
+                }
+
+                if (!matchedRegion) {
+                    showError('Invalid access code');
+                    return;
+                }
+
+                // Store code data
+                codeData = {
+                    region: matchedRegion,
+                    codeType: codeType,
+                    division: codeType === 'hs' ? 'High School' : (codeType === 'ms' ? 'Middle School' : null)
+                };
+
+                // Show welcome message
+                const welcomeMsg = document.getElementById('welcomeMessage');
+                const welcomeTitle = document.getElementById('welcomeTitle');
+                const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+
+                if (codeType === 'ed') {
+                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
+                    welcomeSubtitle.textContent = 'Education Director';
+                    showEdRole();
+                } else {
+                    const divisionName = codeType === 'hs' ? 'High School' : 'Middle School';
+                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
+                    welcomeSubtitle.textContent = divisionName;
+                    showCoordinatorMentorRoles();
+                }
+
+                welcomeMsg.classList.add('show');
+
+            } catch (error) {
+                console.error('Code verification error:', error);
+                showError('Error verifying code');
+            }
+        }
+
+        function showEdRole() {
+            const roleSection = document.getElementById('roleSection');
+            const roleSelector = document.getElementById('roleSelector');
+
+            // Clear and show ED-only role
+            roleSelector.innerHTML = `
+                <div class="role-card ed-only selected" onclick="selectRole('ed')">
+                    <input type="radio" name="role" value="ed" id="roleEd" checked>
+                    <div class="role-content">
+                        <div class="role-icon">👔</div>
+                        <div class="role-label">Education Director</div>
+                    </div>
+                </div>
+            `;
+
+            roleSection.style.display = 'block';
+            selectedRole = 'ed';
+
+            // Show info
+            const infoBox = document.getElementById('infoBox');
+            infoBox.innerHTML = '<strong>Education Director:</strong> You will have full access to all groups and analytics within your region.';
+            infoBox.classList.add('show');
+        }
+
+        function showCoordinatorMentorRoles() {
+            const roleSection = document.getElementById('roleSection');
+            const roleSelector = document.getElementById('roleSelector');
+
+            // Show coordinator, mentor, both options
+            roleSelector.innerHTML = `
+                <div class="role-card" onclick="selectRole('coordinator')">
+                    <input type="radio" name="role" value="coordinator" id="roleCoordinator">
+                    <div class="role-content">
+                        <div class="role-icon">📊</div>
+                        <div class="role-label">Coordinator</div>
+                    </div>
+                </div>
+                <div class="role-card" onclick="selectRole('mentor')">
+                    <input type="radio" name="role" value="mentor" id="roleMentor">
+                    <div class="role-content">
+                        <div class="role-icon">👨‍🏫</div>
+                        <div class="role-label">Mentor</div>
+                    </div>
+                </div>
+                <div class="role-card" onclick="selectRole('both')">
+                    <input type="radio" name="role" value="both" id="roleBoth">
+                    <div class="role-content">
+                        <div class="role-icon">⭐</div>
+                        <div class="role-label">Both</div>
+                    </div>
+                </div>
+            `;
+
+            roleSection.style.display = 'block';
+        }
 
         function selectRole(role) {
             selectedRole = role;
@@ -431,14 +566,20 @@
             event.currentTarget.classList.add('selected');
 
             // Update radio button
-            document.getElementById('role' + role.charAt(0).toUpperCase() + role.slice(1)).checked = true;
+            const radioId = 'role' + role.charAt(0).toUpperCase() + role.slice(1);
+            const radio = document.getElementById(radioId);
+            if (radio) radio.checked = true;
 
             // Show appropriate info
             const infoBox = document.getElementById('infoBox');
             const groupNameSection = document.getElementById('groupNameSection');
 
-            if (role === 'coordinator') {
-                infoBox.innerHTML = '<strong>Coordinator:</strong> You will have access to view all groups in your region. You can also create your own mentor group if needed.';
+            if (role === 'ed') {
+                infoBox.innerHTML = '<strong>Education Director:</strong> You will have full access to all groups and analytics within your region.';
+                infoBox.classList.add('show');
+                groupNameSection.style.display = 'none';
+            } else if (role === 'coordinator') {
+                infoBox.innerHTML = '<strong>Coordinator:</strong> You will have access to view all groups in your division. You can also create your own mentor group if needed.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'none';
             } else if (role === 'mentor') {
@@ -447,7 +588,7 @@
                 groupNameSection.style.display = 'block';
                 document.getElementById('groupName').required = true;
             } else if (role === 'both') {
-                infoBox.innerHTML = '<strong>Both:</strong> You will have coordinator access to all groups in your region AND your own mentor group.';
+                infoBox.innerHTML = '<strong>Both:</strong> You will have coordinator access to all groups in your division AND your own mentor group.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'block';
                 document.getElementById('groupName').required = true;
@@ -475,7 +616,6 @@
 
             try {
                 // Get form values
-                const regionCode = document.getElementById('regionCode').value.trim();
                 const username = document.getElementById('username').value.trim();
                 const email = document.getElementById('email').value.trim() || null;
                 const password = document.getElementById('password').value;
@@ -483,6 +623,10 @@
                 const groupName = document.getElementById('groupName').value.trim() || null;
 
                 // Validation
+                if (!codeData) {
+                    throw new Error('Please verify your access code');
+                }
+
                 if (!selectedRole) {
                     throw new Error('Please select your role');
                 }
@@ -499,57 +643,7 @@
                     throw new Error('Please enter a group name');
                 }
 
-                // Verify region code
-                const { data: codeData, error: codeError } = await supabase
-                    .from('region_codes')
-                    .select('*')
-                    .eq('code', regionCode)
-                    .maybeSingle();
-
-                const { data: edCodeData, error: edCodeError } = await supabase
-                    .from('ed_code')
-                    .select('*')
-                    .eq('code', regionCode)
-                    .maybeSingle();
-
-                const isEdCode = edCodeData && !edCodeError;
-                const isRegionCode = codeData && !codeError;
-
-                if (!isEdCode && !isRegionCode) {
-                    throw new Error('Invalid region or ED code');
-                }
-
-                // Determine actual role
-                let actualRole = selectedRole;
-                let region = null;
-                let isCoordinator = false;
-                let isMentor = false;
-
-                if (isEdCode) {
-                    actualRole = 'ed';
-                    isCoordinator = false;
-                    isMentor = false;
-                } else {
-                    region = codeData.region_name;
-                    if (selectedRole === 'coordinator') {
-                        actualRole = 'coordinator';
-                        isCoordinator = true;
-                        isMentor = false;
-                    } else if (selectedRole === 'mentor') {
-                        actualRole = 'mentor';
-                        isCoordinator = false;
-                        isMentor = true;
-                    } else if (selectedRole === 'both') {
-                        actualRole = 'coordinator';
-                        isCoordinator = true;
-                        isMentor = true;
-                    }
-                }
-
-                // Hash password (simple for now - in production use bcrypt)
-                const passwordHash = btoa(password); // Base64 encoding (NOT secure for production!)
-
-                // Check if username exists
+                // Check if username already exists
                 const { data: existingUser } = await supabase
                     .from('users')
                     .select('username')
@@ -560,6 +654,28 @@
                     throw new Error('Username already taken');
                 }
 
+                // Determine actual role
+                let actualRole = selectedRole;
+                let isCoordinator = false;
+                let isMentor = false;
+
+                if (selectedRole === 'ed') {
+                    actualRole = 'ed';
+                } else if (selectedRole === 'coordinator') {
+                    actualRole = 'coordinator';
+                    isCoordinator = true;
+                } else if (selectedRole === 'mentor') {
+                    actualRole = 'mentor';
+                    isMentor = true;
+                } else if (selectedRole === 'both') {
+                    actualRole = 'coordinator';
+                    isCoordinator = true;
+                    isMentor = true;
+                }
+
+                // Hash password (simple for now - NOT secure for production!)
+                const passwordHash = btoa(password);
+
                 // Create user
                 const { data: newUser, error: userError } = await supabase
                     .from('users')
@@ -568,7 +684,8 @@
                         email,
                         password_hash: passwordHash,
                         role: actualRole,
-                        region,
+                        region_id: codeData.region.id,
+                        division: codeData.division,
                         is_coordinator: isCoordinator,
                         is_mentor: isMentor
                     }])
@@ -583,9 +700,10 @@
                         .from('groups')
                         .insert([{
                             name: groupName,
-                            grade: region || 'Mixed',
+                            grade: codeData.division || 'Mixed',
                             mentor_id: newUser.id,
-                            region: region
+                            region_id: codeData.region.id,
+                            division: codeData.division
                         }])
                         .select()
                         .single();
@@ -593,17 +711,23 @@
                     if (groupError) throw groupError;
 
                     // Update mentor code with group_id
-                    const { data: mentorCode, error: mentorCodeError } = await supabase
+                    const { error: mentorCodeError } = await supabase
                         .from('mentor_codes')
                         .update({ group_id: newGroup.id })
-                        .eq('mentor_id', newUser.id)
-                        .select()
-                        .single();
+                        .eq('mentor_id', newUser.id);
 
                     if (mentorCodeError) throw mentorCodeError;
 
-                    // Store mentor code for display
-                    localStorage.setItem('new_mentor_code', mentorCode.code);
+                    // Get mentor code for display
+                    const { data: mentorCode } = await supabase
+                        .from('mentor_codes')
+                        .select('code')
+                        .eq('mentor_id', newUser.id)
+                        .single();
+
+                    if (mentorCode) {
+                        localStorage.setItem('new_mentor_code', mentorCode.code);
+                    }
                 }
 
                 // Store user session
@@ -611,12 +735,10 @@
 
                 // Success - redirect based on role
                 alert('Account created successfully!');
-                if (actualRole === 'ed') {
-                    window.location.href = 'admin.html'; // ED dashboard
-                } else if (isCoordinator && !isMentor) {
-                    window.location.href = 'admin.html'; // Coordinator dashboard
-                } else if (isMentor) {
-                    window.location.href = 'mentor-success.html'; // Show mentor code
+                if (isMentor) {
+                    window.location.href = 'mentor-success.html';
+                } else {
+                    window.location.href = 'admin.html';
                 }
 
             } catch (error) {
