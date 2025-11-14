@@ -596,6 +596,121 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Easter Egg - Spinning Copyright */
+        .footer-bottom p {
+            cursor: pointer;
+            transition: transform 0.6s ease;
+        }
+
+        .footer-bottom p.spinning {
+            animation: spin360 0.6s ease;
+        }
+
+        @keyframes spin360 {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Easter Egg - Password Page */
+        .easter-egg-page {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+        }
+
+        .easter-egg-page.active {
+            display: flex;
+        }
+
+        .password-container {
+            text-align: center;
+        }
+
+        .password-container h1 {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+            text-transform: lowercase;
+            letter-spacing: 0.1em;
+        }
+
+        .password-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-family: inherit;
+            padding: 0.5rem 0;
+            width: 250px;
+            text-align: center;
+            letter-spacing: 0.2em;
+            outline: none;
+        }
+
+        .password-input:focus {
+            border-bottom-color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Terminal Page */
+        .terminal-page {
+            background: #000000;
+            color: #00ff00;
+            padding: 3rem;
+            line-height: 1.8;
+        }
+
+        .terminal-header {
+            font-size: 0.8rem;
+            font-weight: 400;
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+            text-transform: lowercase;
+        }
+
+        .member-list {
+            font-size: 0.75rem;
+            margin-bottom: 3rem;
+        }
+
+        .member {
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .member.flicker {
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .pause-flicker-btn {
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 0.5rem 1.5rem;
+            font-family: inherit;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-transform: lowercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+        }
+
+        .pause-flicker-btn:hover {
+            background: #00ff00;
+            color: #000000;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .quote-container {
@@ -813,10 +928,37 @@
 
             <!-- Copyright -->
             <div class="footer-bottom">
-                <p>© 2025 cetele. all rights reserved.</p>
+                <p id="copyright" onclick="handleCopyrightClick()">© 2025 cetele. all rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- Easter Egg: Password Page -->
+    <div class="easter-egg-page" id="passwordPage">
+        <div class="password-container">
+            <h1>password</h1>
+            <input
+                type="password"
+                class="password-input"
+                id="passwordInput"
+                placeholder="..."
+                autocomplete="off"
+            >
+        </div>
+    </div>
+
+    <!-- Easter Egg: Terminal Page -->
+    <div class="easter-egg-page" id="terminalPage">
+        <div class="terminal-page">
+            <div class="terminal-header">highest table members:</div>
+            <div class="member-list">
+                <div class="member flicker">cihan cayli</div><br>
+                <div class="member flicker">senih tosun</div><br>
+                <div class="member flicker">nihat karabulut</div>
+            </div>
+            <button class="pause-flicker-btn" onclick="toggleFlicker()">pause flicker</button>
+        </div>
+    </div>
 
     <!-- Feature Request Modal -->
     <div class="contact-modal" id="featureRequestModal">
@@ -958,6 +1100,104 @@
                 }
             });
         });
+
+        // Easter Egg: Copyright Click Counter
+        let copyrightClicks = 0;
+        let copyrightTimer = null;
+        let isPasswordPageActive = false;
+
+        function handleCopyrightClick() {
+            const copyright = document.getElementById('copyright');
+
+            // Clear existing timer
+            if (copyrightTimer) {
+                clearTimeout(copyrightTimer);
+            }
+
+            copyrightClicks++;
+
+            // Spin animation
+            copyright.classList.add('spinning');
+            setTimeout(() => {
+                copyright.classList.remove('spinning');
+            }, 600);
+
+            // Check if clicked 3 times
+            if (copyrightClicks === 3 && !isPasswordPageActive) {
+                // First 3 clicks - do nothing, just spin
+                copyrightClicks = 0;
+            } else if (copyrightClicks === 6) {
+                // Second set of 3 clicks - show password page
+                openPasswordPage();
+                copyrightClicks = 0;
+            }
+
+            // Reset counter after 2 seconds of no clicks
+            copyrightTimer = setTimeout(() => {
+                copyrightClicks = 0;
+            }, 2000);
+        }
+
+        function openPasswordPage() {
+            isPasswordPageActive = true;
+            document.getElementById('passwordPage').classList.add('active');
+            document.getElementById('passwordInput').focus();
+        }
+
+        // Password input handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('passwordInput');
+
+            passwordInput.addEventListener('input', (e) => {
+                if (e.target.value.toLowerCase() === 'tablehighest') {
+                    // Correct password - show terminal page
+                    document.getElementById('passwordPage').classList.remove('active');
+                    document.getElementById('terminalPage').classList.add('active');
+                    isPasswordPageActive = false;
+                }
+            });
+
+            // Allow escape to close password page
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (document.getElementById('passwordPage').classList.contains('active')) {
+                        document.getElementById('passwordPage').classList.remove('active');
+                        passwordInput.value = '';
+                        isPasswordPageActive = false;
+                    } else if (document.getElementById('terminalPage').classList.contains('active')) {
+                        document.getElementById('terminalPage').classList.remove('active');
+                    }
+                }
+            });
+        });
+
+        // Terminal page flicker toggle
+        let flickerPaused = false;
+        let flickerTimeout = null;
+
+        function toggleFlicker() {
+            const members = document.querySelectorAll('.member');
+            const btn = document.querySelector('.pause-flicker-btn');
+
+            if (!flickerPaused) {
+                // Pause flicker
+                flickerPaused = true;
+                members.forEach(m => m.classList.remove('flicker'));
+                btn.textContent = 'resume flicker';
+
+                // Clear any existing timeout
+                if (flickerTimeout) {
+                    clearTimeout(flickerTimeout);
+                }
+
+                // Resume after 3 seconds
+                flickerTimeout = setTimeout(() => {
+                    members.forEach(m => m.classList.add('flicker'));
+                    btn.textContent = 'pause flicker';
+                    flickerPaused = false;
+                }, 3000);
+            }
+        }
 
         // Form submission handlers (sends to ghancayli@gmail.com without revealing it)
         function submitFeatureRequest(event) {
