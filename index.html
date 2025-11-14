@@ -623,15 +623,6 @@
             display: inline-block;
         }
 
-        .member.flicker {
-            animation: flicker 0.15s infinite;
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
         .pause-flicker-btn {
             background: transparent;
             border: 1px solid #00ff00;
@@ -826,9 +817,9 @@
         <div class="terminal-page">
             <div class="terminal-header">highest table members:</div>
             <div class="member-list">
-                <div class="member flicker">cihan cayli</div><br>
-                <div class="member flicker">senih tosun</div><br>
-                <div class="member flicker">nihat karabulut</div>
+                <div class="member" data-original="cihan cayli">cihan cayli</div><br>
+                <div class="member" data-original="senih tosun">senih tosun</div><br>
+                <div class="member" data-original="nihat karabulut">nihat karabulut</div>
             </div>
             <button class="pause-flicker-btn" onclick="toggleFlicker()">pause flicker</button>
         </div>
@@ -1039,9 +1030,48 @@
             });
         });
 
-        // Terminal page flicker toggle
+        // Terminal page letter jumbling effect
         let flickerPaused = false;
         let flickerTimeout = null;
+        let flickerInterval = null;
+
+        const chars = 'abcdefghijklmnopqrstuvwxyz ';
+
+        function jumbleText(element) {
+            const original = element.getAttribute('data-original');
+            let jumbled = '';
+
+            for (let i = 0; i < original.length; i++) {
+                if (original[i] === ' ') {
+                    jumbled += ' ';
+                } else {
+                    jumbled += chars[Math.floor(Math.random() * (chars.length - 1))];
+                }
+            }
+
+            element.textContent = jumbled;
+        }
+
+        function restoreText(element) {
+            element.textContent = element.getAttribute('data-original');
+        }
+
+        function startFlicker() {
+            const members = document.querySelectorAll('.member');
+
+            flickerInterval = setInterval(() => {
+                if (!flickerPaused) {
+                    members.forEach(member => {
+                        // Randomly decide: show original or jumbled
+                        if (Math.random() > 0.5) {
+                            jumbleText(member);
+                        } else {
+                            restoreText(member);
+                        }
+                    });
+                }
+            }, 80); // Jumble every 80ms
+        }
 
         function toggleFlicker() {
             const members = document.querySelectorAll('.member');
@@ -1050,7 +1080,7 @@
             if (!flickerPaused) {
                 // Pause flicker
                 flickerPaused = true;
-                members.forEach(m => m.classList.remove('flicker'));
+                members.forEach(m => restoreText(m));
                 btn.textContent = 'resume flicker';
 
                 // Clear any existing timeout
@@ -1060,12 +1090,31 @@
 
                 // Resume after 3 seconds
                 flickerTimeout = setTimeout(() => {
-                    members.forEach(m => m.classList.add('flicker'));
                     btn.textContent = 'pause flicker';
                     flickerPaused = false;
                 }, 3000);
             }
         }
+
+        // Start flickering when terminal page is shown
+        document.addEventListener('DOMContentLoaded', () => {
+            const terminalPage = document.getElementById('terminalPage');
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        if (terminalPage.classList.contains('active')) {
+                            startFlicker();
+                        } else {
+                            if (flickerInterval) {
+                                clearInterval(flickerInterval);
+                            }
+                        }
+                    }
+                });
+            });
+
+            observer.observe(terminalPage, { attributes: true });
+        });
 
         // Form submission handlers (sends to ghancayli@gmail.com without revealing it)
         function submitFeatureRequest(event) {
