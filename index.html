@@ -79,6 +79,52 @@
             padding: 2rem;
             max-width: 900px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        /* Animated Quote Container */
+        .quote-container {
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quote {
+            position: absolute;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            text-align: center;
+            width: 100%;
+            padding: 0 2rem;
+        }
+
+        .quote.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .quote-text {
+            font-size: 1.75rem;
+            font-weight: 400;
+            color: #ffffff;
+            line-height: 1.5;
+            letter-spacing: 0.01em;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+
+        .quote-author {
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.02em;
         }
 
         /* Frosted Glass Button */
@@ -419,12 +465,16 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .hero-title {
-                font-size: 2.5rem;
+            .quote-container {
+                min-height: 200px;
             }
 
-            .hero-subtitle {
-                font-size: 1.1rem;
+            .quote-text {
+                font-size: 1.25rem;
+            }
+
+            .quote-author {
+                font-size: 0.9rem;
             }
 
             .get-started-btn {
@@ -454,6 +504,46 @@
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="hero-content">
+            <!-- Animated Quotes -->
+            <div class="quote-container">
+                <div class="quote active">
+                    <div class="quote-text">"Ümitsizlik en büyük zehirdir"</div>
+                    <div class="quote-author">Said Nursi - Despair is the greatest poison</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"Be in this world as if you were a stranger or a traveler"</div>
+                    <div class="quote-author">Prophet Muhammad (peace be upon him)</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"A person who is not renewed every day gradually decays"</div>
+                    <div class="quote-author">M. Fethullah Gulen</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"With hardship comes ease"</div>
+                    <div class="quote-author">Qur'an 94:6</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ"</div>
+                    <div class="quote-author">God is with the patient - Qur'an 2:153</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"كُن فَيَكُونُ"</div>
+                    <div class="quote-author">Be, and it is - Qur'an 36:82</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"And We are closer to him than his jugular vein"</div>
+                    <div class="quote-author">Qur'an 50:16</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"Verily in remembrance hearts find peace"</div>
+                    <div class="quote-author">Qur'an 13:28</div>
+                </div>
+                <div class="quote">
+                    <div class="quote-text">"Elmas elmas olduğunu bilmeli"</div>
+                    <div class="quote-author">Said Nursi - A diamond must know it is a diamond</div>
+                </div>
+            </div>
+
             <button class="get-started-btn" onclick="openModal()">
                 Get Started
                 <span class="arrow-icon">→</span>
@@ -585,6 +675,25 @@
     </footer>
 
     <script>
+        // Auto-cycling quotes
+        let currentQuoteIndex = 0;
+        const quotes = document.querySelectorAll('.quote');
+        const totalQuotes = quotes.length;
+
+        function cycleQuotes() {
+            // Remove active class from current quote
+            quotes[currentQuoteIndex].classList.remove('active');
+
+            // Move to next quote
+            currentQuoteIndex = (currentQuoteIndex + 1) % totalQuotes;
+
+            // Add active class to next quote
+            quotes[currentQuoteIndex].classList.add('active');
+        }
+
+        // Auto-cycle every 7 seconds
+        setInterval(cycleQuotes, 7000);
+
         function openModal() {
             const overlay = document.getElementById('modalOverlay');
             overlay.classList.add('active');
