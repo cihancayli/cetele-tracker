@@ -33,14 +33,18 @@
     <div class="container">
         <!-- Week Selector -->
         <div class="week-selector">
-            <button class="week-nav-btn" onclick="changeWeek(-1)">← Previous Week</button>
-            <button class="week-current-btn" onclick="goToCurrentWeek()">📅 Current Week</button>
+            <div class="week-nav-left">
+                <button class="week-nav-btn" onclick="changeWeek(-1)">← Previous Week</button>
+                <button class="week-current-btn" onclick="goToCurrentWeek()">📅 Current Week</button>
+            </div>
             <div class="current-week">
                 <span class="week-label">Week of</span>
                 <span id="currentWeekDisplay" class="week-date">Loading...</span>
                 <span class="week-due">Due: <span id="dueDate">Loading...</span></span>
             </div>
-            <button class="week-nav-btn" onclick="changeWeek(1)">Next Week →</button>
+            <div class="week-nav-right">
+                <button class="week-nav-btn" onclick="changeWeek(1)">Next Week →</button>
+            </div>
         </div>
 
         <!-- Group Cetele Table -->
