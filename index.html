@@ -47,10 +47,29 @@
             background-image: url('assets/hero-bg.png');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
+            /* Removed fixed attachment - image scrolls with page */
         }
 
         /* NO dark overlay - image shows through clearly */
+
+        /* Fade to white gradient at bottom */
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 40%,
+                rgba(255, 255, 255, 0.7) 70%,
+                #ffffff 100%
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
 
         /* Content */
         .hero-content {
@@ -60,26 +79,6 @@
             padding: 2rem;
             max-width: 900px;
             margin: 0 auto;
-        }
-
-        .hero-title {
-            font-size: 4rem;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 3rem;
-            font-weight: 400;
-            line-height: 1.6;
-            letter-spacing: 0.01em;
-            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
         }
 
         /* Frosted Glass Button */
@@ -455,8 +454,6 @@
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="hero-content">
-            <h1 class="hero-title">Track Your Spiritual Journey</h1>
-            <p class="hero-subtitle">Beautiful analytics and meaningful insights to empower your growth</p>
             <button class="get-started-btn" onclick="openModal()">
                 Get Started
                 <span class="arrow-icon">→</span>
