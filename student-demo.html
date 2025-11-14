@@ -197,26 +197,52 @@
             console.error('Line:', e.lineno);
         }, true);
 
-        console.log('Step 2: Loading Supabase config...');
+        console.log('Step 2: Preventing redirects in demo mode...');
+
+        // CRITICAL: Override window.location to prevent redirects in iframe
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            get: function() {
+                return originalLocation;
+            },
+            set: function(value) {
+                console.warn('Demo mode: Blocked redirect to', value);
+                console.log('Demo pages should not redirect');
+                return false;
+            }
+        });
+
+        // Also intercept location.href assignments
+        const originalHref = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+        Object.defineProperty(Location.prototype, 'href', {
+            get: originalHref.get,
+            set: function(value) {
+                console.warn('Demo mode: Blocked redirect to', value);
+                console.log('Demo pages should not redirect');
+            }
+        });
+
+        console.log('✓ Redirect protection enabled');
+        console.log('Step 3: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
     <script>
-        console.log('Step 3: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
-        console.log('Step 4: Loading mock data...');
+        console.log('Step 4: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
+        console.log('Step 5: Loading mock data...');
     </script>
     <script src="js/mock-data.js"></script>
     <script>
-        console.log('Step 5: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
-        console.log('Step 6: Loading db-helper...');
+        console.log('Step 6: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
+        console.log('Step 7: Loading db-helper...');
     </script>
     <script src="js/db-helper.js"></script>
     <script>
-        console.log('Step 7: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
-        console.log('Step 8: Loading student.js...');
+        console.log('Step 8: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
+        console.log('Step 9: Loading student.js...');
     </script>
     <script src="js/student.js"></script>
     <script>
-        console.log('Step 9: Student.js loaded');
+        console.log('Step 10: Student.js loaded');
         console.log('%c✅ ALL SCRIPTS LOADED', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
 
         // Check if page initialized

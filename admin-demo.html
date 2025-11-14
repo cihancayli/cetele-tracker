@@ -245,27 +245,74 @@
             console.error('Line:', e.lineno);
         }, true);
 
-        console.log('Step 2: Loading Supabase config...');
+        console.log('Step 2: Preventing redirects in demo mode...');
+
+        // CRITICAL: Override window.location to prevent redirects in iframe
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            get: function() {
+                return originalLocation;
+            },
+            set: function(value) {
+                console.warn('Demo mode: Blocked redirect to', value);
+                console.log('Demo pages should not redirect');
+                return false;
+            }
+        });
+
+        // Also intercept location.href assignments
+        const originalHref = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+        Object.defineProperty(Location.prototype, 'href', {
+            get: originalHref.get,
+            set: function(value) {
+                console.warn('Demo mode: Blocked redirect to', value);
+                console.log('Demo pages should not redirect');
+            }
+        });
+
+        console.log('✓ Redirect protection enabled');
+        console.log('Step 3: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
     <script>
-        console.log('Step 3: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
-        console.log('Step 4: Loading mock data...');
+        console.log('Step 4: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
+        console.log('Step 5: Loading mock data...');
     </script>
     <script src="js/mock-data.js"></script>
     <script>
-        console.log('Step 5: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
-        console.log('Step 6: Loading db-helper...');
+        console.log('Step 6: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
+        console.log('Step 7: Loading db-helper...');
     </script>
     <script src="js/db-helper.js"></script>
     <script>
-        console.log('Step 7: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
-        console.log('Step 8: Loading auth.js...');
+        console.log('Step 8: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
+        console.log('Step 9: Loading auth.js...');
     </script>
     <script src="js/auth.js"></script>
     <script>
-        console.log('Step 9: Auth.js loaded');
-        console.log('Step 10: Configuring demo-specific functions...');
+        console.log('Step 10: Auth.js loaded');
+        console.log('Step 11: Overriding auth functions for demo mode...');
+
+        // CRITICAL: Override checkAuth to prevent redirects in demo mode
+        window.checkAuth = function(requiredRole) {
+            console.log('Demo mode: checkAuth called with role:', requiredRole);
+
+            // Return a fake session for demo
+            const demoSession = {
+                role: requiredRole,
+                identifier: 'Demo Admin',
+                userId: 'demo-admin-id',
+                timestamp: Date.now()
+            };
+
+            // Store it so other code can use it
+            localStorage.setItem('cetele_session', JSON.stringify(demoSession));
+
+            console.log('Demo mode: Returning fake session, NO redirect');
+            return demoSession;
+        };
+
+        console.log('Step 12: Configuring demo-specific functions...');
 
         // Toggle Debug Mode
         function toggleDebugMode() {
@@ -295,7 +342,7 @@
             }
         });
 
-        console.log('Step 11: Creating demo session...');
+        console.log('Step 13: Creating demo session...');
 
         // Create a fake session for demo mode to bypass auth checks
         const demoSession = {
@@ -307,7 +354,7 @@
         localStorage.setItem('cetele_session', JSON.stringify(demoSession));
         console.log('✓ Demo session created');
 
-        console.log('Step 12: Checking authentication...');
+        console.log('Step 14: Checking authentication...');
 
         // Check authentication before loading admin dashboard
         const session = checkAuth('admin');
@@ -326,11 +373,11 @@
             });
         }
 
-        console.log('Step 13: Loading admin.js...');
+        console.log('Step 15: Loading admin.js...');
     </script>
     <script src="js/admin.js"></script>
     <script>
-        console.log('Step 14: Admin.js loaded');
+        console.log('Step 16: Admin.js loaded');
         console.log('%c✅ ALL SCRIPTS LOADED', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
 
         // Check if page initialized
