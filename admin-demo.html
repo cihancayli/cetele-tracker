@@ -9,10 +9,19 @@
     <script>
         console.log('🚫 DEMO MODE: Installing redirect blockers IMMEDIATELY');
 
+        // Set demo mode flag FIRST
+        window.DEMO_MODE = true;
+
         // Store original methods
         const _assign = window.location.assign.bind(window.location);
         const _replace = window.location.replace.bind(window.location);
         const _reload = window.location.reload.bind(window.location);
+        const _alert = window.alert.bind(window);
+
+        // Override alert to suppress errors in demo mode
+        window.alert = function(msg) {
+            console.warn('🔕 DEMO MODE: Suppressed alert:', msg);
+        };
 
         // Override ALL navigation methods
         Object.defineProperties(window.location, {
