@@ -68,6 +68,11 @@ async function loadAllData() {
         renderGroupComparisonChart()
     ]);
 
+    // Load new visualizations if functions exist
+    if (typeof renderActivityHeatmap !== 'undefined') await renderActivityHeatmap();
+    if (typeof renderBadges !== 'undefined') await renderBadges();
+    if (typeof renderActivityBalanceChart !== 'undefined') await renderActivityBalanceChart();
+
     // Update week navigation buttons
     updateWeekNavigationState();
 }
@@ -177,39 +182,35 @@ async function loadCeteleTable() {
                         else if (value === false) cellClass = 'cell-no';
                     }
 
-                    // Render input based on type
+                    // Render as select dropdown for all activities
+                    let selectedValue = '';
                     if (activity.input_type === 'number') {
-                        activityCells += `
-                            <td class="activity-cell ${cellClass}" data-target="${activity.target}">
-                                <input
-                                    type="number"
-                                    class="activity-number-input"
-                                    data-activity-id="${activity.id}"
-                                    data-target="${activity.target}"
-                                    value="${value || ''}"
-                                    placeholder="0"
-                                    min="0"
-                                    max="${activity.target * 2}"
-                                    ${!isEditing ? 'disabled' : ''}
-                                />
-                                <span class="target-label">/ ${activity.target}</span>
-                            </td>
-                        `;
+                        // For number activities, convert to yes/no based on target
+                        if (value !== null && value !== undefined) {
+                            const percentage = (value / activity.target) * 100;
+                            selectedValue = percentage >= 50 ? 'yes' : 'no';
+                        }
                     } else {
-                        activityCells += `
-                            <td class="activity-cell ${cellClass}">
-                                <select
-                                    class="activity-select"
-                                    data-activity-id="${activity.id}"
-                                    ${!isEditing ? 'disabled' : ''}
-                                >
-                                    <option value="">-</option>
-                                    <option value="yes" ${value === true ? 'selected' : ''}>Yes</option>
-                                    <option value="no" ${value === false ? 'selected' : ''}>No</option>
-                                </select>
-                            </td>
-                        `;
+                        // For checkbox activities
+                        if (value === true) selectedValue = 'yes';
+                        else if (value === false) selectedValue = 'no';
                     }
+
+                    activityCells += `
+                        <td class="activity-cell ${cellClass}">
+                            <select
+                                class="activity-select"
+                                data-activity-id="${activity.id}"
+                                data-target="${activity.target}"
+                                data-input-type="${activity.input_type}"
+                                ${!isEditing ? 'disabled' : ''}
+                            >
+                                <option value="">-</option>
+                                <option value="yes" ${selectedValue === 'yes' ? 'selected' : ''}>Yes</option>
+                                <option value="no" ${selectedValue === 'no' ? 'selected' : ''}>No</option>
+                            </select>
+                        </td>
+                    `;
                 } else {
                     // Read-only for other students
                     let displayValue = '-';
@@ -254,34 +255,12 @@ async function loadCeteleTable() {
         document.querySelectorAll('.current-student-row .activity-select').forEach(select => {
             select.addEventListener('change', function() {
                 const cell = this.closest('td');
-                cell.classList.remove('cell-yes', 'cell-no', 'cell-empty');
+                cell.classList.remove('cell-yes', 'cell-no', 'cell-empty', 'cell-full', 'cell-partial', 'cell-low');
 
                 if (this.value === 'yes') {
                     cell.classList.add('cell-yes');
                 } else if (this.value === 'no') {
                     cell.classList.add('cell-no');
-                } else {
-                    cell.classList.add('cell-empty');
-                }
-            });
-        });
-
-        // Add event listeners to number inputs for color updates
-        document.querySelectorAll('.current-student-row .activity-number-input').forEach(input => {
-            input.addEventListener('input', function() {
-                const cell = this.closest('td');
-                const target = parseInt(this.dataset.target);
-                const value = parseInt(this.value) || 0;
-                const percentage = (value / target) * 100;
-
-                cell.classList.remove('cell-full', 'cell-partial', 'cell-low', 'cell-empty');
-
-                if (percentage >= 100) {
-                    cell.classList.add('cell-full');
-                } else if (percentage >= 50) {
-                    cell.classList.add('cell-partial');
-                } else if (percentage > 0) {
-                    cell.classList.add('cell-low');
                 } else {
                     cell.classList.add('cell-empty');
                 }
@@ -327,16 +306,12 @@ function toggleEdit() {
 
 function enableEditing() {
     const selects = document.querySelectorAll('.current-student-row .activity-select');
-    const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
     selects.forEach(select => select.disabled = false);
-    inputs.forEach(input => input.disabled = false);
 }
 
 function disableEditing() {
     const selects = document.querySelectorAll('.current-student-row .activity-select');
-    const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
     selects.forEach(select => select.disabled = true);
-    inputs.forEach(input => input.disabled = true);
 }
 
 async function saveCetele() {
@@ -344,27 +319,33 @@ async function saveCetele() {
         // Collect activity completions
         const activityCompletions = {};
 
-        // Collect from checkboxes/selects
+        // Collect from selects
         const selects = document.querySelectorAll('.current-student-row .activity-select');
         selects.forEach(select => {
             const activityId = parseInt(select.dataset.activityId);
+            const inputType = select.dataset.inputType;
+            const target = parseInt(select.dataset.target);
             const value = select.value;
 
-            if (value === 'yes') {
-                activityCompletions[activityId] = true;
-            } else if (value === 'no') {
-                activityCompletions[activityId] = false;
+            if (inputType === 'number') {
+                // Convert yes/no back to number based on target
+                if (value === 'yes') {
+                    activityCompletions[activityId] = target; // Full completion
+                } else if (value === 'no') {
+                    activityCompletions[activityId] = 0; // No completion
+                } else {
+                    activityCompletions[activityId] = 0;
+                }
             } else {
-                activityCompletions[activityId] = null;
+                // For checkbox activities, store boolean
+                if (value === 'yes') {
+                    activityCompletions[activityId] = true;
+                } else if (value === 'no') {
+                    activityCompletions[activityId] = false;
+                } else {
+                    activityCompletions[activityId] = null;
+                }
             }
-        });
-
-        // Collect from number inputs
-        const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
-        inputs.forEach(input => {
-            const activityId = parseInt(input.dataset.activityId);
-            const value = parseInt(input.value);
-            activityCompletions[activityId] = isNaN(value) ? 0 : value;
         });
 
         console.log('💾 Saving cetele:', {

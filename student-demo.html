@@ -173,12 +173,32 @@
             </div>
         </div>
 
+        <!-- Activity Heatmap Calendar -->
+        <div class="chart-card-full">
+            <h3>📅 Activity Heatmap - Last 8 Weeks</h3>
+            <div id="activityHeatmap" class="heatmap-container"></div>
+        </div>
+
+        <!-- Activity Balance Radar Chart -->
+        <div class="chart-card-full">
+            <h3>⚖️ Activity Balance</h3>
+            <div class="chart-container">
+                <canvas id="activityBalanceChart"></canvas>
+            </div>
+        </div>
+
         <!-- Group Comparison Chart -->
         <div class="chart-card-full">
             <h3>👥 Group Comparison</h3>
             <div class="chart-container">
                 <canvas id="groupComparisonChart"></canvas>
             </div>
+        </div>
+
+        <!-- Achievement Badges -->
+        <div class="chart-card-full">
+            <h3>🏅 Achievement Badges</h3>
+            <div id="badgesContainer" class="badges-container"></div>
         </div>
     </div>
 
@@ -283,8 +303,10 @@
         console.log('Step 9: Loading student.js...');
     </script>
     <script src="js/student.js"></script>
+    <script src="js/visualizations.js"></script>
     <script>
         console.log('Step 10: Student.js loaded');
+        console.log('Step 11: Visualizations.js loaded');
         console.log('%c✅ ALL SCRIPTS LOADED', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
 
         // Check if page initialized
