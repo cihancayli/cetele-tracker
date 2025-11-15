@@ -1,26 +1,48 @@
-// Mock Data for Development/Demo
+// Mock Data for Development/Demo - FULL REALISTIC DATA
+
+// Helper to get date N weeks ago
+function getWeeksAgo(weeks) {
+    const date = new Date();
+    date.setDate(date.getDate() - (weeks * 7));
+    return date.toISOString().split('T')[0];
+}
 
 const MOCK_DATA = {
     students: [
+        // Group A - 10th Grade (5 students)
         { id: 1, name: 'Emma Thompson', grade: '10th', group_id: 1, created_at: new Date() },
         { id: 2, name: 'Oliver Chen', grade: '10th', group_id: 1, created_at: new Date() },
         { id: 3, name: 'Sophia Martinez', grade: '10th', group_id: 1, created_at: new Date() },
-        { id: 4, name: 'Liam Johnson', grade: '10th', group_id: 2, created_at: new Date() },
-        { id: 5, name: 'Ava Williams', grade: '11th', group_id: 2, created_at: new Date() },
-        { id: 6, name: 'Noah Brown', grade: '11th', group_id: 2, created_at: new Date() },
-        { id: 7, name: 'Isabella Garcia', grade: '11th', group_id: 3, created_at: new Date() },
-        { id: 8, name: 'Ethan Davis', grade: '11th', group_id: 3, created_at: new Date() },
-        { id: 9, name: 'Mia Rodriguez', grade: '12th', group_id: 3, created_at: new Date() },
-        { id: 10, name: 'James Wilson', grade: '12th', group_id: 4, created_at: new Date() },
-        { id: 11, name: 'Charlotte Moore', grade: '12th', group_id: 4, created_at: new Date() },
-        { id: 12, name: 'Benjamin Taylor', grade: '12th', group_id: 4, created_at: new Date() },
+        { id: 4, name: 'Lucas Anderson', grade: '10th', group_id: 1, created_at: new Date() },
+        { id: 5, name: 'Mia Patel', grade: '10th', group_id: 1, created_at: new Date() },
+
+        // Group B - 11th Grade (6 students)
+        { id: 6, name: 'Liam Johnson', grade: '11th', group_id: 2, created_at: new Date() },
+        { id: 7, name: 'Ava Williams', grade: '11th', group_id: 2, created_at: new Date() },
+        { id: 8, name: 'Noah Brown', grade: '11th', group_id: 2, created_at: new Date() },
+        { id: 9, name: 'Isabella Garcia', grade: '11th', group_id: 2, created_at: new Date() },
+        { id: 10, name: 'Ethan Davis', grade: '11th', group_id: 2, created_at: new Date() },
+        { id: 11, name: 'Amelia Wilson', grade: '11th', group_id: 2, created_at: new Date() },
+
+        // Group C - 12th Grade (5 students)
+        { id: 12, name: 'James Rodriguez', grade: '12th', group_id: 3, created_at: new Date() },
+        { id: 13, name: 'Charlotte Moore', grade: '12th', group_id: 3, created_at: new Date() },
+        { id: 14, name: 'Benjamin Taylor', grade: '12th', group_id: 3, created_at: new Date() },
+        { id: 15, name: 'Harper Lee', grade: '12th', group_id: 3, created_at: new Date() },
+        { id: 16, name: 'Elijah Kim', grade: '12th', group_id: 3, created_at: new Date() },
+
+        // Group D - Mixed (4 students)
+        { id: 17, name: 'Aisha Hassan', grade: '10th', group_id: 4, created_at: new Date() },
+        { id: 18, name: 'Muhammad Ali', grade: '11th', group_id: 4, created_at: new Date() },
+        { id: 19, name: 'Fatima Ahmed', grade: '11th', group_id: 4, created_at: new Date() },
+        { id: 20, name: 'Yusuf Ibrahim', grade: '12th', group_id: 4, created_at: new Date() },
     ],
 
     groups: [
-        { id: 1, name: 'Group A', grade: '10th', created_at: new Date() },
-        { id: 2, name: 'Group B', grade: '10th-11th', created_at: new Date() },
-        { id: 3, name: 'Group C', grade: '11th', created_at: new Date() },
-        { id: 4, name: 'Group D', grade: '12th', created_at: new Date() },
+        { id: 1, name: 'Eagles - 10th Grade', grade: '10th', mentor_id: null, created_at: new Date() },
+        { id: 2, name: 'Hawks - 11th Grade', grade: '11th', mentor_id: null, created_at: new Date() },
+        { id: 3, name: 'Falcons - 12th Grade', grade: '12th', mentor_id: null, created_at: new Date() },
+        { id: 4, name: 'Phoenix - Mixed', grade: 'Mixed', mentor_id: null, created_at: new Date() },
     ],
 
     activities: [
@@ -33,20 +55,55 @@ const MOCK_DATA = {
         { id: 7, name: 'SWB/Dhikr', description: '101/day', type: 'prayer', order_index: 7 },
     ],
 
-    weeklySubmissions: [
-        // This week - high performers
-        { id: 1, student_id: 1, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true }, created_at: new Date() },
-        { id: 2, student_id: 2, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: false, 7: true }, created_at: new Date() },
-        { id: 3, student_id: 3, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: false }, created_at: new Date() },
-        { id: 4, student_id: 4, week_start_date: new Date(), activity_completions: { 1: true, 2: false, 3: true, 4: true, 5: true, 6: true, 7: true }, created_at: new Date() },
-        { id: 5, student_id: 5, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: true, 5: false, 6: true, 7: true }, created_at: new Date() },
-        { id: 6, student_id: 6, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: false, 4: true, 5: true, 6: true, 7: true }, created_at: new Date() },
-        { id: 7, student_id: 7, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: false, 5: true, 6: true, 7: true }, created_at: new Date() },
-        { id: 8, student_id: 8, week_start_date: new Date(), activity_completions: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: false, 7: false }, created_at: new Date() },
-        { id: 9, student_id: 9, week_start_date: new Date(), activity_completions: { 1: false, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true }, created_at: new Date() },
-        { id: 10, student_id: 10, week_start_date: new Date(), activity_completions: { 1: true, 2: false, 3: true, 4: true, 5: true, 6: true, 7: false }, created_at: new Date() },
-    ]
+    weeklySubmissions: []  // Will be generated below
 };
+
+// Generate realistic submission data for the past 8 weeks
+const weeklySubmissions = [];
+let submissionId = 1;
+
+for (let weekOffset = 0; weekOffset < 8; weekOffset++) {
+    const weekDate = getWeeksAgo(weekOffset);
+
+    MOCK_DATA.students.forEach(student => {
+        // Create varied completion patterns
+        const completionRate = Math.random();
+        const isHighPerformer = student.id % 3 === 0; // Every 3rd student is high performer
+        const isStruggling = student.id % 7 === 0; // Every 7th student struggles
+
+        let completions = {};
+
+        // Generate realistic activity completion
+        for (let activityId = 1; activityId <= 7; activityId++) {
+            let shouldComplete;
+
+            if (isHighPerformer) {
+                shouldComplete = Math.random() > 0.1; // 90% completion rate
+            } else if (isStruggling) {
+                shouldComplete = Math.random() > 0.6; // 40% completion rate
+            } else {
+                shouldComplete = Math.random() > 0.3; // 70% completion rate
+            }
+
+            // More recent weeks have slightly better completion
+            if (weekOffset < 2) {
+                shouldComplete = shouldComplete || (Math.random() > 0.7);
+            }
+
+            completions[activityId] = shouldComplete;
+        }
+
+        weeklySubmissions.push({
+            id: submissionId++,
+            student_id: student.id,
+            week_start_date: weekDate,
+            activity_completions: completions,
+            created_at: new Date(weekDate)
+        });
+    });
+}
+
+MOCK_DATA.weeklySubmissions = weeklySubmissions;
 
 // Mock Database Helper
 const MockDatabaseHelper = {
