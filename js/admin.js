@@ -69,6 +69,9 @@ function showSection(sectionName) {
         case 'students':
             loadStudents();
             break;
+        case 'cetele':
+            loadCeteleManagement();
+            break;
         case 'weekly':
             loadWeeklyView();
             break;
@@ -775,6 +778,232 @@ window.onclick = function (event) {
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
         window.location.href = 'index.html';
+    }
+}
+
+// ==================== CETELE MANAGEMENT ====================
+
+async function loadCeteleManagement() {
+    try {
+        // Load all activities (both default and custom)
+        const activities = await DatabaseHelper.getActivities();
+
+        // Populate activities table
+        const tbody = document.getElementById('activitiesTableBody');
+        tbody.innerHTML = '';
+
+        activities.forEach(activity => {
+            const row = document.createElement('tr');
+
+            const scope = activity.group_id ? 'Custom (Your Group)' : 'Default (All Groups)';
+            const scopeClass = activity.group_id ? 'badge-custom' : 'badge-default';
+
+            row.innerHTML = `
+                <td>${activity.order_index}</td>
+                <td><strong>${activity.name}</strong></td>
+                <td>${activity.description || '-'}</td>
+                <td><span class="badge">${activity.input_type || 'checkbox'}</span></td>
+                <td>${activity.target || '-'}</td>
+                <td>${activity.unit || '-'}</td>
+                <td><span class="badge ${scopeClass}">${scope}</span></td>
+                <td>
+                    <button class="btn-small btn-edit" onclick="openEditActivityModal(${activity.id})" ${!activity.group_id ? 'disabled title="Cannot edit default activities"' : ''}>
+                        ✏️ Edit
+                    </button>
+                    <button class="btn-small btn-delete" onclick="deleteActivity(${activity.id})" ${!activity.group_id ? 'disabled title="Cannot delete default activities"' : ''}>
+                        🗑️ Delete
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        // Generate preview
+        generateCetelePreview(activities);
+
+    } catch (error) {
+        console.error('Error loading cetele management:', error);
+        alert('Error loading activities. Please try again.');
+    }
+}
+
+function generateCetelePreview(activities) {
+    const previewContainer = document.getElementById('cetelePreview');
+
+    let tableHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    ${activities.map(a => `<th>${a.name}<br><small style="font-weight: normal;">${a.description}</small></th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Example Student</strong></td>
+                    ${activities.map(() => '<td style="text-align: center;">-</td>').join('')}
+                </tr>
+            </tbody>
+        </table>
+    `;
+
+    previewContainer.innerHTML = tableHTML;
+}
+
+function openAddActivityModal() {
+    document.getElementById('addActivityModal').style.display = 'flex';
+}
+
+function toggleActivityTargetFields() {
+    const inputType = document.getElementById('newActivityInputType').value;
+    const container = document.getElementById('targetFieldsContainer');
+
+    if (inputType === 'number') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+async function saveNewActivity() {
+    try {
+        const name = document.getElementById('newActivityName').value.trim();
+        const description = document.getElementById('newActivityDescription').value.trim();
+        const inputType = document.getElementById('newActivityInputType').value;
+        const target = inputType === 'number' ? parseInt(document.getElementById('newActivityTarget').value) : null;
+        const unit = inputType === 'number' ? document.getElementById('newActivityUnit').value.trim() : null;
+        const orderIndex = parseInt(document.getElementById('newActivityOrder').value);
+
+        if (!name) {
+            alert('Please enter an activity name');
+            return;
+        }
+
+        if (inputType === 'number' && (!target || !unit)) {
+            alert('Please enter target amount and unit for number-based activities');
+            return;
+        }
+
+        // Create activity with group_id to mark it as custom
+        await DatabaseHelper.createActivity(name, description, inputType, orderIndex, target, unit, currentUser.group_id);
+
+        // Reload the table
+        await loadCeteleManagement();
+
+        // Close modal and reset form
+        closeModal('addActivityModal');
+        document.getElementById('newActivityName').value = '';
+        document.getElementById('newActivityDescription').value = '';
+        document.getElementById('newActivityTarget').value = '';
+        document.getElementById('newActivityUnit').value = '';
+        document.getElementById('newActivityOrder').value = '8';
+
+        alert('✅ Activity added successfully!');
+
+    } catch (error) {
+        console.error('Error saving activity:', error);
+        alert('Error saving activity. Please try again.');
+    }
+}
+
+async function openEditActivityModal(activityId) {
+    try {
+        const activities = await DatabaseHelper.getActivities();
+        const activity = activities.find(a => a.id === activityId);
+
+        if (!activity) {
+            alert('Activity not found');
+            return;
+        }
+
+        // Check if this is a custom activity
+        if (!activity.group_id) {
+            alert('Cannot edit default activities. You can only edit custom activities you created.');
+            return;
+        }
+
+        // Populate form
+        document.getElementById('editActivityId').value = activity.id;
+        document.getElementById('editActivityName').value = activity.name;
+        document.getElementById('editActivityDescription').value = activity.description || '';
+        document.getElementById('editActivityInputType').value = activity.input_type || 'checkbox';
+        document.getElementById('editActivityTarget').value = activity.target || '';
+        document.getElementById('editActivityUnit').value = activity.unit || '';
+        document.getElementById('editActivityOrder').value = activity.order_index;
+
+        // Show/hide target fields
+        toggleEditTargetFields();
+
+        // Open modal
+        document.getElementById('editActivityModal').style.display = 'flex';
+
+    } catch (error) {
+        console.error('Error opening edit modal:', error);
+        alert('Error loading activity details.');
+    }
+}
+
+function toggleEditTargetFields() {
+    const inputType = document.getElementById('editActivityInputType').value;
+    const container = document.getElementById('editTargetFieldsContainer');
+
+    if (inputType === 'number') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+async function saveEditedActivity() {
+    try {
+        const id = parseInt(document.getElementById('editActivityId').value);
+        const name = document.getElementById('editActivityName').value.trim();
+        const description = document.getElementById('editActivityDescription').value.trim();
+        const inputType = document.getElementById('editActivityInputType').value;
+        const target = inputType === 'number' ? parseInt(document.getElementById('editActivityTarget').value) : null;
+        const unit = inputType === 'number' ? document.getElementById('editActivityUnit').value.trim() : null;
+        const orderIndex = parseInt(document.getElementById('editActivityOrder').value);
+
+        if (!name) {
+            alert('Please enter an activity name');
+            return;
+        }
+
+        if (inputType === 'number' && (!target || !unit)) {
+            alert('Please enter target amount and unit for number-based activities');
+            return;
+        }
+
+        // Update activity
+        await DatabaseHelper.updateActivity(id, name, description, inputType, orderIndex, target, unit);
+
+        // Reload the table
+        await loadCeteleManagement();
+
+        // Close modal
+        closeModal('editActivityModal');
+
+        alert('✅ Activity updated successfully!');
+
+    } catch (error) {
+        console.error('Error updating activity:', error);
+        alert('Error updating activity. Please try again.');
+    }
+}
+
+async function deleteActivity(activityId) {
+    if (!confirm('Are you sure you want to delete this custom activity? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        await DatabaseHelper.deleteActivity(activityId);
+        await loadCeteleManagement();
+        alert('✅ Activity deleted successfully!');
+    } catch (error) {
+        console.error('Error deleting activity:', error);
+        alert('Error deleting activity. Please try again.');
     }
 }
 

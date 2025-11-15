@@ -24,6 +24,7 @@
                 <button class="nav-btn active" onclick="showSection('overview')">📈 Overview</button>
                 <button class="nav-btn" onclick="showSection('groups')">👥 Groups</button>
                 <button class="nav-btn" onclick="showSection('students')">🎓 Students</button>
+                <button class="nav-btn" onclick="showSection('cetele')">📋 Manage Cetele</button>
                 <button class="nav-btn" onclick="showSection('weekly')">📅 Weekly View</button>
                 <button class="nav-btn" onclick="showSection('analytics')">📊 Analytics</button>
 
@@ -170,6 +171,158 @@
                 <div id="performanceCards" class="students-grid"></div>
             </div>
         </section>
+
+        <!-- Manage Cetele Section -->
+        <section id="ceteleSection" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h1>📋 Manage Cetele Activities</h1>
+                <p style="color: #94a3b8; margin-top: 0.5rem;">Customize the weekly activities for your group. Changes will only affect your group's cetele.</p>
+            </div>
+
+            <!-- Activity Template Info -->
+            <div class="stat-card" style="margin-bottom: 2rem; background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3);">
+                <div class="stat-content">
+                    <h3 style="margin: 0 0 0.5rem 0; color: #8b5cf6;">💡 How Cetele Customization Works</h3>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #cbd5e1; line-height: 1.8;">
+                        <li>All groups start with the <strong>default 7 activities</strong></li>
+                        <li>You can <strong>add custom activities</strong> specific to your group</li>
+                        <li>Edit descriptions and targets to match your group's needs</li>
+                        <li>Students will see your customized cetele when they log in</li>
+                        <li>Changes only affect <strong>your group</strong> - other groups are unaffected</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Current Activities Table -->
+            <div class="table-card">
+                <div class="table-header-bar">
+                    <h2>Current Activities</h2>
+                    <button class="btn-primary" onclick="openAddActivityModal()">
+                        ➕ Add Custom Activity
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Activity Name</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Target</th>
+                                <th>Unit</th>
+                                <th>Scope</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activitiesTableBody">
+                            <!-- Activities will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="stat-card" style="margin-top: 2rem;">
+                <h3 style="margin: 0 0 1rem 0;">👀 Student View Preview</h3>
+                <p style="color: #94a3b8; margin-bottom: 1rem;">This is how students will see the cetele table:</p>
+                <div id="cetelePreview" class="table-container">
+                    <!-- Preview table will be generated here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Activity Modal -->
+    <div id="addActivityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Add Custom Activity</h2>
+                <span class="close" onclick="closeModal('addActivityModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Activity Name</label>
+                    <input type="text" id="newActivityName" placeholder="e.g., Community Service">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="newActivityDescription" placeholder="e.g., Help at local mosque">
+                </div>
+                <div class="form-group">
+                    <label>Input Type</label>
+                    <select id="newActivityInputType" onchange="toggleActivityTargetFields()">
+                        <option value="checkbox">Yes/No (Checkbox)</option>
+                        <option value="number">Number (with target)</option>
+                    </select>
+                </div>
+                <div id="targetFieldsContainer" style="display: none;">
+                    <div class="form-group">
+                        <label>Target Amount</label>
+                        <input type="number" id="newActivityTarget" placeholder="e.g., 5" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Unit</label>
+                        <input type="text" id="newActivityUnit" placeholder="e.g., hours, pages, times">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Display Order</label>
+                    <input type="number" id="newActivityOrder" placeholder="e.g., 8" min="1" value="8">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addActivityModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveNewActivity()">Add Activity</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Activity Modal -->
+    <div id="editActivityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Edit Activity</h2>
+                <span class="close" onclick="closeModal('editActivityModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editActivityId">
+                <div class="form-group">
+                    <label>Activity Name</label>
+                    <input type="text" id="editActivityName">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editActivityDescription">
+                </div>
+                <div class="form-group">
+                    <label>Input Type</label>
+                    <select id="editActivityInputType" onchange="toggleEditTargetFields()">
+                        <option value="checkbox">Yes/No (Checkbox)</option>
+                        <option value="number">Number (with target)</option>
+                    </select>
+                </div>
+                <div id="editTargetFieldsContainer">
+                    <div class="form-group">
+                        <label>Target Amount</label>
+                        <input type="number" id="editActivityTarget" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Unit</label>
+                        <input type="text" id="editActivityUnit">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Display Order</label>
+                    <input type="number" id="editActivityOrder" min="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('editActivityModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveEditedActivity()">Save Changes</button>
+            </div>
+        </div>
     </div>
 
     <!-- Add Group Modal -->

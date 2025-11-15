@@ -127,12 +127,51 @@ window.DatabaseHelper = class DatabaseHelper {
 
     // ==================== ACTIVITIES ====================
 
-    static async createActivity(name, description, type, orderIndex) {
-        const { data, error } = await supabase
+    static async createActivity(name, description, inputType, orderIndex, target = null, unit = null, groupId = null) {
+        const activityData = {
+            name,
+            description,
+            input_type: inputType,
+            order_index: orderIndex,
+            target,
+            unit,
+            group_id: groupId
+        };
+
+        const { data, error} = await supabase
             .from('activities')
-            .insert([{ name, description, type, order_index: orderIndex }])
+            .insert([activityData])
             .select()
             .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    static async updateActivity(id, name, description, inputType, orderIndex, target = null, unit = null) {
+        const { data, error } = await supabase
+            .from('activities')
+            .update({
+                name,
+                description,
+                input_type: inputType,
+                order_index: orderIndex,
+                target,
+                unit
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    static async deleteActivity(id) {
+        const { data, error } = await supabase
+            .from('activities')
+            .delete()
+            .eq('id', id);
 
         if (error) throw error;
         return data;
