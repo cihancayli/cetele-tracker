@@ -21,34 +21,7 @@
   ],
   "headers": [
     {
-      "source": "/student-demo.html",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    },
-    {
-      "source": "/admin-demo.html",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    },
-    {
-      "source": "/demo.html",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!student-demo|admin-demo|demo\\.html).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
