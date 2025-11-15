@@ -199,30 +199,36 @@
 
         console.log('Step 2: Preventing redirects in demo mode...');
 
-        // CRITICAL: Override window.location to prevent redirects in iframe
-        const originalLocation = window.location;
-        Object.defineProperty(window, 'location', {
+        // CRITICAL: Intercept ALL navigation attempts
+        const originalAssign = window.location.assign;
+        const originalReplace = window.location.replace;
+
+        // Block location.assign
+        window.location.assign = function(url) {
+            console.warn('🚫 DEMO MODE: Blocked location.assign to', url);
+            return false;
+        };
+
+        // Block location.replace
+        window.location.replace = function(url) {
+            console.warn('🚫 DEMO MODE: Blocked location.replace to', url);
+            return false;
+        };
+
+        // Intercept location.href setter
+        let href = window.location.href;
+        Object.defineProperty(window.location, 'href', {
             get: function() {
-                return originalLocation;
+                return href;
             },
             set: function(value) {
-                console.warn('Demo mode: Blocked redirect to', value);
-                console.log('Demo pages should not redirect');
+                console.warn('🚫 DEMO MODE: Blocked location.href assignment to', value);
                 return false;
-            }
+            },
+            configurable: true
         });
 
-        // Also intercept location.href assignments
-        const originalHref = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
-        Object.defineProperty(Location.prototype, 'href', {
-            get: originalHref.get,
-            set: function(value) {
-                console.warn('Demo mode: Blocked redirect to', value);
-                console.log('Demo pages should not redirect');
-            }
-        });
-
-        console.log('✓ Redirect protection enabled');
+        console.log('✓ Redirect protection enabled (assign, replace, href)');
         console.log('Step 3: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
