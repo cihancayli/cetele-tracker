@@ -65,6 +65,36 @@
         </div>
     </header>
 
+    <!-- Mobile Fill Cetele Button (shown on mobile only) -->
+    <div class="mobile-fill-button-container">
+        <button class="btn-fill-mobile" onclick="openMobileWizard()">
+            📝 Fill This Week's Cetele
+        </button>
+    </div>
+
+    <!-- Mobile Cetele Wizard (card-by-card system) -->
+    <div id="mobileWizard" class="mobile-wizard-overlay">
+        <div class="mobile-wizard-container">
+            <div class="mobile-wizard-header">
+                <h3 id="mobileWizardTitle">Activity 1 of 7</h3>
+                <button class="btn-close-wizard" onclick="closeMobileWizard()">✕</button>
+            </div>
+
+            <div class="mobile-wizard-cards" id="mobileWizardCards">
+                <!-- Cards will be dynamically generated here -->
+            </div>
+
+            <div class="mobile-wizard-footer">
+                <div class="wizard-progress">
+                    <div class="wizard-progress-bar" id="wizardProgressBar"></div>
+                </div>
+                <button class="btn-wizard-next" id="wizardNextBtn" onclick="nextWizardCard()">
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="container">
         <!-- Week Selector -->
@@ -112,93 +142,93 @@
             </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="charts-row">
-            <!-- Progress Over Time Chart -->
-            <div class="chart-card">
-                <h3>📈 My Progress Over Time</h3>
-                <div class="chart-container">
-                    <canvas id="progressChart"></canvas>
+        <!-- Compact Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Column: Stats & Charts -->
+            <div class="dashboard-left">
+                <!-- Personal Stats -->
+                <div class="stats-card compact">
+                    <h3>📊 My Stats</h3>
+                    <div class="stats-grid-compact">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalWeeks">0</div>
+                            <div class="stat-label">Weeks</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="completionRate">0%</div>
+                            <div class="stat-label">Avg</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="bestScore">0</div>
+                            <div class="stat-label">Best</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="currentStreak">0</div>
+                            <div class="stat-label">Streak</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Chart -->
+                <div class="chart-card compact">
+                    <h3>📈 Progress</h3>
+                    <div class="chart-container-small">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Activity Balance -->
+                <div class="chart-card compact">
+                    <h3>⚖️ Balance</h3>
+                    <div class="chart-container-small">
+                        <canvas id="activityBalanceChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <!-- Consistency Tracker Chart -->
-            <div class="chart-card">
-                <h3>🔥 Consistency Tracker</h3>
-                <div class="chart-container">
-                    <canvas id="consistencyChart"></canvas>
+            <!-- Center Column: Consistency -->
+            <div class="dashboard-center">
+                <!-- Consistency Tracker -->
+                <div class="chart-card compact">
+                    <h3>🔥 Consistency</h3>
+                    <div class="chart-container-small">
+                        <canvas id="consistencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Leaderboards & Badges -->
+            <div class="dashboard-right">
+                <!-- Group Leaderboard -->
+                <div class="stats-card compact">
+                    <h3>🏆 Leaderboard</h3>
+                    <div id="leaderboardList" class="leaderboard-list-compact">
+                        <!-- Leaderboard will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Top Performers -->
+                <div class="stats-card compact">
+                    <h3>⭐ Top This Week</h3>
+                    <div id="topPerformers" class="top-performers-compact">
+                        <!-- Top performers will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Achievement Badges -->
+                <div class="stats-card compact">
+                    <h3>🏅 Badges</h3>
+                    <div id="badgesContainer" class="badges-container-compact"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Dashboard -->
-        <div class="stats-dashboard">
-            <!-- Personal Stats -->
-            <div class="stats-card">
-                <h3>📊 My Stats</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalWeeks">0</div>
-                        <div class="stat-label">Weeks Tracked</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="completionRate">0%</div>
-                        <div class="stat-label">Avg Completion</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="bestScore">0</div>
-                        <div class="stat-label">Best Score</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="currentStreak">0</div>
-                        <div class="stat-label">Current Streak</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Group Leaderboard -->
-            <div class="stats-card">
-                <h3>🏆 Group Leaderboard</h3>
-                <div id="leaderboardList" class="leaderboard-list">
-                    <!-- Leaderboard will be populated here -->
-                </div>
-            </div>
-
-            <!-- Top Performers -->
-            <div class="stats-card">
-                <h3>⭐ Top Performers This Week</h3>
-                <div id="topPerformers" class="top-performers">
-                    <!-- Top performers will be populated here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Activity Heatmap Calendar -->
-        <div class="chart-card-full">
-            <h3>📅 Activity Heatmap - Last 8 Weeks</h3>
-            <div id="activityHeatmap" class="heatmap-container"></div>
-        </div>
-
-        <!-- Activity Balance Radar Chart -->
-        <div class="chart-card-full">
-            <h3>⚖️ Activity Balance</h3>
-            <div class="chart-container">
-                <canvas id="activityBalanceChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Group Comparison Chart -->
-        <div class="chart-card-full">
+        <!-- Group Comparison (Full Width) -->
+        <div class="chart-card compact">
             <h3>👥 Group Comparison</h3>
-            <div class="chart-container">
+            <div class="chart-container-small">
                 <canvas id="groupComparisonChart"></canvas>
             </div>
-        </div>
-
-        <!-- Achievement Badges -->
-        <div class="chart-card-full">
-            <h3>🏅 Achievement Badges</h3>
-            <div id="badgesContainer" class="badges-container"></div>
         </div>
     </div>
 

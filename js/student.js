@@ -9,16 +9,20 @@ let groupStudents = [];
 let allSubmissions = [];
 let charts = {};
 
+// Mobile wizard state
+let wizardCurrentIndex = 0;
+let wizardData = {};
+
 // Initialize
 async function init() {
-    // Check for demo mode
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDemo = urlParams.get('demo') === 'true';
+    // Check if this is a demo page (ends with -demo.html)
+    const isDemo = window.location.pathname.includes('-demo.html');
 
     if (isDemo) {
         // Auto-login with demo student (Emma Thompson - student id 1)
         currentStudentId = '1';
         sessionStorage.setItem('studentId', '1');
+        console.log('🎬 Demo mode active - no auth required');
     } else {
         // Verify user session
         const user = DatabaseHelper.getCurrentUser();
@@ -169,62 +173,110 @@ async function loadCeteleTable() {
                 if (isCurrentStudent) {
                     console.log(`🔍 Activity ${activity.id} (${activity.name}):`, value);
 
-                    // Calculate color coding for numbers
-                    let cellClass = '';
-                    if (activity.input_type === 'number' && value !== null && value !== undefined) {
-                        const percentage = (value / activity.target) * 100;
-                        if (percentage >= 100) cellClass = 'cell-full';
-                        else if (percentage >= 50) cellClass = 'cell-partial';
-                        else if (percentage > 0) cellClass = 'cell-low';
-                        else cellClass = 'cell-empty';
-                    } else if (activity.input_type === 'checkbox') {
-                        if (value === true) cellClass = 'cell-yes';
-                        else if (value === false) cellClass = 'cell-no';
-                    }
-
-                    // Render as select dropdown for all activities
-                    let selectedValue = '';
-                    if (activity.input_type === 'number') {
-                        // For number activities, convert to yes/no based on target
-                        if (value !== null && value !== undefined) {
-                            const percentage = (value / activity.target) * 100;
-                            selectedValue = percentage >= 50 ? 'yes' : 'no';
-                        }
-                    } else {
-                        // For checkbox activities
-                        if (value === true) selectedValue = 'yes';
-                        else if (value === false) selectedValue = 'no';
-                    }
-
-                    activityCells += `
-                        <td class="activity-cell ${cellClass}">
-                            <select
-                                class="activity-select"
-                                data-activity-id="${activity.id}"
-                                data-target="${activity.target}"
-                                data-input-type="${activity.input_type}"
-                                ${!isEditing ? 'disabled' : ''}
-                            >
-                                <option value="">-</option>
-                                <option value="yes" ${selectedValue === 'yes' ? 'selected' : ''}>Yes</option>
-                                <option value="no" ${selectedValue === 'no' ? 'selected' : ''}>No</option>
-                            </select>
-                        </td>
-                    `;
-                } else {
-                    // Read-only for other students
+                    // Calculate display value and color for current student
                     let displayValue = '-';
                     let cellClass = '';
 
                     if (activity.input_type === 'number') {
                         if (value !== null && value !== undefined) {
                             const percentage = (value / activity.target) * 100;
-                            displayValue = `${value}/${activity.target}`;
+                            if (percentage >= 50) {
+                                displayValue = 'Yes';
+                                cellClass = 'cell-yes';
+                            } else if (percentage > 0) {
+                                displayValue = 'No';
+                                cellClass = 'cell-no';
+                            } else {
+                                displayValue = '-';
+                                cellClass = 'cell-empty';
+                            }
+                        } else {
+                            cellClass = 'cell-empty';
+                        }
 
-                            if (percentage >= 100) cellClass = 'cell-full';
-                            else if (percentage >= 50) cellClass = 'cell-partial';
-                            else if (percentage > 0) cellClass = 'cell-low';
-                            else cellClass = 'cell-empty';
+                        // Show number input when editing, Yes/No badge when not
+                        if (isEditing) {
+                            activityCells += `
+                                <td class="activity-cell ${cellClass}">
+                                    <div class="number-input-wrapper editable-cell">
+                                        <input
+                                            type="number"
+                                            class="activity-number-input"
+                                            data-activity-id="${activity.id}"
+                                            data-target="${activity.target}"
+                                            data-input-type="number"
+                                            value="${value || ''}"
+                                            placeholder="0"
+                                            min="0"
+                                            max="${activity.target * 2}"
+                                        />
+                                        <span class="target-label">/ ${activity.target}</span>
+                                    </div>
+                                </td>
+                            `;
+                        } else {
+                            activityCells += `
+                                <td class="activity-cell ${cellClass}" data-value="${value || 0}" data-target="${activity.target}" data-activity-id="${activity.id}" data-input-type="number">
+                                    <span class="cell-badge">${displayValue}</span>
+                                </td>
+                            `;
+                        }
+                    } else {
+                        // For checkbox activities
+                        let selectedValue = '';
+                        if (value === true) {
+                            selectedValue = 'yes';
+                            displayValue = 'Yes';
+                            cellClass = 'cell-yes';
+                        } else if (value === false) {
+                            selectedValue = 'no';
+                            displayValue = 'No';
+                            cellClass = 'cell-no';
+                        } else {
+                            cellClass = 'cell-empty';
+                        }
+
+                        if (isEditing) {
+                            activityCells += `
+                                <td class="activity-cell ${cellClass}">
+                                    <select
+                                        class="activity-select editable-cell"
+                                        data-activity-id="${activity.id}"
+                                        data-input-type="checkbox"
+                                    >
+                                        <option value="">-</option>
+                                        <option value="yes" ${selectedValue === 'yes' ? 'selected' : ''}>Yes</option>
+                                        <option value="no" ${selectedValue === 'no' ? 'selected' : ''}>No</option>
+                                    </select>
+                                </td>
+                            `;
+                        } else {
+                            activityCells += `
+                                <td class="activity-cell ${cellClass}" data-value="${selectedValue}" data-activity-id="${activity.id}" data-input-type="checkbox">
+                                    <span class="cell-badge">${displayValue}</span>
+                                </td>
+                            `;
+                        }
+                    }
+                } else {
+                    // Read-only for other students - show Yes/No only
+                    let displayValue = '-';
+                    let cellClass = '';
+
+                    if (activity.input_type === 'number') {
+                        if (value !== null && value !== undefined) {
+                            const percentage = (value / activity.target) * 100;
+
+                            if (percentage >= 50) {
+                                displayValue = 'Yes';
+                                cellClass = 'cell-yes';
+                            } else if (percentage > 0) {
+                                displayValue = 'No';
+                                cellClass = 'cell-no';
+                            } else {
+                                displayValue = '-';
+                                cellClass = 'cell-empty';
+                            }
                         } else {
                             cellClass = 'cell-empty';
                         }
@@ -251,25 +303,50 @@ async function loadCeteleTable() {
         // Update edit/save button visibility
         updateButtonState(hasSubmitted);
 
-        // Add event listeners to dropdowns for color updates
-        document.querySelectorAll('.current-student-row .activity-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const cell = this.closest('td');
-                cell.classList.remove('cell-yes', 'cell-no', 'cell-empty', 'cell-full', 'cell-partial', 'cell-low');
-
-                if (this.value === 'yes') {
-                    cell.classList.add('cell-yes');
-                } else if (this.value === 'no') {
-                    cell.classList.add('cell-no');
-                } else {
-                    cell.classList.add('cell-empty');
-                }
-            });
-        });
+        // Attach event listeners
+        attachInputEventListeners();
 
     } catch (error) {
         console.error('Error loading cetele table:', error);
     }
+}
+
+function attachInputEventListeners() {
+    // Add event listeners to dropdowns for color updates
+    document.querySelectorAll('.current-student-row .activity-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const cell = this.closest('td');
+            cell.classList.remove('cell-yes', 'cell-no', 'cell-empty');
+
+            if (this.value === 'yes') {
+                cell.classList.add('cell-yes');
+            } else if (this.value === 'no') {
+                cell.classList.add('cell-no');
+            } else {
+                cell.classList.add('cell-empty');
+            }
+        });
+    });
+
+    // Add event listeners to number inputs for color updates
+    document.querySelectorAll('.current-student-row .activity-number-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const cell = this.closest('td');
+            const target = parseInt(this.dataset.target);
+            const value = parseInt(this.value) || 0;
+            const percentage = (value / target) * 100;
+
+            cell.classList.remove('cell-yes', 'cell-no', 'cell-empty');
+
+            if (percentage >= 50) {
+                cell.classList.add('cell-yes');
+            } else if (percentage > 0) {
+                cell.classList.add('cell-no');
+            } else {
+                cell.classList.add('cell-empty');
+            }
+        });
+    });
 }
 
 function updateButtonState(hasSubmitted) {
@@ -284,7 +361,6 @@ function updateButtonState(hasSubmitted) {
         editBtn.style.display = 'none';
         saveBtn.style.display = 'block';
         isEditing = true;
-        enableEditing();
     }
 }
 
@@ -296,22 +372,82 @@ function toggleEdit() {
     if (isEditing) {
         editBtn.style.display = 'none';
         saveBtn.style.display = 'block';
-        enableEditing();
+
+        // Convert badges to inputs with smooth transition
+        const currentRow = document.querySelector('.current-student-row');
+        const cells = currentRow.querySelectorAll('.activity-cell');
+
+        cells.forEach((cell, index) => {
+            const activityId = cell.dataset.activityId;
+            const inputType = cell.dataset.inputType;
+            const value = cell.dataset.value;
+            const target = cell.dataset.target;
+
+            if (!activityId) return; // Skip student name cell
+
+            // Fade out badge
+            cell.style.opacity = '0';
+
+            setTimeout(() => {
+                if (inputType === 'number') {
+                    cell.innerHTML = `
+                        <div class="number-input-wrapper editable-cell">
+                            <input
+                                type="number"
+                                class="activity-number-input"
+                                data-activity-id="${activityId}"
+                                data-target="${target}"
+                                data-input-type="number"
+                                value="${value || ''}"
+                                placeholder="0"
+                                min="0"
+                                max="${target * 2}"
+                            />
+                            <span class="target-label">/ ${target}</span>
+                        </div>
+                    `;
+                } else {
+                    cell.innerHTML = `
+                        <select
+                            class="activity-select editable-cell"
+                            data-activity-id="${activityId}"
+                            data-input-type="checkbox"
+                        >
+                            <option value="">-</option>
+                            <option value="yes" ${value === 'yes' ? 'selected' : ''}>Yes</option>
+                            <option value="no" ${value === 'no' ? 'selected' : ''}>No</option>
+                        </select>
+                    `;
+                }
+
+                // Fade in input
+                cell.style.opacity = '1';
+
+                // Reattach event listeners
+                attachInputEventListeners();
+            }, 150 * index); // Stagger the animations
+        });
     } else {
         editBtn.style.display = 'block';
         saveBtn.style.display = 'none';
-        disableEditing();
+
+        // Reload table to show badges again
+        loadCeteleTable();
     }
 }
 
 function enableEditing() {
     const selects = document.querySelectorAll('.current-student-row .activity-select');
+    const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
     selects.forEach(select => select.disabled = false);
+    inputs.forEach(input => input.disabled = false);
 }
 
 function disableEditing() {
     const selects = document.querySelectorAll('.current-student-row .activity-select');
+    const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
     selects.forEach(select => select.disabled = true);
+    inputs.forEach(input => input.disabled = true);
 }
 
 async function saveCetele() {
@@ -319,32 +455,26 @@ async function saveCetele() {
         // Collect activity completions
         const activityCompletions = {};
 
-        // Collect from selects
+        // Collect from number inputs
+        const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
+        inputs.forEach(input => {
+            const activityId = parseInt(input.dataset.activityId);
+            const value = parseInt(input.value);
+            activityCompletions[activityId] = isNaN(value) ? 0 : value;
+        });
+
+        // Collect from selects (checkbox activities)
         const selects = document.querySelectorAll('.current-student-row .activity-select');
         selects.forEach(select => {
             const activityId = parseInt(select.dataset.activityId);
-            const inputType = select.dataset.inputType;
-            const target = parseInt(select.dataset.target);
             const value = select.value;
 
-            if (inputType === 'number') {
-                // Convert yes/no back to number based on target
-                if (value === 'yes') {
-                    activityCompletions[activityId] = target; // Full completion
-                } else if (value === 'no') {
-                    activityCompletions[activityId] = 0; // No completion
-                } else {
-                    activityCompletions[activityId] = 0;
-                }
+            if (value === 'yes') {
+                activityCompletions[activityId] = true;
+            } else if (value === 'no') {
+                activityCompletions[activityId] = false;
             } else {
-                // For checkbox activities, store boolean
-                if (value === 'yes') {
-                    activityCompletions[activityId] = true;
-                } else if (value === 'no') {
-                    activityCompletions[activityId] = false;
-                } else {
-                    activityCompletions[activityId] = null;
-                }
+                activityCompletions[activityId] = null;
             }
         });
 
@@ -363,24 +493,96 @@ async function saveCetele() {
 
         console.log('✅ Save result:', result);
 
+        // Update button state BEFORE animation so table won't reload in edit mode
+        isEditing = false;
+        document.getElementById('editBtn').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'none';
+
+        // Animate back to badges
+        await animateToBadges(activityCompletions);
+
         // Show success modal
         showSuccessModal();
 
-        // Reload all data
+        // Reload all data to update stats/charts (table already has badges from animation)
         await loadAllData();
 
         console.log('📊 Data reloaded, submissions:', allSubmissions);
-
-        // Disable editing
-        isEditing = false;
-        disableEditing();
-        document.getElementById('editBtn').style.display = 'block';
-        document.getElementById('saveBtn').style.display = 'none';
 
     } catch (error) {
         console.error('Error saving cetele:', error);
         alert('Error saving your cetele. Please try again.');
     }
+}
+
+async function animateToBadges(activityCompletions) {
+    return new Promise((resolve) => {
+        const currentRow = document.querySelector('.current-student-row');
+        const cells = currentRow.querySelectorAll('.activity-cell');
+
+        let completed = 0;
+        const total = cells.length;
+
+        cells.forEach((cell, index) => {
+            const activityId = parseInt(cell.querySelector('[data-activity-id]')?.dataset.activityId);
+            if (!activityId) {
+                completed++;
+                if (completed === total) resolve();
+                return;
+            }
+
+            const activity = activities.find(a => a.id === activityId);
+            const value = activityCompletions[activityId];
+
+            // Calculate display value
+            let displayValue = '-';
+            let cellClass = 'cell-empty';
+
+            if (activity.input_type === 'number') {
+                if (value !== null && value !== undefined && value !== 0) {
+                    const percentage = (value / activity.target) * 100;
+                    if (percentage >= 50) {
+                        displayValue = 'Yes';
+                        cellClass = 'cell-yes';
+                    } else {
+                        displayValue = 'No';
+                        cellClass = 'cell-no';
+                    }
+                }
+            } else {
+                if (value === true) {
+                    displayValue = 'Yes';
+                    cellClass = 'cell-yes';
+                } else if (value === false) {
+                    displayValue = 'No';
+                    cellClass = 'cell-no';
+                }
+            }
+
+            // Fade out input
+            setTimeout(() => {
+                cell.style.opacity = '0';
+
+                setTimeout(() => {
+                    // Replace with badge
+                    cell.className = `activity-cell ${cellClass}`;
+                    cell.setAttribute('data-value', value || 0);
+                    cell.setAttribute('data-target', activity.target);
+                    cell.setAttribute('data-activity-id', activityId);
+                    cell.setAttribute('data-input-type', activity.input_type);
+                    cell.innerHTML = `<span class="cell-badge">${displayValue}</span>`;
+
+                    // Fade in badge
+                    cell.style.opacity = '1';
+
+                    completed++;
+                    if (completed === total) {
+                        setTimeout(resolve, 300);
+                    }
+                }, 200);
+            }, index * 100); // Stagger animation
+        });
+    });
 }
 
 async function loadPersonalStats() {
@@ -895,6 +1097,231 @@ function closeSuccessModal() {
 function logout() {
     sessionStorage.removeItem('studentId');
     window.location.href = 'student-login.html';
+}
+
+// ==================== MOBILE WIZARD SYSTEM ====================
+
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+async function openMobileWizard() {
+    if (!isMobile()) return;
+
+    // Reset wizard state
+    wizardCurrentIndex = 0;
+    wizardData = {};
+
+    // Load existing submission if available
+    const existingSubmission = await DatabaseHelper.getWeeklySubmission(currentStudentId, currentWeek);
+    if (existingSubmission) {
+        wizardData = { ...existingSubmission.activity_completions };
+    }
+
+    // Generate wizard cards
+    generateWizardCards();
+
+    // Show overlay
+    const overlay = document.getElementById('mobileWizard');
+    overlay.classList.add('active');
+    document.body.classList.add('mobile-wizard-active');
+
+    // Show first card
+    showWizardCard(0);
+}
+
+function closeMobileWizard() {
+    const overlay = document.getElementById('mobileWizard');
+    overlay.classList.remove('active');
+    document.body.classList.remove('mobile-wizard-active');
+}
+
+function generateWizardCards() {
+    const container = document.getElementById('mobileWizardCards');
+    container.innerHTML = '';
+
+    activities.forEach((activity, index) => {
+        const card = document.createElement('div');
+        card.className = 'wizard-card';
+        card.dataset.index = index;
+
+        const activityIcon = getActivityIcon(activity.name);
+        const existingValue = wizardData[activity.id];
+
+        if (activity.input_type === 'number') {
+            card.innerHTML = `
+                <div class="wizard-card-icon">${activityIcon}</div>
+                <div class="wizard-card-title">${activity.name}</div>
+                <div class="wizard-card-description">${activity.description}</div>
+                <div class="wizard-input-wrapper">
+                    <input type="number"
+                        class="wizard-number-input"
+                        id="wizard-input-${activity.id}"
+                        data-activity-id="${activity.id}"
+                        value="${existingValue || ''}"
+                        placeholder="0"
+                        min="0"
+                        max="${activity.target * 2}"
+                        inputmode="numeric">
+                    <span class="wizard-target-label">Target: ${activity.target} ${activity.unit}</span>
+                </div>
+            `;
+        } else {
+            const isYes = existingValue === true;
+            const isNo = existingValue === false;
+            card.innerHTML = `
+                <div class="wizard-card-icon">${activityIcon}</div>
+                <div class="wizard-card-title">${activity.name}</div>
+                <div class="wizard-card-description">${activity.description}</div>
+                <div class="wizard-checkbox-group">
+                    <button class="wizard-checkbox-btn ${isYes ? 'selected' : ''}"
+                        onclick="selectWizardCheckbox(${activity.id}, true)">
+                        ✓ Yes
+                    </button>
+                    <button class="wizard-checkbox-btn ${isNo ? 'selected' : ''}"
+                        onclick="selectWizardCheckbox(${activity.id}, false)">
+                        ✕ No
+                    </button>
+                </div>
+            `;
+        }
+
+        container.appendChild(card);
+    });
+}
+
+function getActivityIcon(activityName) {
+    const icons = {
+        'Kitap': '📚',
+        'Risale Sohbet 1': '💬',
+        'Risale Sohbet 2': '💬',
+        'Kuran': '📖',
+        'Kaset/Video': '🎥',
+        'Teheccud': '🌙',
+        'SWB/Dhikr': '📿'
+    };
+    return icons[activityName] || '✨';
+}
+
+function selectWizardCheckbox(activityId, value) {
+    wizardData[activityId] = value;
+
+    // Update UI
+    const card = document.querySelector(`.wizard-card[data-index="${wizardCurrentIndex}"]`);
+    const buttons = card.querySelectorAll('.wizard-checkbox-btn');
+    buttons.forEach(btn => btn.classList.remove('selected'));
+
+    if (value === true) {
+        buttons[0].classList.add('selected');
+    } else {
+        buttons[1].classList.add('selected');
+    }
+
+    // Auto-advance after selection
+    setTimeout(() => {
+        nextWizardCard();
+    }, 400);
+}
+
+function showWizardCard(index) {
+    const cards = document.querySelectorAll('.wizard-card');
+    const totalCards = cards.length;
+
+    // Update title
+    document.getElementById('mobileWizardTitle').textContent = `Activity ${index + 1} of ${totalCards}`;
+
+    // Update progress bar
+    const progressPercent = ((index + 1) / totalCards) * 100;
+    document.getElementById('wizardProgressBar').style.width = progressPercent + '%';
+
+    // Update button text
+    const nextBtn = document.getElementById('wizardNextBtn');
+    if (index === totalCards - 1) {
+        nextBtn.textContent = '✓ Submit';
+        nextBtn.classList.add('submit');
+    } else {
+        nextBtn.textContent = 'Next →';
+        nextBtn.classList.remove('submit');
+    }
+
+    // Show active card, hide others
+    cards.forEach((card, i) => {
+        card.classList.remove('active', 'exiting');
+        if (i === index) {
+            card.classList.add('active');
+        } else if (i < index) {
+            card.classList.add('exiting');
+        }
+    });
+}
+
+async function nextWizardCard() {
+    const cards = document.querySelectorAll('.wizard-card');
+    const currentCard = cards[wizardCurrentIndex];
+
+    // Save current input value if it's a number input
+    const input = currentCard.querySelector('.wizard-number-input');
+    if (input) {
+        const activityId = parseInt(input.dataset.activityId);
+        const value = parseInt(input.value) || 0;
+        wizardData[activityId] = value;
+    }
+
+    // Check if we're on the last card
+    if (wizardCurrentIndex === cards.length - 1) {
+        // Submit the data
+        await submitMobileWizard();
+        return;
+    }
+
+    // Move to next card
+    wizardCurrentIndex++;
+    showWizardCard(wizardCurrentIndex);
+}
+
+async function submitMobileWizard() {
+    try {
+        // Submit to database
+        const result = await DatabaseHelper.submitWeeklyData(
+            currentStudentId,
+            currentWeek,
+            wizardData
+        );
+
+        console.log('✅ Mobile wizard save result:', result);
+
+        // Close wizard
+        closeMobileWizard();
+
+        // Show success modal
+        showSuccessModal();
+
+        // Reload all data
+        await loadAllData();
+
+        // Reset wizard
+        wizardCurrentIndex = 0;
+        wizardData = {};
+    } catch (error) {
+        console.error('Error saving from mobile wizard:', error);
+        alert('Error saving your cetele. Please try again.');
+    }
+}
+
+// Modify existing toggleEdit to support mobile wizard
+const originalToggleEdit = typeof toggleEdit !== 'undefined' ? toggleEdit : null;
+function toggleEdit() {
+    if (isMobile()) {
+        // Open mobile wizard instead of inline editing
+        openMobileWizard();
+    } else if (originalToggleEdit) {
+        // Use desktop inline editing
+        originalToggleEdit();
+    } else {
+        // Fallback to default behavior
+        isEditing = !isEditing;
+        loadCeteleTable();
+    }
 }
 
 // Initialize when page loads
