@@ -450,6 +450,10 @@
             🔧 Quick Test Login (Coordinator)
         </button>
 
+        <button type="button" class="btn btn-success" onclick="debugLoginMentor()" style="margin-top: 0.75rem;">
+            👥 Quick Test Login (Mentor)
+        </button>
+
         <div class="back-link">
             <a href="index.html">← Back to Home</a>
         </div>
@@ -604,6 +608,62 @@
             } catch (error) {
                 console.error('Debug login error:', error);
                 showMessage(error.message || 'Debug login failed. Please run setup-debug-mode.sql in your Supabase SQL editor.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Debug Login Function for Mentor - Uses actual test data from database
+        async function debugLoginMentor() {
+            console.log('👥 Debug mentor login triggered');
+            hideMessage();
+
+            const btn = document.querySelector('.btn-success');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Logging in as debug mentor...';
+
+            try {
+                // Fetch the debug mentor user from database
+                const { data: user, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', 'mentor@test.com')
+                    .eq('role', 'mentor')
+                    .single();
+
+                if (error) {
+                    throw new Error('Debug mentor user not found. Please run setup-debug-mode.sql first!');
+                }
+
+                // Update last login
+                await supabase
+                    .from('users')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', user.id);
+
+                // Create proper session format (for auth.js compatibility)
+                const session = {
+                    role: 'admin',  // Admin dashboard expects 'admin' role
+                    identifier: user.email,
+                    userId: user.id,
+                    timestamp: Date.now(),
+                    userData: user  // Store full user data for reference
+                };
+
+                localStorage.setItem('cetele_session', JSON.stringify(session));
+                localStorage.setItem('cetele_user', JSON.stringify(user));  // Backward compatibility
+
+                showMessage('✅ Mentor debug login successful! Redirecting...', 'success');
+
+                // Redirect to admin dashboard
+                setTimeout(() => {
+                    window.location.href = 'admin-new.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Debug mentor login error:', error);
+                showMessage(error.message || 'Debug mentor login failed. Please run setup-debug-mode.sql in your Supabase SQL editor.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }

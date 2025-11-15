@@ -794,7 +794,8 @@ select.form-select option {
 .chart-container {
     position: relative;
     height: 300px;
-    padding: 1rem;
+    padding: 0;
+    margin-top: 1rem;
 }
 
 .charts-grid {
@@ -815,12 +816,13 @@ select.form-select option {
    ========================================== */
 
 .hierarchy-tree {
-    padding: 3rem;
+    padding: 2rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100%;
     overflow-x: auto;
+    width: 100%;
 }
 
 /* Tree levels */
@@ -830,6 +832,8 @@ select.form-select option {
     align-items: center;
     margin-bottom: 4rem;
     position: relative;
+    width: 100%;
+    max-width: 1400px;
 }
 
 .tree-level-label {
@@ -845,10 +849,12 @@ select.form-select option {
 /* Container for nodes at same level */
 .tree-nodes-row {
     display: flex;
-    gap: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
     align-items: flex-start;
     justify-content: center;
     position: relative;
+    width: 100%;
 }
 
 /* Individual tree node (person card) */
@@ -864,8 +870,9 @@ select.form-select option {
     backdrop-filter: blur(10px);
     border: 2px solid rgba(139, 92, 246, 0.3);
     border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    min-width: 200px;
+    padding: 1rem;
+    width: 180px;
+    flex-shrink: 0;
     text-align: center;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1321,5 +1328,384 @@ select.form-select option {
         right: 10px;
         padding: 0.6rem 0.9rem;
         font-size: 0.8rem;
+    }
+}
+
+/* ==========================================
+   ACTIVITY MODAL
+   ========================================== */
+
+.activity-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.activity-modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.activity-modal-container {
+    position: relative;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 2.5rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transform: scale(0.92) translateY(30px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-modal-overlay.active .activity-modal-container {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.close-modal {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    padding: 0;
+}
+
+.close-modal:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.modal-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.modal-subtitle {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+}
+
+.modal-input,
+.modal-textarea,
+.modal-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    resize: none;
+}
+
+.modal-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.6)' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.modal-select option {
+    background: #1a1a2e;
+    color: #ffffff;
+}
+
+.modal-input::placeholder,
+.modal-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.modal-input:focus,
+.modal-textarea:focus,
+.modal-select:focus {
+    outline: none;
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+}
+
+.field-hint {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.25rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.btn-cancel,
+.btn-submit {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.01em;
+    border: 1px solid;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.btn-submit {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: rgba(139, 92, 246, 1);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+}
+
+.btn-submit:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* MENTOR CODE CARD - FROSTED GLASS */
+.mentor-code-card {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mentor-code-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.6),
+        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.mentor-code-header {
+    margin-bottom: 2rem;
+}
+
+.mentor-code-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 24px rgba(139, 92, 246, 0.5));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.mentor-code-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.mentor-code-group {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.mentor-code-display {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.mentor-code-display::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.mentor-code-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: var(--accent-purple);
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    position: relative;
+    z-index: 1;
+    font-family: 'Courier New', monospace;
+}
+
+.mentor-code-stats {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mentor-code-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.mentor-code-stat-value {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mentor-code-info {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+}
+
+.mentor-code-info strong {
+    color: var(--accent-blue);
+}
+
+@media (max-width: 768px) {
+    .mentor-code-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .mentor-code-value {
+        font-size: 1.8rem;
+        letter-spacing: 0.1em;
+    }
+
+    .mentor-code-stat-value {
+        font-size: 2.5rem;
+    }
+
+    .activity-modal-container {
+        padding: 2rem 1.5rem;
+        max-width: 420px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .modal-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
     }
 }
