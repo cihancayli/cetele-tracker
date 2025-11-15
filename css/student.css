@@ -346,7 +346,9 @@ body::before {
     position: sticky;
     left: 0;
     z-index: 1;
-    background: transparent;
+    background: rgba(10, 11, 14, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .cetele-table tbody tr {
@@ -358,7 +360,9 @@ body::before {
 }
 
 .cetele-table tbody tr:hover td:first-child {
-    background: transparent;
+    background: rgba(10, 11, 14, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .current-student-row {
@@ -398,6 +402,22 @@ body::before {
 
 .cell-empty {
     background: rgba(255, 255, 255, 0.02);
+}
+
+/* Number-based color coding */
+.cell-full {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-left: 3px solid #10b981;
+}
+
+.cell-partial {
+    background: rgba(251, 191, 36, 0.15) !important;
+    border-left: 3px solid #fbbf24;
+}
+
+.cell-low {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-left: 3px solid #ef4444;
 }
 
 .cell-badge {
@@ -464,6 +484,89 @@ body::before {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.3);
     color: #f87171;
+}
+
+/* Number inputs */
+.activity-number-input {
+    width: 70px;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #f8fafc;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -moz-appearance: textfield;
+}
+
+.activity-number-input::-webkit-outer-spin-button,
+.activity-number-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.activity-number-input:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.activity-number-input:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.activity-number-input:focus {
+    outline: none;
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.target-label {
+    margin-left: 0.375rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Color coding for number inputs */
+.cell-full .activity-number-input {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+.cell-partial .activity-number-input {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+}
+
+.cell-low .activity-number-input {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+/* Color coding for read-only badges with numbers */
+.cell-full .cell-badge {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.cell-partial .cell-badge {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.cell-low .cell-badge {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* ==================== CHARTS ==================== */

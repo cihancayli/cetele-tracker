@@ -52,13 +52,13 @@ const MOCK_DATA = {
     ],
 
     activities: [
-        { id: 1, name: 'Kitap', description: '35 pages', type: 'reading', order_index: 1 },
-        { id: 2, name: 'Risale Sohbet 1', description: 'First session', type: 'discussion', order_index: 2 },
-        { id: 3, name: 'Risale Sohbet 2', description: 'Second session', type: 'discussion', order_index: 3 },
-        { id: 4, name: 'Kuran', description: '7 pages', type: 'reading', order_index: 4 },
-        { id: 5, name: 'Kaset/Video', description: '60 minutes', type: 'media', order_index: 5 },
-        { id: 6, name: 'Teheccud', description: '3 times', type: 'prayer', order_index: 6 },
-        { id: 7, name: 'SWB/Dhikr', description: '101/day', type: 'prayer', order_index: 7 },
+        { id: 1, name: 'Kitap', description: '35 pages', type: 'reading', target: 35, unit: 'pages', order_index: 1, input_type: 'number' },
+        { id: 2, name: 'Risale Sohbet 1', description: 'First session', type: 'discussion', target: 1, unit: 'session', order_index: 2, input_type: 'checkbox' },
+        { id: 3, name: 'Risale Sohbet 2', description: 'Second session', type: 'discussion', target: 1, unit: 'session', order_index: 3, input_type: 'checkbox' },
+        { id: 4, name: 'Kuran', description: '7 pages', type: 'reading', target: 7, unit: 'pages', order_index: 4, input_type: 'number' },
+        { id: 5, name: 'Kaset/Video', description: '60 minutes', type: 'media', target: 60, unit: 'minutes', order_index: 5, input_type: 'number' },
+        { id: 6, name: 'Teheccud', description: '3 times', type: 'prayer', target: 3, unit: 'times', order_index: 6, input_type: 'number' },
+        { id: 7, name: 'SWB/Dhikr', description: '101/day', type: 'prayer', target: 101, unit: 'per day', order_index: 7, input_type: 'number' },
     ],
 
     weeklySubmissions: []  // Will be generated below
@@ -75,31 +75,53 @@ for (let weekOffset = 0; weekOffset < 8; weekOffset++) {
 
     MOCK_DATA.students.forEach(student => {
         // Create varied completion patterns
-        const completionRate = Math.random();
         const isHighPerformer = student.id % 3 === 0; // Every 3rd student is high performer
         const isStruggling = student.id % 7 === 0; // Every 7th student struggles
 
         let completions = {};
 
         // Generate realistic activity completion
-        for (let activityId = 1; activityId <= 7; activityId++) {
-            let shouldComplete;
+        MOCK_DATA.activities.forEach(activity => {
+            if (activity.input_type === 'number') {
+                // For number inputs, generate realistic values
+                let percentage;
 
-            if (isHighPerformer) {
-                shouldComplete = Math.random() > 0.1; // 90% completion rate
-            } else if (isStruggling) {
-                shouldComplete = Math.random() > 0.6; // 40% completion rate
+                if (isHighPerformer) {
+                    percentage = 0.85 + (Math.random() * 0.2); // 85-105%
+                } else if (isStruggling) {
+                    percentage = 0.2 + (Math.random() * 0.4); // 20-60%
+                } else {
+                    percentage = 0.5 + (Math.random() * 0.4); // 50-90%
+                }
+
+                // More recent weeks have slightly better completion
+                if (weekOffset < 2) {
+                    percentage = Math.min(1.1, percentage + 0.1);
+                }
+
+                // Calculate actual value based on target
+                const value = Math.round(activity.target * percentage);
+                completions[activity.id] = Math.max(0, value);
             } else {
-                shouldComplete = Math.random() > 0.3; // 70% completion rate
-            }
+                // For checkboxes, use boolean
+                let shouldComplete;
 
-            // More recent weeks have slightly better completion
-            if (weekOffset < 2) {
-                shouldComplete = shouldComplete || (Math.random() > 0.7);
-            }
+                if (isHighPerformer) {
+                    shouldComplete = Math.random() > 0.1; // 90% completion rate
+                } else if (isStruggling) {
+                    shouldComplete = Math.random() > 0.6; // 40% completion rate
+                } else {
+                    shouldComplete = Math.random() > 0.3; // 70% completion rate
+                }
 
-            completions[activityId] = shouldComplete;
-        }
+                // More recent weeks have slightly better completion
+                if (weekOffset < 2) {
+                    shouldComplete = shouldComplete || (Math.random() > 0.7);
+                }
+
+                completions[activity.id] = shouldComplete;
+            }
+        });
 
         weeklySubmissions.push({
             id: submissionId++,
