@@ -437,66 +437,72 @@
             hideError();
 
             try {
-                // Query regions table to check if this is an ED, HS, or MS code
-                const { data: regions, error } = await supabase
-                    .from('regions')
-                    .select('*');
+                // Check if it's an ED code
+                const { data: edCodes, error: edError } = await supabase
+                    .from('ed_code')
+                    .select('*')
+                    .eq('code', code);
 
-                if (error) throw error;
+                if (edError) throw edError;
 
-                // Find matching code
-                let matchedRegion = null;
-                let codeType = null;
+                if (edCodes && edCodes.length > 0) {
+                    // It's an ED code
+                    const edCode = edCodes[0];
+                    codeData = {
+                        codeType: 'ed',
+                        state: edCode.state,
+                        division: null
+                    };
 
-                for (const region of regions) {
-                    if (region.ed_code === code) {
-                        matchedRegion = region;
-                        codeType = 'ed';
-                        break;
-                    } else if (region.hs_code === code) {
-                        matchedRegion = region;
-                        codeType = 'hs';
-                        break;
-                    } else if (region.ms_code === code) {
-                        matchedRegion = region;
-                        codeType = 'ms';
-                        break;
-                    }
-                }
+                    // Show welcome message
+                    const welcomeMsg = document.getElementById('welcomeMessage');
+                    const welcomeTitle = document.getElementById('welcomeTitle');
+                    const welcomeSubtitle = document.getElementById('welcomeSubtitle');
 
-                if (!matchedRegion) {
-                    showError('Invalid access code');
+                    welcomeTitle.textContent = `Welcome to ${edCode.state}`;
+                    welcomeSubtitle.textContent = 'Education Director';
+                    welcomeMsg.classList.add('show');
+
+                    showEdRole();
                     return;
                 }
 
-                // Store code data
-                codeData = {
-                    region: matchedRegion,
-                    codeType: codeType,
-                    division: codeType === 'hs' ? 'High School' : (codeType === 'ms' ? 'Middle School' : null)
-                };
+                // Check if it's a region code (HS or MS)
+                const { data: regionCodes, error: regionError } = await supabase
+                    .from('region_codes')
+                    .select('*')
+                    .eq('code', code);
 
-                // Show welcome message
-                const welcomeMsg = document.getElementById('welcomeMessage');
-                const welcomeTitle = document.getElementById('welcomeTitle');
-                const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+                if (regionError) throw regionError;
 
-                if (codeType === 'ed') {
-                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
-                    welcomeSubtitle.textContent = 'Education Director';
-                    showEdRole();
-                } else {
-                    const divisionName = codeType === 'hs' ? 'High School' : 'Middle School';
-                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
-                    welcomeSubtitle.textContent = divisionName;
+                if (regionCodes && regionCodes.length > 0) {
+                    // It's a region code
+                    const regionCode = regionCodes[0];
+                    codeData = {
+                        codeType: regionCode.region_name === 'High School' ? 'hs' : 'ms',
+                        state: regionCode.state,
+                        division: regionCode.region_name
+                    };
+
+                    // Show welcome message
+                    const welcomeMsg = document.getElementById('welcomeMessage');
+                    const welcomeTitle = document.getElementById('welcomeTitle');
+                    const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+
+                    welcomeTitle.textContent = `Welcome to ${regionCode.state}`;
+                    welcomeSubtitle.textContent = regionCode.region_name;
+                    welcomeMsg.classList.add('show');
+
                     showCoordinatorMentorRoles();
+                    return;
                 }
 
-                welcomeMsg.classList.add('show');
+                // Code not found in either table
+                showError('Invalid access code');
 
             } catch (error) {
                 console.error('Code verification error:', error);
-                showError('Error verifying code');
+                showError('Error verifying code: ' + error.message);
             }
         }
 
@@ -684,8 +690,8 @@
                         email,
                         password_hash: passwordHash,
                         role: actualRole,
-                        region_id: codeData.region.id,
-                        division: codeData.division,
+                        state: codeData.state,
+                        region: codeData.division,
                         is_coordinator: isCoordinator,
                         is_mentor: isMentor
                     }])
@@ -702,8 +708,8 @@
                             name: groupName,
                             grade: codeData.division || 'Mixed',
                             mentor_id: newUser.id,
-                            region_id: codeData.region.id,
-                            division: codeData.division
+                            state: codeData.state,
+                            region: codeData.division
                         }])
                         .select()
                         .single();
