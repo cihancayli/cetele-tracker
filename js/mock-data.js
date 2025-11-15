@@ -1,10 +1,16 @@
 // Mock Data for Development/Demo - FULL REALISTIC DATA
 
-// Helper to get date N weeks ago
+// Helper to get Monday of the week N weeks ago
 function getWeeksAgo(weeks) {
     const date = new Date();
     date.setDate(date.getDate() - (weeks * 7));
-    return date.toISOString().split('T')[0];
+
+    // Normalize to Monday (same logic as getWeekStartDate)
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+
+    return monday.toISOString().split('T')[0];
 }
 
 const MOCK_DATA = {
@@ -62,8 +68,10 @@ const MOCK_DATA = {
 const weeklySubmissions = [];
 let submissionId = 1;
 
+console.log('📅 Generating mock data for weeks:');
 for (let weekOffset = 0; weekOffset < 8; weekOffset++) {
     const weekDate = getWeeksAgo(weekOffset);
+    console.log(`  Week ${weekOffset}: ${weekDate}`);
 
     MOCK_DATA.students.forEach(student => {
         // Create varied completion patterns
