@@ -501,13 +501,24 @@
                 // Verify mentor code exists
                 const { data: mentorCodeData, error: codeError } = await supabase
                     .from('mentor_codes')
-                    .select('*, groups(id, name, grade, region)')
+                    .select('*')
                     .eq('code', mentorCode)
                     .eq('is_active', true)
                     .maybeSingle();
 
                 if (codeError || !mentorCodeData) {
                     throw new Error('Invalid mentor code');
+                }
+
+                // Get the group details
+                const { data: group, error: groupError } = await supabase
+                    .from('groups')
+                    .select('*')
+                    .eq('id', mentorCodeData.group_id)
+                    .single();
+
+                if (groupError || !group) {
+                    throw new Error('Group not found for this mentor code');
                 }
 
                 // Check if username already exists
@@ -526,8 +537,9 @@
                     .from('students')
                     .insert([{
                         name: fullName,
-                        grade: mentorCodeData.groups.grade,
-                        group_id: mentorCodeData.groups.id
+                        grade: group.grade,
+                        group_id: group.id,
+                        state: group.state
                     }])
                     .select()
                     .single();
@@ -545,7 +557,9 @@
                         password_hash: passwordHash,
                         role: 'student',
                         student_id: newStudent.id,
-                        mentor_id: mentorCodeData.mentor_id
+                        mentor_id: mentorCodeData.mentor_id,
+                        state: group.state,
+                        region: group.region
                     }])
                     .select()
                     .single();
