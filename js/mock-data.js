@@ -127,9 +127,14 @@ const MockDatabaseHelper = {
 
     async getWeeklySubmissions(weekStartDate, groupFilter = null) {
         let submissions = MOCK_DATA.weeklySubmissions.filter(sub => {
-            const subDate = new Date(sub.week_start_date);
-            const compareDate = new Date(weekStartDate);
-            return subDate.toDateString() === compareDate.toDateString();
+            // Compare as ISO date strings to avoid timezone issues
+            const subDateStr = typeof sub.week_start_date === 'string'
+                ? sub.week_start_date
+                : sub.week_start_date.toISOString().split('T')[0];
+            const compareDateStr = typeof weekStartDate === 'string'
+                ? weekStartDate
+                : new Date(weekStartDate).toISOString().split('T')[0];
+            return subDateStr === compareDateStr;
         });
 
         if (groupFilter) {
@@ -188,28 +193,36 @@ const MockDatabaseHelper = {
 
     async getWeeklySubmission(studentId, weekStartDate) {
         const submission = MOCK_DATA.weeklySubmissions.find(sub => {
-            const subDate = new Date(sub.week_start_date);
-            const compareDate = new Date(weekStartDate);
-            return sub.student_id == studentId &&
-                   subDate.toDateString() === compareDate.toDateString();
+            // Compare as ISO date strings to avoid timezone issues
+            const subDateStr = typeof sub.week_start_date === 'string'
+                ? sub.week_start_date
+                : sub.week_start_date.toISOString().split('T')[0];
+            const compareDateStr = typeof weekStartDate === 'string'
+                ? weekStartDate
+                : new Date(weekStartDate).toISOString().split('T')[0];
+            return sub.student_id == studentId && subDateStr === compareDateStr;
         });
         return submission || null;
     },
 
     async submitWeeklyData(studentId, weekStartDate, activityCompletions) {
-        // Normalize the date string
-        const weekDateStr = weekStartDate instanceof Date ? weekStartDate.toDateString() : new Date(weekStartDate).toDateString();
+        // Normalize to ISO date string
+        const weekDateStr = typeof weekStartDate === 'string'
+            ? weekStartDate
+            : new Date(weekStartDate).toISOString().split('T')[0];
 
         // Find existing submission
         const existingIndex = MOCK_DATA.weeklySubmissions.findIndex(sub => {
-            const subDate = new Date(sub.week_start_date);
-            return sub.student_id == studentId && subDate.toDateString() === weekDateStr;
+            const subDateStr = typeof sub.week_start_date === 'string'
+                ? sub.week_start_date
+                : sub.week_start_date.toISOString().split('T')[0];
+            return sub.student_id == studentId && subDateStr === weekDateStr;
         });
 
         const submission = {
             id: existingIndex >= 0 ? MOCK_DATA.weeklySubmissions[existingIndex].id : MOCK_DATA.weeklySubmissions.length + 1,
             student_id: parseInt(studentId),
-            week_start_date: new Date(weekStartDate),
+            week_start_date: weekDateStr, // Store as string
             activity_completions: activityCompletions,
             created_at: new Date()
         };
@@ -237,9 +250,14 @@ const MockDatabaseHelper = {
 
     async getAllSubmissionsForWeek(weekStartDate, groupId = null) {
         let submissions = MOCK_DATA.weeklySubmissions.filter(sub => {
-            const subDate = new Date(sub.week_start_date);
-            const compareDate = new Date(weekStartDate);
-            return subDate.toDateString() === compareDate.toDateString();
+            // Compare as ISO date strings to avoid timezone issues
+            const subDateStr = typeof sub.week_start_date === 'string'
+                ? sub.week_start_date
+                : sub.week_start_date.toISOString().split('T')[0];
+            const compareDateStr = typeof weekStartDate === 'string'
+                ? weekStartDate
+                : new Date(weekStartDate).toISOString().split('T')[0];
+            return subDateStr === compareDateStr;
         });
 
         // Add student and group data to submissions
