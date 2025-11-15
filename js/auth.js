@@ -21,13 +21,14 @@ function checkExistingSession() {
         if (sessionAge < 24 * 60 * 60 * 1000) {
             // Redirect to appropriate portal
             if (sessionData.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
+                window.location.href = 'admin-new.html';
+            } else if (sessionData.role === 'student') {
                 window.location.href = 'student.html';
             }
         } else {
             // Session expired
             localStorage.removeItem('cetele_session');
+            localStorage.removeItem('cetele_user');
         }
     }
 }
@@ -77,7 +78,7 @@ async function adminLogin(event) {
             createSession('admin', email, null);
             showMessage('Login successful! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = 'admin.html';
+                window.location.href = 'admin-new.html';
             }, 1000);
             return;
         }
@@ -92,22 +93,27 @@ async function adminLogin(event) {
             throw new Error('Invalid credentials. Use default: admin@cetele.app / cetele2024');
         }
 
-        // Check if user has admin role
+        // Check if user has admin-level access (admin, coordinator, ed, or mentor)
         const { data: userData } = await supabase
             .from('users')
-            .select('role')
+            .select('*')
             .eq('email', email)
             .single();
 
-        if (userData?.role !== 'admin') {
+        const allowedRoles = ['admin', 'coordinator', 'ed', 'mentor'];
+        const isAllowed = allowedRoles.includes(userData?.role) || userData?.is_coordinator || userData?.is_mentor;
+
+        if (!isAllowed) {
             throw new Error('You do not have admin access');
         }
 
-        createSession('admin', email, data.user.id);
+        // Store full user data
+        localStorage.setItem('cetele_user', JSON.stringify(userData));
+        createSession(userData.role, email, data.user.id);
         showMessage('Login successful! Redirecting...', 'success');
 
         setTimeout(() => {
-            window.location.href = 'admin.html';
+            window.location.href = 'admin-new.html';
         }, 1000);
 
     } catch (error) {
@@ -173,7 +179,7 @@ async function sendMagicLink(role) {
         const { error } = await supabase.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: window.location.origin + (role === 'admin' ? '/admin.html' : '/student.html')
+                emailRedirectTo: window.location.origin + (role === 'admin' ? '/admin-new.html' : '/student.html')
             }
         });
 

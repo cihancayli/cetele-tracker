@@ -13,9 +13,23 @@ let allSubmissions = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication
-    const session = checkAuth('admin');
-    if (!session) return;
+    // Check authentication - allow any admin-level role
+    const session = localStorage.getItem('cetele_session');
+    if (!session) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    const sessionData = JSON.parse(session);
+
+    // Check if session is expired (24 hours)
+    const sessionAge = Date.now() - sessionData.timestamp;
+    if (sessionAge > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem('cetele_session');
+        localStorage.removeItem('cetele_user');
+        window.location.href = 'login.html';
+        return;
+    }
 
     // Load user data
     currentUser = JSON.parse(localStorage.getItem('cetele_user'));
