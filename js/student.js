@@ -28,8 +28,11 @@ async function init() {
         const user = DatabaseHelper.getCurrentUser();
         currentStudentId = DatabaseHelper.getSessionStudentId();
 
+        console.log('🔍 Session check:', { user, currentStudentId });
+
         // If no session or not a student, redirect to login
         if (!currentStudentId || !user || user.role !== 'student') {
+            console.log('❌ No valid session, redirecting to login');
             window.location.href = 'student-login.html';
             return;
         }
@@ -45,10 +48,17 @@ async function init() {
     }
 
     try {
+        console.log('📥 Loading student data for ID:', currentStudentId);
+
         // Load student data
         currentStudent = await DatabaseHelper.getStudentById(currentStudentId);
+        console.log('✅ Student loaded:', currentStudent);
+
         activities = await DatabaseHelper.getActivities();
+        console.log('✅ Activities loaded:', activities);
+
         currentWeek = DatabaseHelper.getWeekStartDate();
+        console.log('✅ Current week:', currentWeek);
 
         // Update header
         updateHeader();
@@ -56,8 +66,13 @@ async function init() {
         // Load data
         await loadAllData();
     } catch (error) {
-        console.error('Initialization error:', error);
-        alert('Error loading student portal. Please try again.');
+        console.error('❌ Initialization error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            studentId: currentStudentId
+        });
+        alert(`Error loading student portal: ${error.message}\n\nPlease check the console for details.`);
     }
 }
 
