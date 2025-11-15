@@ -444,6 +444,12 @@
             </button>
         </form>
 
+        <div class="divider">Debug Mode</div>
+
+        <button type="button" class="btn btn-secondary" onclick="debugLogin()">
+            🔧 Quick Test Login (Coordinator)
+        </button>
+
         <div class="back-link">
             <a href="index.html">← Back to Home</a>
         </div>
@@ -539,11 +545,36 @@
         }
 
 
+        // Debug Login Function
+        function debugLogin() {
+            console.log('🔧 Debug login triggered');
+
+            // Create a mock coordinator session
+            const debugUser = {
+                id: 'debug-user-' + Date.now(),
+                username: 'debug_coordinator',
+                email: 'debug@test.com',
+                role: 'coordinator',
+                full_name: 'Debug Coordinator',
+                group_id: null
+            };
+
+            // Save to localStorage
+            localStorage.setItem('cetele_user', JSON.stringify(debugUser));
+
+            showMessage('Debug login successful! Redirecting...', 'success');
+
+            // Redirect to admin dashboard
+            setTimeout(() => {
+                window.location.href = 'admin.html';
+            }, 1000);
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Clear any existing session - force re-authentication
-            localStorage.removeItem('cetele_user');
-            sessionStorage.clear();
+            // Don't auto-redirect - let user manually log in
+            // This prevents infinite loops
+            console.log('Login page loaded');
         });
     </script>
 </body>

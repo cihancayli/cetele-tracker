@@ -434,7 +434,7 @@
             if (!user) {
                 alert('Please log in to access the admin portal');
                 window.location.href = 'login.html';
-                throw new Error('Not authenticated');
+                return;
             }
 
             try {
@@ -443,12 +443,15 @@
                     alert('Access denied. This portal is for administrators and mentors only.');
                     localStorage.removeItem('cetele_user');
                     window.location.href = 'login.html';
-                    throw new Error('Unauthorized');
+                    return;
                 }
+                console.log('✅ Admin authenticated:', userData.role);
             } catch (e) {
-                console.error('Invalid session data');
-                localStorage.removeItem('cetele_user');
-                window.location.href = 'login.html';
+                if (e.message !== 'Unauthorized' && e.message !== 'Not authenticated') {
+                    console.error('Invalid session data:', e);
+                    localStorage.removeItem('cetele_user');
+                    window.location.href = 'login.html';
+                }
             }
         })();
     </script>
