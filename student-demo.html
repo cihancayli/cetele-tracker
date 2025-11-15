@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cetele — Student Portal</title>
+
+    <!-- CRITICAL: Block redirects BEFORE anything else loads -->
+    <script>
+        console.log('🚫 DEMO MODE: Installing redirect blockers IMMEDIATELY');
+
+        // Store original methods
+        const _assign = window.location.assign.bind(window.location);
+        const _replace = window.location.replace.bind(window.location);
+        const _reload = window.location.reload.bind(window.location);
+
+        // Override ALL navigation methods
+        Object.defineProperties(window.location, {
+            href: {
+                get: function() { return window.location.toString(); },
+                set: function(v) { console.error('🚫 BLOCKED: location.href =', v); }
+            },
+            assign: {
+                value: function(v) { console.error('🚫 BLOCKED: location.assign()', v); }
+            },
+            replace: {
+                value: function(v) { console.error('🚫 BLOCKED: location.replace()', v); }
+            }
+        });
+
+        console.log('✅ Redirect protection installed in <head>');
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
