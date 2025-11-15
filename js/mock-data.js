@@ -220,6 +220,27 @@ const MockDatabaseHelper = {
         }
 
         return weeks;
+    },
+
+    // Auth & Session Methods (for production code compatibility)
+    getCurrentUser() {
+        const userStr = localStorage.getItem('cetele_user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
+
+    getSessionStudentId() {
+        return sessionStorage.getItem('studentId');
+    },
+
+    async getUserRegion() {
+        // Return mock region for demo
+        return {
+            id: 'demo-region-id',
+            name: 'Demo Region',
+            ed_code: 'DEMO-ED',
+            hs_code: 'DEMO-HS',
+            ms_code: 'DEMO-MS'
+        };
     }
 };
 
