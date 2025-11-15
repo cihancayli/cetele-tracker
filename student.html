@@ -177,13 +177,18 @@
                     const userData = JSON.parse(user);
                     if (userData.role !== 'student') {
                         alert('Access denied. This portal is for students only.');
+                        localStorage.removeItem('cetele_user');
+                        sessionStorage.clear();
                         window.location.href = 'login.html';
                         throw new Error('Unauthorized');
                     }
                 } catch (e) {
-                    console.error('Invalid session data');
-                    localStorage.removeItem('cetele_user');
-                    window.location.href = 'student-login.html';
+                    if (e.message !== 'Unauthorized') {
+                        console.error('Invalid session data');
+                        localStorage.removeItem('cetele_user');
+                        sessionStorage.clear();
+                        window.location.href = 'student-login.html';
+                    }
                 }
             }
         })();
