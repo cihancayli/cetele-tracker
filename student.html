@@ -160,6 +160,34 @@
     <script src="js/supabase-config.js"></script>
     <script src="js/mock-data.js"></script>
     <script src="js/db-helper.js"></script>
+    <script>
+        // Authentication guard for student portal
+        (function() {
+            const user = localStorage.getItem('cetele_user');
+            const studentId = sessionStorage.getItem('studentId');
+
+            if (!user && !studentId) {
+                alert('Please log in to access the student portal');
+                window.location.href = 'student-login.html';
+                throw new Error('Not authenticated');
+            }
+
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    if (userData.role !== 'student') {
+                        alert('Access denied. This portal is for students only.');
+                        window.location.href = 'login.html';
+                        throw new Error('Unauthorized');
+                    }
+                } catch (e) {
+                    console.error('Invalid session data');
+                    localStorage.removeItem('cetele_user');
+                    window.location.href = 'student-login.html';
+                }
+            }
+        })();
+    </script>
     <script src="js/student.js"></script>
 </body>
 </html>

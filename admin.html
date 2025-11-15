@@ -274,6 +274,31 @@
             });
         }
     </script>
+    <script>
+        // Authentication guard - REQUIRED before loading admin.js
+        (function() {
+            const user = localStorage.getItem('cetele_user');
+            if (!user) {
+                alert('Please log in to access the admin portal');
+                window.location.href = 'login.html';
+                throw new Error('Not authenticated');
+            }
+
+            try {
+                const userData = JSON.parse(user);
+                if (!['ed', 'coordinator', 'mentor'].includes(userData.role)) {
+                    alert('Access denied. This portal is for administrators and mentors only.');
+                    localStorage.removeItem('cetele_user');
+                    window.location.href = 'login.html';
+                    throw new Error('Unauthorized');
+                }
+            } catch (e) {
+                console.error('Invalid session data');
+                localStorage.removeItem('cetele_user');
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
     <script src="js/admin.js"></script>
 </body>
 </html>
