@@ -370,6 +370,16 @@
             </button>
         </form>
 
+        <!-- Debug Mode Section -->
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.15);">
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <span style="color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;">Debug Mode</span>
+            </div>
+            <button type="button" class="submit-btn" onclick="debugStudentLogin()" style="background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.3); padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                🔧 Quick Test Login (Student 1)
+            </button>
+        </div>
+
         <div class="back-link">
             <a href="index.html">← Back to Home</a>
         </div>
@@ -458,8 +468,25 @@
                     throw new Error('Invalid username or password');
                 }
 
-                // Store session
-                localStorage.setItem('cetele_user', JSON.stringify(user));
+                // Get student details
+                const { data: student } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('id', user.student_id)
+                    .single();
+
+                // Create proper session format (for auth.js compatibility)
+                const session = {
+                    role: 'student',
+                    identifier: student ? student.name : username,
+                    userId: user.student_id,
+                    timestamp: Date.now(),
+                    userData: user
+                };
+
+                localStorage.setItem('cetele_session', JSON.stringify(session));
+                localStorage.setItem('cetele_user', JSON.stringify(user));  // Backward compatibility
+                localStorage.setItem('studentId', user.student_id);
                 sessionStorage.setItem('studentId', user.student_id);
 
                 // Redirect to student dashboard
@@ -582,8 +609,18 @@
                     .update({ user_id: newUser.id })
                     .eq('id', newStudent.id);
 
-                // Store session
-                localStorage.setItem('cetele_user', JSON.stringify(newUser));
+                // Create proper session format (for auth.js compatibility)
+                const session = {
+                    role: 'student',
+                    identifier: newStudent.name,
+                    userId: newStudent.id,
+                    timestamp: Date.now(),
+                    userData: newUser
+                };
+
+                localStorage.setItem('cetele_session', JSON.stringify(session));
+                localStorage.setItem('cetele_user', JSON.stringify(newUser));  // Backward compatibility
+                localStorage.setItem('studentId', newStudent.id);
                 sessionStorage.setItem('studentId', newStudent.id);
 
                 // Success
@@ -598,6 +635,62 @@
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
+            }
+        }
+
+        // Debug Student Login Function
+        async function debugStudentLogin() {
+            console.log('🔧 Debug student login triggered');
+            hideMessages();
+
+            try {
+                // Fetch the debug student user from database
+                const { data: user, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('username', 'debug_student1')
+                    .eq('role', 'student')
+                    .single();
+
+                if (error) {
+                    throw new Error('Debug student not found. Please run setup-debug-mode.sql first!');
+                }
+
+                // Get student details
+                const { data: student, error: studentError } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('id', user.student_id)
+                    .single();
+
+                if (studentError) {
+                    throw new Error('Student details not found');
+                }
+
+                // Create proper session format (for auth.js compatibility)
+                const session = {
+                    role: 'student',
+                    identifier: student.name,
+                    userId: user.student_id,
+                    timestamp: Date.now(),
+                    userData: user  // Store full user data for reference
+                };
+
+                localStorage.setItem('cetele_session', JSON.stringify(session));
+                localStorage.setItem('cetele_user', JSON.stringify(user));  // Backward compatibility
+                localStorage.setItem('studentId', user.student_id);  // For student.html
+                sessionStorage.setItem('studentId', user.student_id);  // Session storage too
+
+                showInfo('✅ Debug login successful! Redirecting...');
+
+                // Redirect to student dashboard
+                setTimeout(() => {
+                    window.location.href = 'student.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Debug login error:', error);
+                showError(error.message || 'Debug login failed. Please run setup-debug-mode.sql in your Supabase SQL editor.');
             }
         }
     </script>
