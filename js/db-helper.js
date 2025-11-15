@@ -5,7 +5,7 @@ if (window.DatabaseHelper && window.DatabaseHelper.__isMock) {
     console.log('Skipping real DatabaseHelper - using mock data');
 } else {
 
-class DatabaseHelper {
+window.DatabaseHelper = class DatabaseHelper {
     // ==================== AUTH & SESSION ====================
 
     static getCurrentUser() {
