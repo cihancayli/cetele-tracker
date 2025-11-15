@@ -529,7 +529,7 @@
                     .maybeSingle();
 
                 if (existingUser) {
-                    throw new Error('Username already taken');
+                    throw new Error('This username is already taken. Please choose a different username.');
                 }
 
                 // Create student entry first
@@ -564,7 +564,16 @@
                     .select()
                     .single();
 
-                if (userError) throw userError;
+                if (userError) {
+                    // Handle specific database errors with friendly messages
+                    if (userError.message.includes('users_username_key')) {
+                        throw new Error('This username is already taken. Please choose a different username.');
+                    } else if (userError.message.includes('users_email_key')) {
+                        throw new Error('This email is already registered. Please use a different email or log in.');
+                    } else {
+                        throw new Error('Failed to create account. Please try again or contact support.');
+                    }
+                }
 
                 // Update student with user_id
                 await supabase
