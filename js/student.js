@@ -555,13 +555,25 @@ async function saveCetele() {
 async function animateToBadges(activityCompletions) {
     return new Promise((resolve) => {
         const currentRow = document.querySelector('.current-student-row');
+        if (!currentRow) {
+            resolve();
+            return;
+        }
+
         const cells = currentRow.querySelectorAll('.activity-cell');
 
         let completed = 0;
         const total = cells.length;
 
+        if (total === 0) {
+            resolve();
+            return;
+        }
+
         cells.forEach((cell, index) => {
-            const activityId = parseInt(cell.querySelector('[data-activity-id]')?.dataset.activityId);
+            const activityIdElement = cell.querySelector('[data-activity-id]');
+            const activityId = activityIdElement?.dataset.activityId;
+
             if (!activityId) {
                 completed++;
                 if (completed === total) resolve();
@@ -570,6 +582,13 @@ async function animateToBadges(activityCompletions) {
 
             const activity = activities.find(a => a.id === activityId);
             const value = activityCompletions[activityId];
+
+            // Skip if activity not found
+            if (!activity) {
+                completed++;
+                if (completed === total) resolve();
+                return;
+            }
 
             // Calculate display value
             let displayValue = '-';
@@ -692,12 +711,18 @@ function calculateStreak(submissions) {
 
 async function loadLeaderboard() {
     try {
-        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, 10);
+        // Get leaderboard for current week (no limit parameter - getLeaderboard takes groupId, weekStartDate)
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, currentWeek);
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
 
-        leaderboard.forEach((item, index) => {
-            const isCurrentStudent = item.id === currentStudentId;
+        // Limit to top 10
+        const top10 = leaderboard.slice(0, 10);
+
+        top10.forEach((item, index) => {
+            const studentId = item.student?.id || item.id;
+            const studentName = item.student?.name || item.name || 'Unknown';
+            const isCurrentStudent = studentId === currentStudentId;
             const percentage = Math.round(item.percentage || 0);
 
             const div = document.createElement('div');
@@ -711,8 +736,8 @@ async function loadLeaderboard() {
 
             div.innerHTML = `
                 <div class="leaderboard-rank">${medal}</div>
-                <div class="leaderboard-name">${item.name}${isCurrentStudent ? ' (You)' : ''}</div>
-                <div class="leaderboard-score">${item.score} pts</div>
+                <div class="leaderboard-name">${studentName}${isCurrentStudent ? ' (You)' : ''}</div>
+                <div class="leaderboard-score">${item.score || 0} pts</div>
                 <div class="leaderboard-bar">
                     <div class="leaderboard-fill" style="width: ${percentage}%"></div>
                 </div>
