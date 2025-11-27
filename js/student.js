@@ -169,9 +169,23 @@ async function loadCeteleTable() {
 
         // Check if current student has submitted FIRST to set isEditing before rendering
         const mySubmission = allSubmissions.find(s => s.student_id == currentStudentId);
-        const hasSubmitted = !!mySubmission;
+        // Only count as "submitted" if there's actual data in the submission
+        const hasActualData = mySubmission && mySubmission.activity_completions &&
+            Object.keys(mySubmission.activity_completions).length > 0 &&
+            Object.values(mySubmission.activity_completions).some(v => v !== null && v !== undefined);
+        const hasSubmitted = hasActualData;
         const currentWeekStart = DatabaseHelper.getWeekStartDate();
         const isCurrentWeek = currentWeek === currentWeekStart;
+
+        console.log('🔍 Submission check:', {
+            currentStudentId,
+            mySubmission,
+            hasActualData,
+            hasSubmitted,
+            currentWeek,
+            currentWeekStart,
+            isCurrentWeek
+        });
 
         // Set isEditing state BEFORE rendering
         if (hasSubmitted) {
@@ -405,7 +419,7 @@ function updateButtonState(hasSubmitted) {
     const currentWeekStart = DatabaseHelper.getWeekStartDate();
     const isCurrentWeek = currentWeek === currentWeekStart;
 
-    console.log('🔘 updateButtonState:', { hasSubmitted, isCurrentWeek, currentWeek, currentWeekStart });
+    console.log('🔘 updateButtonState:', { hasSubmitted, isCurrentWeek, currentWeek, currentWeekStart, isEditing });
 
     if (hasSubmitted) {
         // Already submitted - show Edit button (if current week, they can edit)
