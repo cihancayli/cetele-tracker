@@ -167,6 +167,23 @@ async function loadCeteleTable() {
             allSubmissions: allSubmissions
         });
 
+        // Check if current student has submitted FIRST to set isEditing before rendering
+        const mySubmission = allSubmissions.find(s => s.student_id == currentStudentId);
+        const hasSubmitted = !!mySubmission;
+        const currentWeekStart = DatabaseHelper.getWeekStartDate();
+        const isCurrentWeek = currentWeek === currentWeekStart;
+
+        // Set isEditing state BEFORE rendering
+        if (hasSubmitted) {
+            isEditing = false;
+        } else if (isCurrentWeek) {
+            isEditing = true; // Auto-enable editing for current week with no submission
+        } else {
+            isEditing = false; // Can't edit past weeks
+        }
+
+        console.log('📝 Editing state:', { hasSubmitted, isCurrentWeek, isEditing });
+
         // Build table headers
         const headerRow = document.querySelector('#ceteleTable thead tr');
         let headersHTML = '<th class="student-col">Student</th>';
@@ -178,10 +195,6 @@ async function loadCeteleTable() {
         // Build table body
         const tbody = document.getElementById('ceteleTableBody');
         tbody.innerHTML = '';
-
-        // Check if current student has submitted
-        const mySubmission = allSubmissions.find(s => s.student_id == currentStudentId);
-        const hasSubmitted = !!mySubmission;
 
         console.log('👤 My submission:', mySubmission);
 
@@ -389,15 +402,35 @@ function attachInputEventListeners() {
 function updateButtonState(hasSubmitted) {
     const editBtn = document.getElementById('editBtn');
     const saveBtn = document.getElementById('saveBtn');
+    const currentWeekStart = DatabaseHelper.getWeekStartDate();
+    const isCurrentWeek = currentWeek === currentWeekStart;
+
+    console.log('🔘 updateButtonState:', { hasSubmitted, isCurrentWeek, currentWeek, currentWeekStart });
 
     if (hasSubmitted) {
-        editBtn.style.display = 'block';
+        // Already submitted - show Edit button (if current week, they can edit)
+        if (isCurrentWeek) {
+            editBtn.style.display = 'block';
+            editBtn.textContent = 'Edit Changes';
+        } else {
+            editBtn.style.display = 'none'; // Can't edit past weeks
+        }
         saveBtn.style.display = 'none';
         isEditing = false;
     } else {
-        editBtn.style.display = 'none';
-        saveBtn.style.display = 'block';
-        isEditing = true;
+        // Not submitted yet
+        if (isCurrentWeek) {
+            // Current week, no submission - auto-enable editing
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'block';
+            saveBtn.textContent = 'Save Changes';
+            isEditing = true;
+        } else {
+            // Past week, no submission - can't edit anymore
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'none';
+            isEditing = false;
+        }
     }
 }
 
@@ -495,7 +528,7 @@ async function saveCetele() {
         // Collect from number inputs
         const inputs = document.querySelectorAll('.current-student-row .activity-number-input');
         inputs.forEach(input => {
-            const activityId = parseInt(input.dataset.activityId);
+            const activityId = input.dataset.activityId; // Keep as string (UUID)
             const value = parseInt(input.value);
             activityCompletions[activityId] = isNaN(value) ? 0 : value;
         });
@@ -503,7 +536,7 @@ async function saveCetele() {
         // Collect from selects (checkbox activities)
         const selects = document.querySelectorAll('.current-student-row .activity-select');
         selects.forEach(select => {
-            const activityId = parseInt(select.dataset.activityId);
+            const activityId = select.dataset.activityId; // Keep as string (UUID)
             const value = select.value;
 
             if (value === 'yes') {
@@ -821,13 +854,19 @@ function goToCurrentWeek() {
 function isWeekAllowed(weekString) {
     const weekDate = new Date(weekString);
     const today = new Date();
+    const currentWeekStart = DatabaseHelper.getWeekStartDate();
 
-    // Calculate the Saturday of the week at midnight
+    // Current week is ALWAYS allowed
+    if (weekString === currentWeekStart) {
+        return true;
+    }
+
+    // For past weeks: Calculate the Saturday of the week at midnight
     const saturdayOfWeek = new Date(weekDate);
     saturdayOfWeek.setDate(saturdayOfWeek.getDate() + 5); // Monday + 5 = Saturday
     saturdayOfWeek.setHours(0, 0, 0, 0);
 
-    // Week is accessible if today is >= Saturday of that week
+    // Past week is accessible if today is >= Saturday of that week
     return today >= saturdayOfWeek;
 }
 
@@ -1324,7 +1363,7 @@ async function nextWizardCard() {
     // Save current input value if it's a number input
     const input = currentCard.querySelector('.wizard-number-input');
     if (input) {
-        const activityId = parseInt(input.dataset.activityId);
+        const activityId = input.dataset.activityId; // Keep as string (UUID)
         const value = parseInt(input.value) || 0;
         wizardData[activityId] = value;
     }
