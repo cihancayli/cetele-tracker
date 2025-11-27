@@ -448,7 +448,7 @@ function updateButtonState(hasSubmitted) {
     }
 }
 
-function toggleEdit() {
+function desktopToggleEdit() {
     isEditing = !isEditing;
     const editBtn = document.getElementById('editBtn');
     const saveBtn = document.getElementById('saveBtn');
@@ -459,6 +459,8 @@ function toggleEdit() {
 
         // Convert badges to inputs with smooth transition
         const currentRow = document.querySelector('.current-student-row');
+        if (!currentRow) return;
+
         const cells = currentRow.querySelectorAll('.activity-cell');
 
         cells.forEach((cell, index) => {
@@ -1423,19 +1425,14 @@ async function submitMobileWizard() {
     }
 }
 
-// Modify existing toggleEdit to support mobile wizard
-const originalToggleEdit = typeof toggleEdit !== 'undefined' ? toggleEdit : null;
+// Toggle edit - routes to mobile wizard or desktop editing
 function toggleEdit() {
     if (isMobile()) {
         // Open mobile wizard instead of inline editing
         openMobileWizard();
-    } else if (originalToggleEdit) {
-        // Use desktop inline editing
-        originalToggleEdit();
     } else {
-        // Fallback to default behavior
-        isEditing = !isEditing;
-        loadCeteleTable();
+        // Use desktop inline editing
+        desktopToggleEdit();
     }
 }
 
