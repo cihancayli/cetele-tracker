@@ -151,8 +151,43 @@ const MockDatabaseHelper = {
         return [...MOCK_DATA.groups];
     },
 
-    async getActivities() {
+    async getActivities(groupId = null) {
+        if (groupId) {
+            // Return only activities for this specific group
+            return MOCK_DATA.activities.filter(a => a.group_id === groupId);
+        }
         return [...MOCK_DATA.activities];
+    },
+
+    async getActivitiesForGroup(groupId) {
+        if (!groupId) {
+            console.warn('No groupId provided to getActivitiesForGroup');
+            return [];
+        }
+        const activities = MOCK_DATA.activities.filter(a => a.group_id === groupId);
+        console.log(`📋 Mock: Loaded ${activities.length} activities for group ${groupId}`);
+        return activities;
+    },
+
+    async getAllActivities() {
+        return [...MOCK_DATA.activities];
+    },
+
+    async createActivity(name, description, inputType, orderIndex, target = null, unit = null, groupId = null) {
+        const newActivity = {
+            id: 'mock-' + Date.now(),
+            name,
+            description,
+            input_type: inputType,
+            order_index: orderIndex,
+            target,
+            unit,
+            group_id: groupId,
+            created_at: new Date()
+        };
+        MOCK_DATA.activities.push(newActivity);
+        console.log('📋 Mock: Created activity', newActivity);
+        return newActivity;
     },
 
     async getWeeklySubmissions(weekStartDate, groupFilter = null) {
@@ -349,10 +384,12 @@ const MockDatabaseHelper = {
     }
 };
 
-// Debug mode - Check URL parameter or localStorage
+// Debug mode - ONLY enabled with explicit ?debug=true URL parameter
+// localStorage is no longer used to prevent accidental mock mode
 function isDebugMode() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('debug') === 'true' || localStorage.getItem('cetele_debug') === 'true';
+    // Only enable mock mode if URL explicitly has ?debug=true
+    return urlParams.get('debug') === 'true';
 }
 
 // Enable debug mode from console: enableDebugMode()

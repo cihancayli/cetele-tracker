@@ -6,6 +6,75 @@ let charts = {};
 let currentUser = null;
 let userRegion = null;
 
+// ==================== TOAST NOTIFICATION SYSTEM ====================
+
+function showToast(message, type = 'success') {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-message">${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ==================== CONFIRMATION MODAL ====================
+
+function showConfirmModal(title, message, onConfirm) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('confirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h2 id="confirmModalTitle">Confirm</h2>
+                    <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmModalMessage" style="color: rgba(255,255,255,0.8); line-height: 1.6;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+                    <button class="btn-danger" id="confirmModalBtn">Confirm</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    confirmBtn.onclick = () => {
+        closeModal('confirmModal');
+        onConfirm();
+    };
+
+    modal.style.display = 'flex';
+}
+
 // Initialize Dashboard
 async function init() {
     try {
@@ -388,7 +457,7 @@ async function loadGroups() {
 }
 
 function showAddGroupModal() {
-    document.getElementById('addGroupModal').style.display = 'block';
+    document.getElementById('addGroupModal').style.display = 'flex';
 }
 
 async function addGroup() {
@@ -397,12 +466,12 @@ async function addGroup() {
         const grade = document.getElementById('groupGrade').value.trim();
 
         if (!name || !grade) {
-            alert('Please fill in all fields');
+            showToast('Please fill in all fields', 'error');
             return;
         }
 
         await DatabaseHelper.createGroup(name, grade);
-        alert('Group added successfully!');
+        showToast('Group added successfully!', 'success');
 
         closeModal('addGroupModal');
         document.getElementById('groupName').value = '';
@@ -412,7 +481,7 @@ async function addGroup() {
         await loadGroups();
     } catch (error) {
         console.error('Error adding group:', error);
-        alert('Error adding group. Please try again.');
+        showToast('Error adding group. Please try again.', 'error');
     }
 }
 
@@ -470,7 +539,7 @@ async function loadStudents() {
 }
 
 function showAddStudentModal() {
-    document.getElementById('addStudentModal').style.display = 'block';
+    document.getElementById('addStudentModal').style.display = 'flex';
 }
 
 async function addStudent() {
@@ -480,12 +549,12 @@ async function addStudent() {
         const groupId = document.getElementById('studentGroup').value || null;
 
         if (!name || !grade) {
-            alert('Please fill in all required fields');
+            showToast('Please fill in all required fields', 'error');
             return;
         }
 
         await DatabaseHelper.createStudent(name, grade, groupId);
-        alert('Student added successfully!');
+        showToast('Student added successfully!', 'success');
 
         closeModal('addStudentModal');
         document.getElementById('studentName').value = '';
@@ -495,7 +564,7 @@ async function addStudent() {
         await loadStudents();
     } catch (error) {
         console.error('Error adding student:', error);
-        alert('Error adding student. Please try again.');
+        showToast('Error adding student. Please try again.', 'error');
     }
 }
 
@@ -763,7 +832,10 @@ async function renderPerformanceCards(groupFilter) {
 // ==================== MODAL FUNCTIONS ====================
 
 function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Close modal when clicking outside
@@ -773,12 +845,25 @@ window.onclick = function (event) {
     }
 }
 
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+    }
+});
+
 // ==================== LOGOUT ====================
 
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
+    showConfirmModal('Logout', 'Are you sure you want to logout?', () => {
+        localStorage.removeItem('cetele_user');
         window.location.href = 'index.html';
-    }
+    });
 }
 
 // ==================== CETELE MANAGEMENT ====================
@@ -876,12 +961,12 @@ async function saveNewActivity() {
         const orderIndex = parseInt(document.getElementById('newActivityOrder').value);
 
         if (!name) {
-            alert('Please enter an activity name');
+            showToast('Please enter an activity name', 'error');
             return;
         }
 
         if (inputType === 'number' && (!target || !unit)) {
-            alert('Please enter target amount and unit for number-based activities');
+            showToast('Please enter target amount and unit for number-based activities', 'error');
             return;
         }
 
@@ -899,11 +984,11 @@ async function saveNewActivity() {
         document.getElementById('newActivityUnit').value = '';
         document.getElementById('newActivityOrder').value = '8';
 
-        alert('✅ Activity added successfully!');
+        showToast('Activity added successfully!', 'success');
 
     } catch (error) {
         console.error('Error saving activity:', error);
-        alert('Error saving activity. Please try again.');
+        showToast('Error saving activity. Please try again.', 'error');
     }
 }
 
@@ -913,13 +998,13 @@ async function openEditActivityModal(activityId) {
         const activity = activities.find(a => a.id === activityId);
 
         if (!activity) {
-            alert('Activity not found');
+            showToast('Activity not found', 'error');
             return;
         }
 
         // Check if this is a custom activity
         if (!activity.group_id) {
-            alert('Cannot edit default activities. You can only edit custom activities you created.');
+            showToast('Cannot edit default activities. You can only edit custom activities you created.', 'error');
             return;
         }
 
@@ -940,7 +1025,7 @@ async function openEditActivityModal(activityId) {
 
     } catch (error) {
         console.error('Error opening edit modal:', error);
-        alert('Error loading activity details.');
+        showToast('Error loading activity details.', 'error');
     }
 }
 
@@ -966,12 +1051,12 @@ async function saveEditedActivity() {
         const orderIndex = parseInt(document.getElementById('editActivityOrder').value);
 
         if (!name) {
-            alert('Please enter an activity name');
+            showToast('Please enter an activity name', 'error');
             return;
         }
 
         if (inputType === 'number' && (!target || !unit)) {
-            alert('Please enter target amount and unit for number-based activities');
+            showToast('Please enter target amount and unit for number-based activities', 'error');
             return;
         }
 
@@ -984,27 +1069,29 @@ async function saveEditedActivity() {
         // Close modal
         closeModal('editActivityModal');
 
-        alert('✅ Activity updated successfully!');
+        showToast('Activity updated successfully!', 'success');
 
     } catch (error) {
         console.error('Error updating activity:', error);
-        alert('Error updating activity. Please try again.');
+        showToast('Error updating activity. Please try again.', 'error');
     }
 }
 
 async function deleteActivity(activityId) {
-    if (!confirm('Are you sure you want to delete this custom activity? This action cannot be undone.')) {
-        return;
-    }
-
-    try {
-        await DatabaseHelper.deleteActivity(activityId);
-        await loadCeteleManagement();
-        alert('✅ Activity deleted successfully!');
-    } catch (error) {
-        console.error('Error deleting activity:', error);
-        alert('Error deleting activity. Please try again.');
-    }
+    showConfirmModal(
+        'Delete Activity',
+        'Are you sure you want to delete this custom activity? This action cannot be undone.',
+        async () => {
+            try {
+                await DatabaseHelper.deleteActivity(activityId);
+                await loadCeteleManagement();
+                showToast('Activity deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting activity:', error);
+                showToast('Error deleting activity. Please try again.', 'error');
+            }
+        }
+    );
 }
 
 // Initialize when page loads

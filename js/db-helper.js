@@ -115,13 +115,29 @@ window.DatabaseHelper = class DatabaseHelper {
     }
 
     static async getStudentById(studentId) {
+        console.log('📥 getStudentById called with:', studentId);
+
+        if (!studentId) {
+            console.error('❌ No studentId provided to getStudentById');
+            return null;
+        }
+
         const { data, error } = await supabase
             .from('students')
             .select('*, groups(*)')
             .eq('id', studentId)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ getStudentById error:', error);
+            // Don't throw on PGRST116 (no rows found) - just return null
+            if (error.code === 'PGRST116') {
+                return null;
+            }
+            throw error;
+        }
+
+        console.log('✅ getStudentById found:', data);
         return data;
     }
 
@@ -177,7 +193,48 @@ window.DatabaseHelper = class DatabaseHelper {
         return data;
     }
 
-    static async getActivities() {
+    static async getActivities(groupId = null) {
+        let query = supabase
+            .from('activities')
+            .select('*');
+
+        // If groupId is provided, filter to show only:
+        // 1. Activities specific to this group (group_id = groupId)
+        // 2. Global activities (group_id is null) - only if no group-specific ones exist
+        if (groupId) {
+            // First, get group-specific activities
+            query = query.eq('group_id', groupId);
+        }
+
+        query = query.order('order_index');
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        return data;
+    }
+
+    // Get activities for a student's group (only group-specific activities)
+    static async getActivitiesForGroup(groupId) {
+        if (!groupId) {
+            console.warn('No groupId provided to getActivitiesForGroup');
+            return [];
+        }
+
+        const { data, error } = await supabase
+            .from('activities')
+            .select('*')
+            .eq('group_id', groupId)
+            .order('order_index');
+
+        if (error) throw error;
+
+        console.log(`📋 Loaded ${data?.length || 0} activities for group ${groupId}`);
+        return data || [];
+    }
+
+    // Get all activities (global + group-specific) - for admin views
+    static async getAllActivities() {
         const { data, error } = await supabase
             .from('activities')
             .select('*')

@@ -920,3 +920,289 @@ tr:hover td {
     border-radius: 12px;
     overflow: hidden;
 }
+
+/* ==================== TOAST NOTIFICATIONS ==================== */
+
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 400px;
+}
+
+.toast-notification.show {
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+}
+
+.toast-message {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.toast-success {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.toast-error {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.toast-info {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.15);
+}
+
+/* ==================== MODAL IMPROVEMENTS ==================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: rgba(15, 15, 20, 0.95);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.75rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.modal-header .close {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.modal-header .close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 24px 24px;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Form inputs in modals */
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.modal .form-group input:focus,
+.modal .form-group select:focus,
+.modal .form-group textarea:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.modal .form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Number input styling */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Table container scroll */
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.data-table thead {
+    background: rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 1rem 1.25rem;
+    color: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+.data-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+    .toast-notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+
+    .modal {
+        padding: 1rem;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        border-radius: 20px;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column-reverse;
+    }
+
+    .modal-footer button {
+        width: 100%;
+    }
+}

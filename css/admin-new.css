@@ -1709,3 +1709,240 @@ select.form-select option {
         width: 100%;
     }
 }
+
+/* ==========================================
+   TOAST NOTIFICATIONS
+   ========================================== */
+
+.toast-notification {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: rgba(10, 11, 14, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 420px;
+}
+
+.toast-notification.show {
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.toast-success {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(10, 11, 14, 0.95));
+}
+
+.toast-error {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(10, 11, 14, 0.95));
+}
+
+.toast-info {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(10, 11, 14, 0.95));
+}
+
+/* ==========================================
+   CONFIRM MODAL
+   ========================================== */
+
+#confirmModalOverlay.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 1rem;
+}
+
+#confirmModalOverlay.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+#confirmModalOverlay .modal-card {
+    background: rgba(15, 16, 22, 0.98);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    width: 100%;
+    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#confirmModalOverlay.active .modal-card {
+    transform: scale(1) translateY(0);
+}
+
+#confirmModalOverlay .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#confirmModalOverlay .modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+#confirmModalOverlay .modal-close {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+#confirmModalOverlay .modal-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+#confirmModalOverlay .modal-body {
+    padding: 2rem;
+}
+
+#confirmModalOverlay .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 24px 24px;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1)) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    color: #f87171 !important;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.2)) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+/* ==========================================
+   LOADING OVERLAY
+   ========================================== */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--accent-purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-content p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* ==========================================
+   RESPONSIVE FIXES
+   ========================================== */
+
+@media (max-width: 768px) {
+    .toast-notification {
+        left: 16px;
+        right: 16px;
+        max-width: none;
+        top: 16px;
+    }
+
+    #confirmModalOverlay .modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    #confirmModalOverlay .modal-footer .btn {
+        width: 100%;
+    }
+}

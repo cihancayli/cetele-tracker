@@ -54,8 +54,23 @@ async function init() {
         currentStudent = await DatabaseHelper.getStudentById(currentStudentId);
         console.log('✅ Student loaded:', currentStudent);
 
-        activities = await DatabaseHelper.getActivities();
-        console.log('✅ Activities loaded:', activities);
+        if (!currentStudent) {
+            throw new Error('Student not found. Please login again.');
+        }
+
+        // Load activities for this student's group only
+        if (currentStudent.group_id) {
+            activities = await DatabaseHelper.getActivitiesForGroup(currentStudent.group_id);
+            console.log(`✅ Activities loaded for group ${currentStudent.group_id}:`, activities);
+        } else {
+            // Fallback: if no group, show no activities (mentor needs to set up cetele)
+            activities = [];
+            console.log('⚠️ No group assigned to student, no activities to show');
+        }
+
+        if (activities.length === 0) {
+            console.log('⚠️ No activities found for this group. Mentor needs to create/adopt activities.');
+        }
 
         currentWeek = DatabaseHelper.getWeekStartDate();
         console.log('✅ Current week:', currentWeek);
@@ -70,7 +85,8 @@ async function init() {
         console.error('Error details:', {
             message: error.message,
             stack: error.stack,
-            studentId: currentStudentId
+            studentId: currentStudentId,
+            currentStudent: currentStudent
         });
         alert(`Error loading student portal: ${error.message}\n\nPlease check the console for details.`);
     }
@@ -97,13 +113,19 @@ async function loadAllData() {
 }
 
 function updateHeader() {
+    if (!currentStudent) {
+        document.getElementById('groupTitle').textContent = 'Loading...';
+        document.getElementById('studentName').textContent = '';
+        return;
+    }
+
     // Update group title
     const groupName = currentStudent.groups?.name || 'No Group';
-    const grade = currentStudent.groups?.grade || currentStudent.grade;
-    document.getElementById('groupTitle').textContent = `${groupName} - ${grade}`;
+    const grade = currentStudent.groups?.grade || currentStudent.grade || '';
+    document.getElementById('groupTitle').textContent = `${groupName}${grade ? ' - ' + grade : ''}`;
 
     // Update student name (First name + Last initial)
-    const nameParts = currentStudent.name.split(' ');
+    const nameParts = (currentStudent.name || 'Student').split(' ');
     const firstName = nameParts[0];
     const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0) + '.' : '';
     document.getElementById('studentName').textContent = `${firstName} ${lastInitial}`;

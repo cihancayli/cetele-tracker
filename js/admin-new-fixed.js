@@ -2,6 +2,112 @@
 // CETELE ADMIN DASHBOARD - FIXED VERSION
 // ==========================================
 
+// ==================== TOAST NOTIFICATION SYSTEM ====================
+
+function showToast(message, type = 'success') {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-message">${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ==================== CONFIRMATION MODAL ====================
+
+function showConfirmModal(title, message, onConfirm, confirmText = 'Confirm', isDanger = true) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('confirmModalOverlay');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModalOverlay';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-card" style="max-width: 420px;">
+                <div class="modal-header">
+                    <h2 id="confirmModalTitle">Confirm</h2>
+                    <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmModalMessage" style="color: rgba(255,255,255,0.8); line-height: 1.6; margin: 0;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                    <button class="btn" id="confirmModalBtn">Confirm</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    confirmBtn.textContent = confirmText;
+    confirmBtn.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+    confirmBtn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+    };
+
+    modal.classList.add('active');
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModalOverlay');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// ==================== LOADING OVERLAY ====================
+
+function showLoading(message = 'Loading...') {
+    let overlay = document.getElementById('loadingOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loadingOverlay';
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = `
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingMessage">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    } else {
+        document.getElementById('loadingMessage').textContent = message;
+    }
+    overlay.classList.add('active');
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
 // Global State
 let currentPage = 'overview';
 let currentUser = null;
@@ -37,8 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Current user:', currentUser);
 
     if (!currentUser) {
-        alert('User data not found. Please login again.');
-        window.location.href = 'login.html';
+        showToast('User data not found. Please login again.', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1500);
         return;
     }
 
@@ -132,11 +238,11 @@ function hasPermission(permission) {
 }
 
 function logout() {
-    if (confirm('Are you sure you want to sign out?')) {
+    showConfirmModal('Sign Out', 'Are you sure you want to sign out?', () => {
         localStorage.removeItem('cetele_session');
         localStorage.removeItem('cetele_user');
         window.location.href = 'login.html';
-    }
+    }, 'Sign Out', false);
 }
 
 // ==========================================
@@ -304,7 +410,7 @@ async function loadAllData() {
 
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Error loading data. Please check console for details.');
+        showToast('Error loading data. Please check console for details.', 'error');
     }
 }
 
@@ -343,7 +449,7 @@ async function loadPageData(pageName) {
         }
     } catch (error) {
         console.error('Error loading page data:', error);
-        alert('Error loading page. Check console for details.');
+        showToast('Error loading page. Check console for details.', 'error');
     }
 }
 
@@ -1218,7 +1324,7 @@ async function loadGroupsData() {
 }
 
 function showCreateGroupModal() {
-    alert('Create group modal coming soon! For now, use Supabase dashboard to create groups.');
+    showToast('Create group modal coming soon! For now, use Supabase dashboard to create groups.', 'info');
 }
 
 async function deleteGroup(groupId) {
@@ -1229,42 +1335,42 @@ async function deleteGroup(groupId) {
     // Coordinators and EDs can delete groups
     if (!hasPermission('delete_group') && currentUser.role !== 'coordinator' && currentUser.role !== 'ed' && !currentUser.is_coordinator) {
         console.log('Permission denied for deleting group');
-        alert('You do not have permission to delete groups.');
+        showToast('You do not have permission to delete groups.', 'error');
         return;
     }
 
-    if (!confirm('Are you sure you want to delete this group? This will remove all students from the group.')) {
-        console.log('User cancelled deletion');
-        return;
-    }
+    showConfirmModal('Delete Group', 'Are you sure you want to delete this group? This will remove all students from the group.', async () => {
+        try {
+            showLoading('Deleting group...');
+            console.log('Attempting to delete group from database...');
 
-    try {
-        console.log('Attempting to delete group from database...');
+            const { error, data } = await supabase
+                .from('groups')
+                .delete()
+                .eq('id', groupId)
+                .select();
 
-        const { error, data } = await supabase
-            .from('groups')
-            .delete()
-            .eq('id', groupId)
-            .select();
+            console.log('Delete result:', { error, data });
 
-        console.log('Delete result:', { error, data });
+            if (error) throw error;
 
-        if (error) throw error;
+            console.log('Group deleted from database, reloading data...');
 
-        console.log('Group deleted from database, reloading data...');
+            await loadAllData();
+            console.log('Data reloaded, refreshing groups list...');
 
-        await loadAllData();
-        console.log('Data reloaded, refreshing groups list...');
+            await loadGroupsData();
+            console.log('Groups list refreshed');
 
-        await loadGroupsData();
-        console.log('Groups list refreshed');
-
-        alert('Group deleted successfully!');
-    } catch (error) {
-        console.error('Error deleting group:', error);
-        console.error('Error details:', error.message, error.code, error.hint);
-        alert('Failed to delete group: ' + error.message);
-    }
+            hideLoading();
+            showToast('Group deleted successfully!', 'success');
+        } catch (error) {
+            hideLoading();
+            console.error('Error deleting group:', error);
+            console.error('Error details:', error.message, error.code, error.hint);
+            showToast('Failed to delete group: ' + error.message, 'error');
+        }
+    }, 'Delete Group');
 }
 
 // ==========================================
@@ -1330,7 +1436,7 @@ function filterStudents() {
 }
 
 function showAddStudentModal() {
-    alert('Add student modal coming soon! For now, students can sign up using the student portal.');
+    showToast('Add student modal coming soon! For now, students can sign up using the student portal.', 'info');
 }
 
 async function deleteStudent(studentId) {
@@ -1347,18 +1453,15 @@ async function deleteStudent(studentId) {
     if (!canDelete) {
         logPermission('Delete Student', false);
         logError('Delete Student', 'User does not have coordinator/ED role');
-        alert('You do not have permission to delete students.');
+        showToast('You do not have permission to delete students.', 'error');
         return;
     }
 
     logPermission('Delete Student', true);
 
-    if (!confirm(`Are you sure you want to delete ${studentName}? This will also delete all their submissions.`)) {
-        logWarning('Delete Student', 'User cancelled deletion');
-        return;
-    }
-
-    try {
+    showConfirmModal('Delete Student', `Are you sure you want to delete ${studentName}? This will also delete all their submissions.`, async () => {
+        try {
+            showLoading('Deleting student...');
         logOperation('Database Delete', `Starting deletion for: ${studentName}`);
 
         // First delete submissions
@@ -1389,8 +1492,9 @@ async function deleteStudent(studentId) {
         }
 
         if (!data || data.length === 0) {
+            hideLoading();
             logWarning('Delete Student', 'No rows deleted - student may not exist or RLS policy blocking delete');
-            alert('Failed to delete student. The student may not exist, or you may not have permission. Check the debug console for details.');
+            showToast('Failed to delete student. The student may not exist, or you may not have permission.', 'error');
             return;
         }
 
@@ -1406,27 +1510,30 @@ async function deleteStudent(studentId) {
         filterStudents();
         logSuccess('Refresh UI', 'Students table updated');
 
+        hideLoading();
         logSuccess('DELETE COMPLETE', `${studentName} has been permanently deleted`);
-        alert(`Student "${studentName}" deleted successfully!`);
+        showToast(`Student "${studentName}" deleted successfully!`, 'success');
 
-    } catch (error) {
-        logError('Delete Student Failed', error.message);
-        logDatabase('Error Details', 'FULL ERROR', {
-            message: error.message,
-            code: error.code,
-            hint: error.hint,
-            details: error.details
-        });
+        } catch (error) {
+            hideLoading();
+            logError('Delete Student Failed', error.message);
+            logDatabase('Error Details', 'FULL ERROR', {
+                message: error.message,
+                code: error.code,
+                hint: error.hint,
+                details: error.details
+            });
 
-        let errorMessage = 'Failed to delete student: ' + error.message;
+            let errorMessage = 'Failed to delete student: ' + error.message;
 
-        if (error.message.includes('row-level security')) {
-            errorMessage += '\n\n🔒 This is a database permission error. You need to update the RLS policies in Supabase. See FIX-RLS-POLICIES.sql';
-            logError('RLS Policy Error', 'Run FIX-RLS-POLICIES.sql in Supabase to fix this');
+            if (error.message.includes('row-level security')) {
+                errorMessage = 'Database permission error. Please check RLS policies.';
+                logError('RLS Policy Error', 'Run FIX-RLS-POLICIES.sql in Supabase to fix this');
+            }
+
+            showToast(errorMessage, 'error');
         }
-
-        alert(errorMessage);
-    }
+    }, 'Delete Student');
 }
 
 // ==========================================
@@ -1894,13 +2001,13 @@ function copyMentorCode() {
     const code = document.getElementById('mentorCodeDisplay').textContent;
     if (code && code !== 'Loading...' && code !== 'No code assigned' && code !== 'Not a mentor' && !code.includes('Error')) {
         navigator.clipboard.writeText(code).then(() => {
-            alert('Mentor code copied to clipboard!');
+            showToast('Mentor code copied to clipboard!', 'success');
         }).catch(err => {
             console.error('Failed to copy:', err);
-            alert('Failed to copy code. Please copy manually: ' + code);
+            showToast('Failed to copy code. Please copy manually: ' + code, 'error');
         });
     } else {
-        alert('No valid code to copy');
+        showToast('No valid code to copy', 'error');
     }
 }
 
@@ -2749,25 +2856,37 @@ async function adoptActivity(activityId) {
     const activity = allActivities.find(a => a.id === activityId);
     if (!activity) return;
 
-    if (!confirm(`Adopt "${activity.name}" into your group's cetele?`)) {
-        return;
-    }
+    showConfirmModal('Adopt Activity', `Add "${activity.name}" to your group's cetele?`, async () => {
+        await performAdoptActivity(activity);
+    }, 'Adopt', false);
+}
 
+async function performAdoptActivity(activity) {
     try {
+        showLoading('Adding activity...');
+
         // Get the highest order_index for group activities
         const groupActivities = allActivities.filter(a => a.group_id === currentUser.group_id);
         const maxOrder = groupActivities.reduce((max, a) => Math.max(max, a.order_index || 0), 0);
 
-        // Create a copy of the global activity for this group
+        // Create a copy of the global activity for this group with ALL fields
+        const newActivity = {
+            name: activity.name,
+            description: activity.description,
+            type: activity.type,
+            input_type: activity.input_type || 'checkbox',
+            target: activity.target,
+            unit: activity.unit,
+            response_type: activity.response_type,
+            group_id: currentUser.group_id,
+            order_index: maxOrder + 1
+        };
+
+        console.log('📋 Adopting activity with data:', newActivity);
+
         const { data, error } = await supabase
             .from('activities')
-            .insert([{
-                name: activity.name,
-                description: activity.description,
-                type: activity.type,
-                group_id: currentUser.group_id,
-                order_index: maxOrder + 1
-            }])
+            .insert([newActivity])
             .select()
             .single();
 
@@ -2779,10 +2898,12 @@ async function adoptActivity(activityId) {
         await loadAllData();
         loadManageCetelePage();
 
-        alert(`"${activity.name}" has been added to your cetele!`);
+        hideLoading();
+        showToast(`"${activity.name}" has been added to your cetele!`, 'success');
     } catch (error) {
+        hideLoading();
         console.error('Error adopting activity:', error);
-        alert('Failed to adopt activity: ' + error.message);
+        showToast('Failed to adopt activity: ' + error.message, 'error');
     }
 }
 
@@ -2890,9 +3011,11 @@ async function submitActivityForm(event) {
 
         // Close modal
         closeActivityModal();
+
+        showToast(currentEditingActivityId ? 'Activity updated successfully!' : 'Activity created successfully!', 'success');
     } catch (error) {
         console.error('Error saving activity:', error);
-        alert('Failed to save activity: ' + error.message);
+        showToast('Failed to save activity: ' + error.message, 'error');
 
         // Re-enable button
         submitBtn.disabled = false;
@@ -2901,29 +3024,31 @@ async function submitActivityForm(event) {
 }
 
 async function deleteActivity(activityId) {
-    if (!confirm('Are you sure you want to delete this activity? This action cannot be undone.')) {
-        return;
-    }
+    showConfirmModal('Delete Activity', 'Are you sure you want to delete this activity? This action cannot be undone.', async () => {
+        try {
+            showLoading('Deleting activity...');
 
-    try {
-        const { error } = await supabase
-            .from('activities')
-            .delete()
-            .eq('id', activityId);
+            const { error } = await supabase
+                .from('activities')
+                .delete()
+                .eq('id', activityId);
 
-        if (error) throw error;
+            if (error) throw error;
 
-        console.log('✅ Activity deleted');
+            console.log('✅ Activity deleted');
 
-        // Reload data
-        await loadAllData();
-        loadManageCetelePage();
+            // Reload data
+            await loadAllData();
+            loadManageCetelePage();
 
-        alert('Activity deleted successfully!');
-    } catch (error) {
-        console.error('Error deleting activity:', error);
-        alert('Failed to delete activity: ' + error.message);
-    }
+            hideLoading();
+            showToast('Activity deleted successfully!', 'success');
+        } catch (error) {
+            hideLoading();
+            console.error('Error deleting activity:', error);
+            showToast('Failed to delete activity: ' + error.message, 'error');
+        }
+    }, 'Delete');
 }
 
 
