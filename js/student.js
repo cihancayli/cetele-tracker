@@ -695,19 +695,32 @@ async function loadPersonalStats() {
         // Get all student submissions
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
 
-        // Calculate stats
+        // Get current activity IDs for accurate counting
+        const currentActivityIds = activities.map(a => a.id);
+
+        // Calculate stats - only count completions for current activities
         const totalWeeks = allMySubmissions.length;
         let totalCompletions = 0;
         let bestScore = 0;
 
         allMySubmissions.forEach(sub => {
-            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            if (!sub.activity_completions) return;
+
+            // Only count completions for current activities
+            let score = 0;
+            currentActivityIds.forEach(actId => {
+                const value = sub.activity_completions[actId];
+                if (value === true || (typeof value === 'number' && value > 0)) {
+                    score++;
+                }
+            });
+
             totalCompletions += score;
-            if (score > bestScore) bestScore = score;
+            if (score > bestScore) bestScore = Math.min(score, activities.length);
         });
 
-        const avgCompletion = totalWeeks > 0
-            ? Math.round((totalCompletions / (totalWeeks * activities.length)) * 100)
+        const avgCompletion = totalWeeks > 0 && activities.length > 0
+            ? Math.min(Math.round((totalCompletions / (totalWeeks * activities.length)) * 100), 100)
             : 0;
 
         // Calculate streak
@@ -803,13 +816,33 @@ async function loadTopPerformers() {
     try {
         const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
 
-        // Calculate scores for this week
+        // Get current activity IDs for accurate counting
+        const currentActivityIds = activities.map(a => a.id);
+
+        // Calculate scores for this week - only count current activities
         const performers = submissions.map(sub => {
-            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
+            if (!sub.activity_completions) {
+                return { student: sub.students, score: 0, percentage: 0 };
+            }
+
+            // Only count completions for current activities
+            let score = 0;
+            currentActivityIds.forEach(actId => {
+                const value = sub.activity_completions[actId];
+                if (value === true || (typeof value === 'number' && value > 0)) {
+                    score++;
+                }
+            });
+
+            const cappedScore = Math.min(score, activities.length);
+            const percentage = activities.length > 0
+                ? Math.min(Math.round((cappedScore / activities.length) * 100), 100)
+                : 0;
+
             return {
                 student: sub.students,
-                score: score,
-                percentage: Math.round((score / activities.length) * 100)
+                score: cappedScore,
+                percentage: percentage
             };
         });
 
@@ -927,6 +960,9 @@ async function renderProgressChart() {
     try {
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
 
+        // Get current activity IDs for accurate counting
+        const currentActivityIds = activities.map(a => a.id);
+
         // Get last 8 weeks
         const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
         const weeklyScores = weeks.map(week => {
@@ -935,10 +971,20 @@ async function renderProgressChart() {
                 return subWeek === week;
             });
 
-            if (!submission) return 0;
+            if (!submission || !submission.activity_completions) return 0;
+            if (activities.length === 0) return 0;
 
-            const completions = Object.values(submission.activity_completions).filter(v => v === true).length;
-            return Math.round((completions / activities.length) * 100);
+            // Only count completions for current activities
+            let completions = 0;
+            currentActivityIds.forEach(actId => {
+                const value = submission.activity_completions[actId];
+                if (value === true || (typeof value === 'number' && value > 0)) {
+                    completions++;
+                }
+            });
+
+            const percentage = Math.round((completions / activities.length) * 100);
+            return Math.min(percentage, 100); // Cap at 100%
         });
 
         const ctx = document.getElementById('progressChart');
@@ -1016,20 +1062,32 @@ async function renderConsistencyChart() {
     try {
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
 
+        // Get current activity IDs for accurate counting
+        const currentActivityIds = activities.map(a => a.id);
+
         // Get last 8 weeks
         const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
 
-        // Calculate completion rate for each week
+        // Calculate completion count for each week (only for current activities)
         const completionRates = weeks.map(week => {
             const submission = allMySubmissions.find(sub => {
                 const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
                 return subWeek === week;
             });
 
-            if (!submission) return 0;
+            if (!submission || !submission.activity_completions) return 0;
 
-            const completions = Object.values(submission.activity_completions).filter(v => v === true).length;
-            return completions;
+            // Only count completions for current activities
+            let completions = 0;
+            currentActivityIds.forEach(actId => {
+                const value = submission.activity_completions[actId];
+                if (value === true || (typeof value === 'number' && value > 0)) {
+                    completions++;
+                }
+            });
+
+            // Cap at max activities
+            return Math.min(completions, activities.length);
         });
 
         const ctx = document.getElementById('consistencyChart');
