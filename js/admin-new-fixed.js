@@ -2827,11 +2827,11 @@ function renderActivityItem(activity, index, isEditable) {
                 <div style="font-weight: 500; margin-bottom: 0.25rem;">${activity.name}</div>
                 ${activity.description ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${activity.description}</div>` : ''}
             </div>
-            <button class="btn btn-secondary" onclick="editActivity('${activity.id}')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                ✏️ Edit
+            <button class="btn-edit" onclick="editActivity('${activity.id}')">
+                ✏ Edit
             </button>
-            <button class="btn" onclick="deleteActivity('${activity.id}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
-                🗑️ Delete
+            <button class="btn-delete" onclick="deleteActivity('${activity.id}')">
+                🗑 Delete
             </button>
         </div>
     `;
@@ -2840,13 +2840,13 @@ function renderActivityItem(activity, index, isEditable) {
 function renderSuggestedActivityItem(activity, index) {
     return `
         <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--glass-border);">
-            <span style="font-size: 1.5rem;">💡</span>
+            <span style="font-size: 1.5rem; opacity: 0.6;">💡</span>
             <div style="flex: 1;">
                 <div style="font-weight: 500; margin-bottom: 0.25rem; color: rgba(255, 255, 255, 0.7);">${activity.name}</div>
                 ${activity.description ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${activity.description}</div>` : ''}
             </div>
-            <button class="btn" onclick="adoptActivity('${activity.id}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.3); color: rgba(251, 191, 36, 0.9);">
-                ➕ Adopt This
+            <button class="btn-adopt" onclick="adoptActivity('${activity.id}')">
+                <span>+</span> Adopt
             </button>
         </div>
     `;
