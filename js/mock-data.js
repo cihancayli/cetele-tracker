@@ -64,12 +64,14 @@ const MOCK_DATA = {
     weeklySubmissions: []  // Will be generated below
 };
 
-// Generate realistic submission data for the past 8 weeks
+// Generate realistic submission data for the past 3 weeks only (for demo)
 const weeklySubmissions = [];
 let submissionId = 1;
 
-console.log('📅 Generating mock data for weeks:');
-for (let weekOffset = 0; weekOffset < 8; weekOffset++) {
+// Store the valid week range for navigation limits
+const DEMO_WEEKS_COUNT = 3;
+
+for (let weekOffset = 0; weekOffset < DEMO_WEEKS_COUNT; weekOffset++) {
     const weekDate = getWeeksAgo(weekOffset);
     console.log(`  Week ${weekOffset}: ${weekDate}`);
 
@@ -473,6 +475,31 @@ const MockDatabaseHelper = {
             hs_code: 'DEMO-HS',
             ms_code: 'DEMO-MS'
         };
+    },
+
+    // Demo navigation limits
+    getValidWeekRange() {
+        const currentWeekStart = this.getWeekStartDate(new Date());
+        const oldestWeekStart = getWeeksAgo(DEMO_WEEKS_COUNT - 1);
+        return {
+            newest: currentWeekStart,  // Current week (can't go to future)
+            oldest: oldestWeekStart,   // 3 weeks ago
+            weeksCount: DEMO_WEEKS_COUNT
+        };
+    },
+
+    isValidWeek(weekDate) {
+        const range = this.getValidWeekRange();
+        const checkDate = typeof weekDate === 'string' ? weekDate : this.getWeekStartDate(new Date(weekDate));
+        return checkDate >= range.oldest && checkDate <= range.newest;
+    },
+
+    canNavigate(currentWeekDate, direction) {
+        const current = new Date(currentWeekDate);
+        const targetDate = new Date(current);
+        targetDate.setDate(targetDate.getDate() + (direction * 7));
+        const targetWeek = this.getWeekStartDate(targetDate);
+        return this.isValidWeek(targetWeek);
     }
 };
 

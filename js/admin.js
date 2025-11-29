@@ -621,6 +621,26 @@ async function loadWeeklyView() {
 }
 
 function changeWeek(direction) {
+    // Check if navigation is allowed (for demo mode)
+    if (DatabaseHelper.canNavigate && !DatabaseHelper.canNavigate(currentWeek, direction)) {
+        // Shake the button that was clicked
+        const btn = direction > 0
+            ? document.querySelector('.week-nav-btn:last-child')
+            : document.querySelector('.week-nav-btn:first-child');
+        if (btn) {
+            btn.classList.add('shake');
+            setTimeout(() => btn.classList.remove('shake'), 500);
+        }
+
+        // Show toast message
+        if (direction > 0) {
+            showToast('Cannot navigate to future weeks', 'error');
+        } else {
+            showToast('No more data available for previous weeks', 'error');
+        }
+        return;
+    }
+
     const date = new Date(currentWeek);
     date.setDate(date.getDate() + (direction * 7));
     currentWeek = DatabaseHelper.getWeekStartDate(date);
