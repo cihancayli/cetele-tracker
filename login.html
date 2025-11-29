@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/password-utils.js"></script>
     <style>
         * {
             margin: 0;
@@ -179,7 +180,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 1rem; /* Prevents iOS auto-zoom on focus */
             color: #ffffff;
             transition: all 0.3s ease;
             font-family: 'Inter', sans-serif;
@@ -444,16 +445,6 @@
             </button>
         </form>
 
-        <div class="divider">Debug Mode</div>
-
-        <button type="button" class="btn btn-secondary" onclick="debugLogin()">
-            🔧 Quick Test Login (Coordinator)
-        </button>
-
-        <button type="button" class="btn btn-success" onclick="debugLoginMentor()" style="margin-top: 0.75rem;">
-            👥 Quick Test Login (Mentor)
-        </button>
-
         <div class="back-link">
             <a href="index.html">← Back to Home</a>
         </div>
@@ -505,13 +496,26 @@
 
                 const user = users[0];
 
-                // Verify password (base64 comparison - NOT production-secure!)
-                const passwordHash = btoa(password);
-                if (user.password_hash !== passwordHash) {
+                // Verify password with secure hashing (supports legacy base64 format)
+                const { valid, needsUpgrade } = await PasswordUtils.verifyPasswordWithLegacy(
+                    password,
+                    user.password_hash
+                );
+
+                if (!valid) {
                     showMessage('Invalid email or password', 'error');
                     btn.disabled = false;
                     btn.innerHTML = 'Sign In as Admin';
                     return;
+                }
+
+                // Upgrade legacy password hash to new secure format
+                if (needsUpgrade) {
+                    const newHash = await PasswordUtils.createPasswordHash(password);
+                    await supabase
+                        .from('users')
+                        .update({ password_hash: newHash })
+                        .eq('id', user.id);
                 }
 
                 // Check if user has admin role (ed, coordinator, or mentor)
@@ -549,7 +553,6 @@
                 }, 1000);
 
             } catch (error) {
-                console.error('Login error:', error);
                 showMessage('An error occurred. Please try again.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = 'Sign In as Admin';
@@ -557,132 +560,18 @@
         }
 
 
-        // Debug Login Function - Uses actual test data from database
-        async function debugLogin() {
-            console.log('🔧 Debug login triggered');
-            hideMessage();
-
-            const btn = document.querySelector('.btn-secondary');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>Logging in as debug coordinator...';
-
-            try {
-                // Fetch the debug coordinator user from database
-                const { data: user, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', 'debug@test.com')
-                    .eq('role', 'coordinator')
-                    .single();
-
-                if (error) {
-                    throw new Error('Debug user not found. Please run setup-debug-mode.sql first!');
-                }
-
-                // Update last login
-                await supabase
-                    .from('users')
-                    .update({ last_login: new Date().toISOString() })
-                    .eq('id', user.id);
-
-                // Create proper session format (for auth.js compatibility)
-                const session = {
-                    role: 'admin',  // Admin dashboard expects 'admin' role
-                    identifier: user.email,
-                    userId: user.id,
-                    timestamp: Date.now(),
-                    userData: user  // Store full user data for reference
-                };
-
-                localStorage.setItem('cetele_session', JSON.stringify(session));
-                localStorage.setItem('cetele_user', JSON.stringify(user));  // Backward compatibility
-
-                showMessage('✅ Debug login successful! Redirecting...', 'success');
-
-                // Redirect to admin dashboard
-                setTimeout(() => {
-                    window.location.href = 'admin-new.html';
-                }, 1000);
-
-            } catch (error) {
-                console.error('Debug login error:', error);
-                showMessage(error.message || 'Debug login failed. Please run setup-debug-mode.sql in your Supabase SQL editor.', 'error');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        }
-
-        // Debug Login Function for Mentor - Uses actual test data from database
-        async function debugLoginMentor() {
-            console.log('👥 Debug mentor login triggered');
-            hideMessage();
-
-            const btn = document.querySelector('.btn-success');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>Logging in as debug mentor...';
-
-            try {
-                // Fetch the debug mentor user from database
-                const { data: user, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', 'mentor@test.com')
-                    .eq('role', 'mentor')
-                    .single();
-
-                if (error) {
-                    throw new Error('Debug mentor user not found. Please run setup-debug-mode.sql first!');
-                }
-
-                // Update last login
-                await supabase
-                    .from('users')
-                    .update({ last_login: new Date().toISOString() })
-                    .eq('id', user.id);
-
-                // Create proper session format (for auth.js compatibility)
-                const session = {
-                    role: 'admin',  // Admin dashboard expects 'admin' role
-                    identifier: user.email,
-                    userId: user.id,
-                    timestamp: Date.now(),
-                    userData: user  // Store full user data for reference
-                };
-
-                localStorage.setItem('cetele_session', JSON.stringify(session));
-                localStorage.setItem('cetele_user', JSON.stringify(user));  // Backward compatibility
-
-                showMessage('✅ Mentor debug login successful! Redirecting...', 'success');
-
-                // Redirect to admin dashboard
-                setTimeout(() => {
-                    window.location.href = 'admin-new.html';
-                }, 1000);
-
-            } catch (error) {
-                console.error('Debug mentor login error:', error);
-                showMessage(error.message || 'Debug mentor login failed. Please run setup-debug-mode.sql in your Supabase SQL editor.', 'error');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        }
-
         // Logout function (in case called)
         function logout() {
             localStorage.removeItem('cetele_session');
             localStorage.removeItem('cetele_user');
             localStorage.removeItem('studentId');
             sessionStorage.removeItem('studentId');
-            console.log('Logged out successfully');
         }
 
         // Clear any existing sessions on login page load
         document.addEventListener('DOMContentLoaded', () => {
             // Clear sessions to allow fresh login
             logout();
-            console.log('Login page loaded - sessions cleared');
         });
     </script>
 </body>

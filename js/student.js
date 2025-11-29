@@ -22,24 +22,20 @@ async function init() {
         // Auto-login with demo student (Emma Thompson - student id 1)
         currentStudentId = '1';
         sessionStorage.setItem('studentId', '1');
-        console.log('🎬 Demo mode active - no auth required');
     } else {
         // Verify user session
         const user = DatabaseHelper.getCurrentUser();
         currentStudentId = DatabaseHelper.getSessionStudentId();
 
-        console.log('🔍 Session check:', { user, currentStudentId });
 
         // If no session or not a student, redirect to login
         if (!currentStudentId || !user || user.role !== 'student') {
-            console.log('❌ No valid session, redirecting to login');
             window.location.href = 'student-login.html';
             return;
         }
 
         // Verify student_id matches user's student_id
         if (user.student_id && currentStudentId !== user.student_id.toString()) {
-            console.error('Session mismatch - student_id does not match user');
             localStorage.removeItem('cetele_user');
             sessionStorage.removeItem('studentId');
             window.location.href = 'student-login.html';
@@ -48,11 +44,9 @@ async function init() {
     }
 
     try {
-        console.log('📥 Loading student data for ID:', currentStudentId);
 
         // Load student data
         currentStudent = await DatabaseHelper.getStudentById(currentStudentId);
-        console.log('✅ Student loaded:', currentStudent);
 
         if (!currentStudent) {
             throw new Error('Student not found. Please login again.');
@@ -61,19 +55,15 @@ async function init() {
         // Load activities for this student's group only
         if (currentStudent.group_id) {
             activities = await DatabaseHelper.getActivitiesForGroup(currentStudent.group_id);
-            console.log(`✅ Activities loaded for group ${currentStudent.group_id}:`, activities);
         } else {
             // Fallback: if no group, show no activities (mentor needs to set up cetele)
             activities = [];
-            console.log('⚠️ No group assigned to student, no activities to show');
         }
 
         if (activities.length === 0) {
-            console.log('⚠️ No activities found for this group. Mentor needs to create/adopt activities.');
         }
 
         currentWeek = DatabaseHelper.getWeekStartDate();
-        console.log('✅ Current week:', currentWeek);
 
         // Update header
         updateHeader();
@@ -81,13 +71,6 @@ async function init() {
         // Load data
         await loadAllData();
     } catch (error) {
-        console.error('❌ Initialization error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            studentId: currentStudentId,
-            currentStudent: currentStudent
-        });
         alert(`Error loading student portal: ${error.message}\n\nPlease check the console for details.`);
     }
 }
@@ -160,13 +143,6 @@ async function loadCeteleTable() {
         // Get all submissions for this week
         allSubmissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
 
-        console.log('📋 Loading table:', {
-            week: currentWeek,
-            groupStudents: groupStudents.length,
-            submissions: allSubmissions.length,
-            allSubmissions: allSubmissions
-        });
-
         // Check if current student has submitted FIRST to set isEditing before rendering
         const mySubmission = allSubmissions.find(s => s.student_id == currentStudentId);
         // Only count as "submitted" if there's actual data in the submission
@@ -177,16 +153,6 @@ async function loadCeteleTable() {
         const currentWeekStart = DatabaseHelper.getWeekStartDate();
         const isCurrentWeek = currentWeek === currentWeekStart;
 
-        console.log('🔍 Submission check:', {
-            currentStudentId,
-            mySubmission,
-            hasActualData,
-            hasSubmitted,
-            currentWeek,
-            currentWeekStart,
-            isCurrentWeek
-        });
-
         // Set isEditing state BEFORE rendering
         if (hasSubmitted) {
             isEditing = false;
@@ -196,7 +162,6 @@ async function loadCeteleTable() {
             isEditing = false; // Can't edit past weeks
         }
 
-        console.log('📝 Editing state:', { hasSubmitted, isCurrentWeek, isEditing });
 
         // Build table headers
         const headerRow = document.querySelector('#ceteleTable thead tr');
@@ -210,7 +175,6 @@ async function loadCeteleTable() {
         const tbody = document.getElementById('ceteleTableBody');
         tbody.innerHTML = '';
 
-        console.log('👤 My submission:', mySubmission);
 
         groupStudents.forEach(student => {
             const submission = allSubmissions.find(s => s.student_id === student.id);
@@ -235,7 +199,6 @@ async function loadCeteleTable() {
                 const value = submission?.activity_completions?.[activity.id];
 
                 if (isCurrentStudent) {
-                    console.log(`🔍 Activity ${activity.id} (${activity.name}):`, value);
 
                     // Calculate display value and color for current student
                     let displayValue = '-';
@@ -371,7 +334,6 @@ async function loadCeteleTable() {
         attachInputEventListeners();
 
     } catch (error) {
-        console.error('Error loading cetele table:', error);
     }
 }
 
@@ -419,7 +381,6 @@ function updateButtonState(hasSubmitted) {
     const currentWeekStart = DatabaseHelper.getWeekStartDate();
     const isCurrentWeek = currentWeek === currentWeekStart;
 
-    console.log('🔘 updateButtonState:', { hasSubmitted, isCurrentWeek, currentWeek, currentWeekStart, isEditing });
 
     if (hasSubmitted) {
         // Already submitted - show Edit button (if current week, they can edit)
@@ -564,12 +525,6 @@ async function saveCetele() {
             }
         });
 
-        console.log('💾 Saving cetele:', {
-            studentId: currentStudentId,
-            week: currentWeek,
-            completions: activityCompletions
-        });
-
         // Submit to database
         const result = await DatabaseHelper.submitWeeklyData(
             currentStudentId,
@@ -577,7 +532,6 @@ async function saveCetele() {
             activityCompletions
         );
 
-        console.log('✅ Save result:', result);
 
         // Update button state BEFORE animation so table won't reload in edit mode
         isEditing = false;
@@ -593,10 +547,8 @@ async function saveCetele() {
         // Reload all data to update stats/charts (table already has badges from animation)
         await loadAllData();
 
-        console.log('📊 Data reloaded, submissions:', allSubmissions);
 
     } catch (error) {
-        console.error('Error saving cetele:', error);
         alert('Error saving your cetele. Please try again.');
     }
 }
@@ -739,7 +691,6 @@ async function loadPersonalStats() {
         document.getElementById('rankPosition').textContent = myRank > 0 ? '#' + myRank : '#-';
 
     } catch (error) {
-        console.error('Error loading personal stats:', error);
     }
 }
 
@@ -808,7 +759,6 @@ async function loadLeaderboard() {
             container.appendChild(div);
         });
     } catch (error) {
-        console.error('Error loading leaderboard:', error);
     }
 }
 
@@ -875,7 +825,6 @@ async function loadTopPerformers() {
             container.appendChild(div);
         });
     } catch (error) {
-        console.error('Error loading top performers:', error);
     }
 }
 
@@ -1054,7 +1003,6 @@ async function renderProgressChart() {
             }
         });
     } catch (error) {
-        console.error('Error rendering progress chart:', error);
     }
 }
 
@@ -1167,7 +1115,6 @@ async function renderConsistencyChart() {
             }
         });
     } catch (error) {
-        console.error('Error rendering consistency chart:', error);
     }
 }
 
@@ -1255,7 +1202,6 @@ async function renderGroupComparisonChart() {
             }
         });
     } catch (error) {
-        console.error('Error rendering group comparison chart:', error);
     }
 }
 
@@ -1463,7 +1409,6 @@ async function submitMobileWizard() {
             wizardData
         );
 
-        console.log('✅ Mobile wizard save result:', result);
 
         // Close wizard
         closeMobileWizard();
@@ -1478,7 +1423,6 @@ async function submitMobileWizard() {
         wizardCurrentIndex = 0;
         wizardData = {};
     } catch (error) {
-        console.error('Error saving from mobile wizard:', error);
         alert('Error saving your cetele. Please try again.');
     }
 }

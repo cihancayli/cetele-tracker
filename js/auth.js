@@ -1,9 +1,5 @@
 // Authentication Module
 
-// Default admin credentials (change these in production!)
-const DEFAULT_ADMIN_EMAIL = 'admin@cetele.app';
-const DEFAULT_ADMIN_PASSWORD = 'cetele2024';
-
 // Initialize
 async function init() {
     await loadStudentsForLogin();
@@ -57,7 +53,6 @@ async function loadStudentsForLogin() {
             select.appendChild(option);
         });
     } catch (error) {
-        console.error('Error loading students:', error);
     }
 }
 
@@ -73,24 +68,14 @@ async function adminLogin(event) {
     btn.innerHTML = '<span class="spinner"></span> Signing in...';
 
     try {
-        // Method 1: Check default credentials
-        if (email === DEFAULT_ADMIN_EMAIL && password === DEFAULT_ADMIN_PASSWORD) {
-            createSession('admin', email, null);
-            showMessage('Login successful! Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = 'admin-new.html';
-            }, 1000);
-            return;
-        }
-
-        // Method 2: Try Supabase Auth
+        // Try Supabase Auth
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
         });
 
         if (error) {
-            throw new Error('Invalid credentials. Use default: admin@cetele.app / cetele2024');
+            throw new Error('Invalid email or password');
         }
 
         // Check if user has admin-level access (admin, coordinator, ed, or mentor)

@@ -2,7 +2,6 @@
 
 // Skip if mock data is active
 if (window.DatabaseHelper && window.DatabaseHelper.__isMock) {
-    console.log('Skipping real DatabaseHelper - using mock data');
 } else {
 
 window.DatabaseHelper = class DatabaseHelper {
@@ -115,10 +114,8 @@ window.DatabaseHelper = class DatabaseHelper {
     }
 
     static async getStudentById(studentId) {
-        console.log('📥 getStudentById called with:', studentId);
 
         if (!studentId) {
-            console.error('❌ No studentId provided to getStudentById');
             return null;
         }
 
@@ -129,7 +126,6 @@ window.DatabaseHelper = class DatabaseHelper {
             .single();
 
         if (error) {
-            console.error('❌ getStudentById error:', error);
             // Don't throw on PGRST116 (no rows found) - just return null
             if (error.code === 'PGRST116') {
                 return null;
@@ -137,7 +133,6 @@ window.DatabaseHelper = class DatabaseHelper {
             throw error;
         }
 
-        console.log('✅ getStudentById found:', data);
         return data;
     }
 
@@ -217,7 +212,6 @@ window.DatabaseHelper = class DatabaseHelper {
     // Get activities for a student's group (only group-specific activities)
     static async getActivitiesForGroup(groupId) {
         if (!groupId) {
-            console.warn('No groupId provided to getActivitiesForGroup');
             return [];
         }
 
@@ -229,7 +223,6 @@ window.DatabaseHelper = class DatabaseHelper {
 
         if (error) throw error;
 
-        console.log(`📋 Loaded ${data?.length || 0} activities for group ${groupId}`);
         return data || [];
     }
 

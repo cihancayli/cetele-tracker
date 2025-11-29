@@ -304,7 +304,6 @@
                 document.getElementById('mentorCode').textContent = data.code;
                 document.getElementById('codeInText').textContent = data.code;
             } catch (error) {
-                console.error('Error fetching mentor code:', error);
                 document.getElementById('mentorCode').textContent = 'Error loading code';
             }
         }
@@ -326,7 +325,6 @@
                     copyIcon.textContent = '📋';
                 }, 2000);
             }).catch(err => {
-                console.error('Failed to copy:', err);
                 alert('Failed to copy code. Please copy manually: ' + code);
             });
         }

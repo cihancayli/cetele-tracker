@@ -12,8 +12,18 @@
     <link rel="stylesheet" href="css/admin-new.css">
 </head>
 <body>
+    <!-- Mobile Hamburger Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
                 <span class="logo-icon">📊</span>
@@ -598,33 +608,49 @@
         </div>
     </div>
 
-    <!-- Debug Console -->
-    <div class="debug-console hidden" id="debugConsole">
-        <div class="debug-console-header" onclick="toggleDebugConsole()">
-            <div class="debug-console-title">
-                <span>🔍</span>
-                <span>Debug Console</span>
-                <span class="debug-console-badge" id="debugBadge">0</span>
-            </div>
-            <div class="debug-console-actions">
-                <button class="debug-console-btn" onclick="event.stopPropagation(); clearDebugLogs()">Clear</button>
-                <button class="debug-console-btn" onclick="event.stopPropagation(); downloadDebugLogs()">Download</button>
-            </div>
-        </div>
-        <div class="debug-console-body" id="debugLogs">
-            <div class="debug-log info">
-                <span class="debug-log-time">--:--:--</span>
-                <span class="debug-log-type">info</span>
-                <span class="debug-log-message">Debug console initialized. All operations will be logged here.</span>
-            </div>
-        </div>
-    </div>
-
     <!-- Scripts -->
     <script src="js/supabase-config.js"></script>
     <script src="js/db-helper.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/admin-new-fixed.js"></script>
-    <script src="js/debug-console.js"></script>
+
+    <!-- Mobile Sidebar Toggle -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            menuBtn.classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            menuBtn.classList.remove('active');
+        }
+
+        // Close sidebar when clicking a nav item on mobile
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Close sidebar on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSidebar();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load user data
     currentUser = JSON.parse(localStorage.getItem('cetele_user'));
 
-    console.log('Current user:', currentUser);
 
     if (!currentUser) {
         showToast('User data not found. Please login again.', 'error');
@@ -201,22 +200,18 @@ function getRoleDisplayName(role) {
 
 function hasPermission(permission) {
     if (!currentUser) {
-        console.log('hasPermission: No current user');
         return false;
     }
 
     const role = currentUser.role;
-    console.log('hasPermission check:', permission, 'for role:', role);
 
     // ED has all permissions
     if (role === 'ed') {
-        console.log('ED has all permissions');
         return true;
     }
 
     // Coordinator has all permissions
     if (role === 'coordinator' || currentUser.is_coordinator) {
-        console.log('Coordinator has all permissions');
         return true;
     }
 
@@ -229,11 +224,9 @@ function hasPermission(permission) {
             'view_own_students'
         ];
         const hasIt = mentorPermissions.includes(permission);
-        console.log('Mentor permission check:', permission, '=', hasIt);
         return hasIt;
     }
 
-    console.log('No permission granted for:', permission);
     return false;
 }
 
@@ -283,7 +276,6 @@ function setupNavigation() {
             if (tabText) tabText.textContent = 'Manage Cetele';
         }
 
-        console.log('🔒 Mentor view: Hidden Organization, Groups, Analytics tabs; Changed Activities to Manage Cetele');
     }
 }
 
@@ -343,7 +335,6 @@ function showPage(pageName) {
 
 async function loadAllData() {
     try {
-        console.log('Loading all data...');
 
         // Determine which groups to load based on role
         let groupsQuery = supabase.from('groups').select('*');
@@ -355,7 +346,6 @@ async function loadAllData() {
 
         const { data: groups } = await groupsQuery.order('created_at', { ascending: false });
         allGroups = groups || [];
-        console.log('Loaded groups:', allGroups.length);
 
         // Load students (filtered by groups if mentor)
         let studentsQuery = supabase.from('students').select('*, groups(name)');
@@ -366,7 +356,6 @@ async function loadAllData() {
 
         const { data: students } = await studentsQuery.order('name');
         allStudents = students || [];
-        console.log('Loaded students:', allStudents.length);
 
         // Load activities
         let activitiesQuery = supabase
@@ -386,7 +375,6 @@ async function loadAllData() {
 
         const { data: activities } = await activitiesQuery.order('order_index');
         allActivities = activities || [];
-        console.log('Loaded activities:', allActivities.length);
 
         // Load submissions (filtered by students if mentor)
         let submissionsQuery = supabase
@@ -403,19 +391,15 @@ async function loadAllData() {
 
         const { data: submissions } = await submissionsQuery.limit(200);
         allSubmissions = submissions || [];
-        console.log('Loaded submissions:', allSubmissions.length);
         if (allSubmissions.length > 0) {
-            console.log('Sample submission:', allSubmissions[0]);
         }
 
     } catch (error) {
-        console.error('Error loading data:', error);
         showToast('Error loading data. Please check console for details.', 'error');
     }
 }
 
 async function loadPageData(pageName) {
-    console.log('Loading page data for:', pageName);
 
     try {
         switch(pageName) {
@@ -448,7 +432,6 @@ async function loadPageData(pageName) {
                 break;
         }
     } catch (error) {
-        console.error('Error loading page data:', error);
         showToast('Error loading page. Check console for details.', 'error');
     }
 }
@@ -458,7 +441,6 @@ async function loadPageData(pageName) {
 // ==========================================
 
 async function loadOverviewData() {
-    console.log('Loading overview data...');
 
     // Update stats
     document.getElementById('totalStudents').textContent = allStudents.length;
@@ -471,14 +453,9 @@ async function loadOverviewData() {
         return match;
     });
 
-    console.log('This week submissions:', thisWeekSubmissions.length);
     if (allSubmissions.length > 0) {
         const today = new Date();
-        console.log('Today:', today.toLocaleDateString(), 'Week start:', weekStart.toLocaleDateString());
-        console.log('Sample submission date:', allSubmissions[0].week_start_date);
         const sampleSubWeek = getWeekStart(new Date(allSubmissions[0].week_start_date));
-        console.log('Sample submission week start:', sampleSubWeek.toLocaleDateString());
-        console.log('Week starts match?', sampleSubWeek.getTime() === weekStart.getTime());
     }
 
     if (thisWeekSubmissions.length > 0 && allActivities.length > 0) {
@@ -490,7 +467,6 @@ async function loadOverviewData() {
             totalCompleted += Object.values(completions).filter(v => v === true || (typeof v === 'number' && v > 0)).length;
         });
         const completionRate = Math.round((totalCompleted / totalPossible) * 100);
-        console.log('This week completion:', totalCompleted, '/', totalPossible, '=', completionRate + '%');
         document.getElementById('weekCompletion').textContent = completionRate + '%';
 
         const changeEl = document.getElementById('weekCompletionChange');
@@ -682,11 +658,6 @@ function loadTrendsChart() {
 function loadActivityChart() {
     const canvas = document.getElementById('activityChart');
     if (!canvas || allActivities.length === 0 || allSubmissions.length === 0) {
-        console.log('🔄 Activity Chart - Missing data:', {
-            canvas: !!canvas,
-            activities: allActivities.length,
-            submissions: allSubmissions.length
-        });
         return;
     }
 
@@ -695,7 +666,6 @@ function loadActivityChart() {
         canvas.chart.destroy();
     }
 
-    console.log('🔄 Activity Breakdown Chart - Processing', allActivities.length, 'activities');
 
     // Calculate completion rate for each activity
     const activityNames = allActivities.map(a => a.name);
@@ -715,11 +685,9 @@ function loadActivityChart() {
         // Total possible is number of submissions (each submission should have this activity)
         const total = allSubmissions.length;
         const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
-        console.log(`  Activity "${activity.name}" (ID: ${activity.id}): ${completed}/${total} = ${rate}%`);
         return rate;
     });
 
-    console.log('✅ Activity Chart Data:', activityNames, activityRates);
 
     // Color-code each activity based on completion rate
     const backgroundColors = getPerformanceColors(activityRates, 0.7);
@@ -1222,7 +1190,6 @@ async function loadHierarchyData() {
 
         logSuccess('Load Hierarchy', 'Family tree view rendered successfully');
     } catch (error) {
-        console.error('Error loading hierarchy:', error);
         container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error loading hierarchy</div><div class="empty-text">' + error.message + '</div></div>';
     }
 }
@@ -1328,13 +1295,9 @@ function showCreateGroupModal() {
 }
 
 async function deleteGroup(groupId) {
-    console.log('=== DELETE GROUP ===');
-    console.log('Group ID:', groupId);
-    console.log('Current user:', currentUser);
 
     // Coordinators and EDs can delete groups
     if (!hasPermission('delete_group') && currentUser.role !== 'coordinator' && currentUser.role !== 'ed' && !currentUser.is_coordinator) {
-        console.log('Permission denied for deleting group');
         showToast('You do not have permission to delete groups.', 'error');
         return;
     }
@@ -1342,7 +1305,6 @@ async function deleteGroup(groupId) {
     showConfirmModal('Delete Group', 'Are you sure you want to delete this group? This will remove all students from the group.', async () => {
         try {
             showLoading('Deleting group...');
-            console.log('Attempting to delete group from database...');
 
             const { error, data } = await supabase
                 .from('groups')
@@ -1350,24 +1312,18 @@ async function deleteGroup(groupId) {
                 .eq('id', groupId)
                 .select();
 
-            console.log('Delete result:', { error, data });
 
             if (error) throw error;
 
-            console.log('Group deleted from database, reloading data...');
 
             await loadAllData();
-            console.log('Data reloaded, refreshing groups list...');
 
             await loadGroupsData();
-            console.log('Groups list refreshed');
 
             hideLoading();
             showToast('Group deleted successfully!', 'success');
         } catch (error) {
             hideLoading();
-            console.error('Error deleting group:', error);
-            console.error('Error details:', error.message, error.code, error.hint);
             showToast('Failed to delete group: ' + error.message, 'error');
         }
     }, 'Delete Group');
@@ -1541,7 +1497,6 @@ async function deleteStudent(studentId) {
 // ==========================================
 
 async function loadCeteleData() {
-    console.log('📋 Loading cetele data for week offset:', currentWeekOffset);
 
     // Update week display
     const weekStart = getWeekStart(new Date());
@@ -1597,47 +1552,18 @@ async function loadCeteleData() {
     }
 
     // Debug week matching
-    console.log('Looking for week:', weekStart.toISOString().split('T')[0]);
-    console.log('All submission dates:', [...new Set(allSubmissions.map(s => s.week_start_date))]);
 
     const weekSubmissions = allSubmissions.filter(sub => {
         const subWeekStart = getWeekStart(new Date(sub.week_start_date));
         const match = subWeekStart.getTime() === weekStart.getTime();
         if (allSubmissions.indexOf(sub) < 3) { // Debug first 3
-            console.log('Checking submission:', {
-                date: sub.week_start_date,
-                normalized: subWeekStart.toISOString().split('T')[0],
-                target: weekStart.toISOString().split('T')[0],
-                match: match
-            });
-        }
+            }
         return match;
     });
-
-    console.log(`📅 Week ${weekStart.toLocaleDateString()}: ${weekSubmissions.length} submissions`);
-
-    // Debug first submission structure
-    if (weekSubmissions.length > 0) {
-        const sample = weekSubmissions[0];
-        console.log('✅ Found submission! Structure:', {
-            student_id: sample.student_id,
-            week_start_date: sample.week_start_date,
-            activity_completions: sample.activity_completions,
-            completions_keys: Object.keys(sample.activity_completions || {})
-        });
-        console.log('First activity ID:', allActivities[0]?.id);
-        console.log('First activity name:', allActivities[0]?.name);
-    } else if (allSubmissions.length > 0) {
-        console.log('❌ No submissions found for this week. Sample submission:', {
-            date: allSubmissions[0].week_start_date,
-            normalized: getWeekStart(new Date(allSubmissions[0].week_start_date)).toISOString().split('T')[0]
-        });
-    }
 
     // Build table grouped by groups
     const container = document.getElementById('ceteleTableContainer');
     if (!container) {
-        console.error('Container not found!');
         return;
     }
 
@@ -1719,13 +1645,7 @@ async function loadCeteleData() {
 
                         // Debug first student
                         if (studentIndex === 0 && submission) {
-                            console.log('First student submission check:', {
-                                student: student.name,
-                                hasSubmission: !!submission,
-                                completions: completions,
-                                completionsType: typeof completions
-                            });
-                        }
+                            }
 
                         // Count both boolean true and numeric values > 0
                         const completed = Object.values(completions).filter(v => v === true || (typeof v === 'number' && v > 0)).length;
@@ -1744,15 +1664,7 @@ async function loadCeteleData() {
 
                                     // Debug first student, first activity
                                     if (studentIndex === 0 && actIndex === 0 && submission) {
-                                        console.log('Activity check for first student:', {
-                                            activity: activity.name,
-                                            activityId: activity.id,
-                                            valueById: valueById,
-                                            valueByName: valueByName,
-                                            finalValue: value,
-                                            isCompleted: isCompleted
-                                        });
-                                    }
+                                        }
 
                                     // Determine what to display
                                     let display = '';
@@ -2003,7 +1915,6 @@ function copyMentorCode() {
         navigator.clipboard.writeText(code).then(() => {
             showToast('Mentor code copied to clipboard!', 'success');
         }).catch(err => {
-            console.error('Failed to copy:', err);
             showToast('Failed to copy code. Please copy manually: ' + code, 'error');
         });
     } else {
@@ -2259,11 +2170,6 @@ function renderStudentActivityDetails(filteredSubmissions, groupFilter) {
 function loadTopGroupChart() {
     const canvas = document.getElementById('topGroupChart');
     if (!canvas || allGroups.length === 0 || allSubmissions.length === 0) {
-        console.log('🔄 Top Group Chart - Missing data:', {
-            canvas: !!canvas,
-            groups: allGroups.length,
-            submissions: allSubmissions.length
-        });
         return;
     }
 
@@ -2283,9 +2189,7 @@ function loadTopGroupChart() {
             const subWeekStart = getWeekStart(new Date(sub.week_start_date));
             return subWeekStart.getTime() === weekStart.getTime();
         });
-        console.log('Week filter - Current week start:', weekStart.toLocaleDateString());
         if (filteredSubmissions.length > 0) {
-            console.log('First matching submission week:', getWeekStart(new Date(filteredSubmissions[0].week_start_date)).toLocaleDateString());
         }
     } else if (timeFilter === 'month') {
         const monthStart = new Date();
@@ -2297,10 +2201,8 @@ function loadTopGroupChart() {
         });
     }
 
-    console.log(`🔄 Top Group Chart (${timeFilter}): ${filteredSubmissions.length} submissions`);
 
     if (filteredSubmissions.length === 0) {
-        console.log('⚠️ No submissions for selected time period');
         // Show empty state message in chart
         const container = canvas.parentElement;
         let emptyMsg = container.querySelector('.empty-state-msg');
@@ -2326,7 +2228,6 @@ function loadTopGroupChart() {
             // Check if submission has student data with group
             return s.students?.groups?.name === group.name;
         });
-        console.log(`  "${group.name}" (ID: ${group.id}): ${groupSubmissions.length} submissions found`);
         if (groupSubmissions.length === 0) return { name: group.name, rate: 0 };
 
         let totalCompletion = 0;
@@ -2342,19 +2243,12 @@ function loadTopGroupChart() {
 
             // Debug first submission of each group
             if (idx === 0) {
-                console.log(`    Sample submission for "${group.name}":`, {
-                    completions: completions,
-                    completedCount: completed,
-                    totalActivities: allActivities.length,
-                    rate: rate
-                });
-            }
+                }
 
             totalCompletion += rate;
         });
 
         const avgRate = Math.round(totalCompletion / groupSubmissions.length);
-        console.log(`  Group "${group.name}": ${groupSubmissions.length} submissions, total=${totalCompletion}, avg=${avgRate}%`);
 
         return {
             name: group.name,
@@ -2365,7 +2259,6 @@ function loadTopGroupChart() {
     // Sort and get top group
     groupStats.sort((a, b) => b.rate - a.rate);
     const topGroup = groupStats[0];
-    console.log('✅ Top Group:', topGroup.name, topGroup.rate + '%');
 
     canvas.chart = new Chart(canvas, {
         type: 'doughnut',
@@ -2444,7 +2337,6 @@ function loadBottomGroupChart() {
     }
 
     if (filteredSubmissions.length === 0) {
-        console.log('⚠️ Bottom Group Chart - No submissions for selected time period');
         // Show empty state message in chart
         const container = canvas.parentElement;
         let emptyMsg = container.querySelector('.empty-state-msg');
@@ -2744,7 +2636,6 @@ function getActiveActivities() {
 
 async function loadManageCetelePage() {
     if (!hasPermission('edit_own_cetele')) {
-        console.error('No permission to manage cetele');
         return;
     }
 
@@ -2757,7 +2648,6 @@ async function loadManageCetelePage() {
         // Activities are already loaded in allActivities with proper filtering
         renderActivitiesList(allActivities);
     } catch (error) {
-        console.error('Error loading manage cetele page:', error);
         container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error loading activities</div></div>';
     }
 }
@@ -2886,7 +2776,6 @@ async function performAdoptActivity(activity) {
             order_index: maxOrder + 1
         };
 
-        console.log('📋 Adopting activity with data:', newActivity);
 
         const { data, error } = await supabase
             .from('activities')
@@ -2896,7 +2785,6 @@ async function performAdoptActivity(activity) {
 
         if (error) throw error;
 
-        console.log('✅ Activity adopted:', data);
 
         // Reload data
         await loadAllData();
@@ -2906,7 +2794,6 @@ async function performAdoptActivity(activity) {
         showToast(`"${activity.name}" has been added to your cetele!`, 'success');
     } catch (error) {
         hideLoading();
-        console.error('Error adopting activity:', error);
         showToast('Failed to adopt activity: ' + error.message, 'error');
     }
 }
@@ -2987,7 +2874,6 @@ async function submitActivityForm(event) {
                 .eq('id', currentEditingActivityId);
 
             if (error) throw error;
-            console.log('✅ Activity updated');
         } else {
             // Create new activity
             const groupActivities = allActivities.filter(a => a.group_id === currentUser.group_id);
@@ -3006,7 +2892,6 @@ async function submitActivityForm(event) {
                 .single();
 
             if (error) throw error;
-            console.log('✅ Activity created:', data);
         }
 
         // Reload data
@@ -3018,7 +2903,6 @@ async function submitActivityForm(event) {
 
         showToast(currentEditingActivityId ? 'Activity updated successfully!' : 'Activity created successfully!', 'success');
     } catch (error) {
-        console.error('Error saving activity:', error);
         showToast('Failed to save activity: ' + error.message, 'error');
 
         // Re-enable button
@@ -3039,7 +2923,6 @@ async function deleteActivity(activityId) {
 
             if (error) throw error;
 
-            console.log('✅ Activity deleted');
 
             // Reload data
             await loadAllData();
@@ -3049,7 +2932,6 @@ async function deleteActivity(activityId) {
             showToast('Activity deleted successfully!', 'success');
         } catch (error) {
             hideLoading();
-            console.error('Error deleting activity:', error);
             showToast('Failed to delete activity: ' + error.message, 'error');
         }
     }, 'Delete');

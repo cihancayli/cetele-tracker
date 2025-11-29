@@ -120,4 +120,3 @@ CREATE POLICY "Allow read for authenticated" ON feature_requests FOR SELECT USIN
 CREATE POLICY "Allow read for authenticated" ON contact_messages FOR SELECT USING (auth.role() = 'authenticated');
 `;
 
-console.log('Supabase configured. Run the schema SQL in Supabase SQL Editor to initialize database.');

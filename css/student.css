@@ -1395,8 +1395,43 @@ body::before {
         justify-content: center;
     }
 
+    /* Further reduce table min-width for small phones */
     .cetele-table {
-        min-width: 700px;
+        min-width: 600px;
+        font-size: 0.7rem;
+    }
+
+    .cetele-table thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .cetele-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .student-col {
+        min-width: 100px;
+        font-size: 0.75rem;
+    }
+
+    .activity-col {
+        min-width: 80px;
+    }
+
+    /* Scroll indicator for table */
+    .table-container {
+        position: relative;
+    }
+
+    .table-container::after {
+        content: '← Swipe to see more →';
+        display: block;
+        text-align: center;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.4);
+        padding: 0.5rem 0;
+        margin-top: 0.5rem;
     }
 
     .stats-grid {
@@ -1406,6 +1441,19 @@ body::before {
     .leaderboard-list,
     .top-performers {
         font-size: 0.85rem;
+    }
+
+    .header-stats {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .stat-divider {
+        display: none;
+    }
+
+    .header-stats .stat-item {
+        font-size: 0.75rem;
     }
 }
 

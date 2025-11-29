@@ -134,9 +134,7 @@ async function loadAllData() {
             .limit(100);
         allSubmissions = submissions || [];
 
-        console.log('Data loaded:', { groups: allGroups.length, students: allStudents.length, activities: allActivities.length, submissions: allSubmissions.length });
     } catch (error) {
-        console.error('Error loading data:', error);
     }
 }
 
@@ -559,7 +557,6 @@ async function loadHierarchyData() {
 
         container.innerHTML = html;
     } catch (error) {
-        console.error('Error loading hierarchy:', error);
         container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error loading hierarchy</div></div>';
     }
 }
@@ -672,7 +669,6 @@ async function deleteGroup(groupId) {
         await loadGroupsData();
         alert('Group deleted successfully!');
     } catch (error) {
-        console.error('Error deleting group:', error);
         alert('Failed to delete group: ' + error.message);
     }
 }
@@ -754,7 +750,6 @@ async function deleteStudent(studentId) {
         filterStudents();
         alert('Student deleted successfully!');
     } catch (error) {
-        console.error('Error deleting student:', error);
         alert('Failed to delete student: ' + error.message);
     }
 }
@@ -874,7 +869,6 @@ async function loadMentorCode() {
             document.getElementById('mentorCodeStudents').textContent = '0';
         }
     } catch (error) {
-        console.error('Error loading mentor code:', error);
         document.getElementById('mentorCodeDisplay').textContent = 'Error loading code';
     }
 }
@@ -949,7 +943,6 @@ async function deleteActivity(activityId) {
         await loadActivitiesData();
         alert('Activity deleted successfully!');
     } catch (error) {
-        console.error('Error deleting activity:', error);
         alert('Failed to delete activity: ' + error.message);
     }
 }

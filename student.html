@@ -185,7 +185,6 @@
                     }
                 } catch (e) {
                     if (e.message !== 'Unauthorized') {
-                        console.error('Invalid session data');
                         localStorage.removeItem('cetele_user');
                         sessionStorage.clear();
                         window.location.href = 'student-login.html';

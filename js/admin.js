@@ -96,12 +96,6 @@ async function init() {
         // Get user's region
         userRegion = await DatabaseHelper.getUserRegion();
 
-        console.log('Admin logged in:', {
-            role: currentUser.role,
-            region: userRegion?.name,
-            division: currentUser.division
-        });
-
         // Load initial data
         await loadGroupFilters();
         await showSection('overview');
@@ -109,7 +103,6 @@ async function init() {
         // Hide loading state
         document.getElementById('loadingState').style.display = 'none';
     } catch (error) {
-        console.error('Initialization error:', error);
         alert('Error loading dashboard. Please refresh the page.');
     }
 }
@@ -195,7 +188,6 @@ async function loadGroupFilters() {
             }
         });
     } catch (error) {
-        console.error('Error loading group filters:', error);
     }
 }
 
@@ -238,7 +230,6 @@ async function loadOverview() {
         await renderActivityChart(groupFilter);
 
     } catch (error) {
-        console.error('Error loading overview:', error);
     }
 }
 
@@ -452,7 +443,6 @@ async function loadGroups() {
             container.appendChild(card);
         }
     } catch (error) {
-        console.error('Error loading groups:', error);
     }
 }
 
@@ -480,7 +470,6 @@ async function addGroup() {
         await loadGroupFilters();
         await loadGroups();
     } catch (error) {
-        console.error('Error adding group:', error);
         showToast('Error adding group. Please try again.', 'error');
     }
 }
@@ -534,7 +523,6 @@ async function loadStudents() {
 
         container.innerHTML = tableHTML;
     } catch (error) {
-        console.error('Error loading students:', error);
     }
 }
 
@@ -563,7 +551,6 @@ async function addStudent() {
 
         await loadStudents();
     } catch (error) {
-        console.error('Error adding student:', error);
         showToast('Error adding student. Please try again.', 'error');
     }
 }
@@ -630,7 +617,6 @@ async function loadWeeklyView() {
             container.appendChild(card);
         });
     } catch (error) {
-        console.error('Error loading weekly view:', error);
     }
 }
 
@@ -650,7 +636,6 @@ async function loadAnalytics() {
         await renderActivityBreakdownChart(groupFilter);
         await renderPerformanceCards(groupFilter);
     } catch (error) {
-        console.error('Error loading analytics:', error);
     }
 }
 
@@ -908,7 +893,6 @@ async function loadCeteleManagement() {
         generateCetelePreview(activities);
 
     } catch (error) {
-        console.error('Error loading cetele management:', error);
         alert('Error loading activities. Please try again.');
     }
 }
@@ -987,7 +971,6 @@ async function saveNewActivity() {
         showToast('Activity added successfully!', 'success');
 
     } catch (error) {
-        console.error('Error saving activity:', error);
         showToast('Error saving activity. Please try again.', 'error');
     }
 }
@@ -1024,7 +1007,6 @@ async function openEditActivityModal(activityId) {
         document.getElementById('editActivityModal').style.display = 'flex';
 
     } catch (error) {
-        console.error('Error opening edit modal:', error);
         showToast('Error loading activity details.', 'error');
     }
 }
@@ -1072,7 +1054,6 @@ async function saveEditedActivity() {
         showToast('Activity updated successfully!', 'success');
 
     } catch (error) {
-        console.error('Error updating activity:', error);
         showToast('Error updating activity. Please try again.', 'error');
     }
 }
@@ -1087,7 +1068,6 @@ async function deleteActivity(activityId) {
                 await loadCeteleManagement();
                 showToast('Activity deleted successfully!', 'success');
             } catch (error) {
-                console.error('Error deleting activity:', error);
                 showToast('Error deleting activity. Please try again.', 'error');
             }
         }

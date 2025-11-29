@@ -72,7 +72,6 @@ async function renderActivityHeatmap() {
 
         container.innerHTML = html;
     } catch (error) {
-        console.error('Error rendering activity heatmap:', error);
     }
 }
 
@@ -181,7 +180,6 @@ async function renderBadges() {
 
         container.innerHTML = html;
     } catch (error) {
-        console.error('Error rendering badges:', error);
     }
 }
 
@@ -288,6 +286,5 @@ async function renderActivityBalanceChart() {
             }
         });
     } catch (error) {
-        console.error('Error rendering activity balance chart:', error);
     }
 }

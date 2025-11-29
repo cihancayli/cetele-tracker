@@ -343,8 +343,10 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -599,7 +601,7 @@
             border-radius: 12px;
             padding: 1rem;
             color: rgba(80, 80, 80, 0.9);
-            font-size: 0.7rem;
+            font-size: 1rem; /* Prevents iOS auto-zoom on focus */
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
             resize: vertical;
             transition: all 0.3s ease;
@@ -831,6 +833,62 @@
             .footer-grid {
                 grid-template-columns: 1fr;
                 gap: 2rem;
+            }
+        }
+
+        /* Extra small screens - 480px and below */
+        @media (max-width: 480px) {
+            .modal-container {
+                padding: 1.5rem 1rem;
+                border-radius: 20px;
+            }
+
+            .modal-title {
+                font-size: 1.25rem;
+            }
+
+            .modal-subtitle {
+                font-size: 0.75rem;
+            }
+
+            .option-card {
+                padding: 1rem 1.25rem;
+            }
+
+            .option-icon {
+                font-size: 1.25rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .option-title {
+                font-size: 0.95rem;
+            }
+
+            .option-description {
+                font-size: 0.7rem;
+            }
+
+            .contact-modal-content {
+                padding: 2rem 1.25rem;
+            }
+
+            .contact-form-buttons {
+                flex-direction: column;
+            }
+
+            .contact-form button {
+                min-height: 44px;
+            }
+
+            .get-started-btn {
+                padding: 0.875rem 1.75rem;
+                font-size: 0.95rem;
+                min-height: 44px;
+            }
+
+            .hero-content {
+                gap: 14rem;
+                padding: 1.5rem;
             }
         }
     </style>
@@ -1320,7 +1378,6 @@
                 closeContactModal('featureRequestModal');
                 form.reset();
             } catch (error) {
-                console.error('Error submitting feature request:', error);
                 alert('there was an error submitting your request. please try again.');
             }
         }
@@ -1350,7 +1407,6 @@
                 closeContactModal('contactModal');
                 form.reset();
             } catch (error) {
-                console.error('Error submitting contact message:', error);
                 alert('there was an error sending your message. please try again.');
             }
         }
