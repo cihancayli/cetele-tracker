@@ -2,6 +2,20 @@
 // CETELE ADMIN DASHBOARD - FIXED VERSION
 // ==========================================
 
+// ==================== DEBUG LOGGING STUBS ====================
+// These are no-op stubs to replace removed debug console functions
+function logOperation(operation, details) {
+    // No-op in production
+}
+
+function logSuccess(operation, details) {
+    // No-op in production
+}
+
+function logError(operation, details) {
+    // No-op in production
+}
+
 // ==================== TOAST NOTIFICATION SYSTEM ====================
 
 function showToast(message, type = 'success') {
@@ -232,9 +246,13 @@ function hasPermission(permission) {
 
 function logout() {
     showConfirmModal('Sign Out', 'Are you sure you want to sign out?', () => {
-        localStorage.removeItem('cetele_session');
-        localStorage.removeItem('cetele_user');
-        window.location.href = 'login.html';
+        if (typeof performLogout === 'function') {
+            performLogout();
+        } else {
+            localStorage.removeItem('cetele_session');
+            localStorage.removeItem('cetele_user');
+            window.location.href = 'login.html';
+        }
     }, 'Sign Out', false);
 }
 

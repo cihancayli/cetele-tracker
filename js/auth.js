@@ -233,13 +233,17 @@ function checkAuth(requiredRole) {
     return sessionData;
 }
 
-// Logout function (global)
+// Base logout function - pages can override with custom confirm dialogs
+function performLogout() {
+    localStorage.removeItem('cetele_session');
+    localStorage.removeItem('cetele_user');
+    localStorage.removeItem('studentId');
+    window.location.href = 'login.html';
+}
+
+// Simple logout for pages without custom modal
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('cetele_session');
-        localStorage.removeItem('studentId');
-        window.location.href = 'login.html';
-    }
+    performLogout();
 }
 
 // Initialize on page load

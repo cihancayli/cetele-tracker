@@ -212,18 +212,24 @@ const MockDatabaseHelper = {
 
     async getLeaderboard(groupFilter = null, limit = 10) {
         const students = await this.getStudents(groupFilter);
-        const submissions = await this.getWeeklySubmissions(new Date());
+        const currentWeek = this.getWeekStartDate(new Date());
+        const submissions = await this.getWeeklySubmissions(currentWeek);
+        const totalActivities = MOCK_DATA.activities.length;
 
         const leaderboard = students.map(student => {
             const submission = submissions.find(s => s.student_id === student.id);
             let score = 0;
             if (submission) {
-                score = Object.values(submission.activity_completions).filter(Boolean).length;
+                // Count both boolean true AND numeric values > 0
+                score = Object.values(submission.activity_completions).filter(v =>
+                    v === true || (typeof v === 'number' && v > 0)
+                ).length;
             }
+            const percentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
             return {
-                ...student,
+                student: student,
                 score,
-                total_activities: MOCK_DATA.activities.length
+                percentage
             };
         });
 
@@ -349,6 +355,56 @@ const MockDatabaseHelper = {
             .sort((a, b) => new Date(b.week_start_date) - new Date(a.week_start_date));
     },
 
+    async getStudentStats(studentId) {
+        const submissions = await this.getAllSubmissionsForStudent(studentId);
+        const totalActivities = MOCK_DATA.activities.length;
+
+        if (!submissions || submissions.length === 0) {
+            return {
+                totalWeeks: 0,
+                totalCompletions: 0,
+                averageCompletion: 0,
+                weeklyScores: []
+            };
+        }
+
+        let totalCompletions = 0;
+        const weeklyScores = submissions.map(sub => {
+            const completions = Object.values(sub.activity_completions).filter(v =>
+                v === true || (typeof v === 'number' && v > 0)
+            ).length;
+            totalCompletions += completions;
+            return {
+                week: sub.week_start_date,
+                score: completions,
+                percentage: totalActivities > 0 ? (completions / totalActivities) * 100 : 0
+            };
+        });
+
+        const averageCompletion = weeklyScores.length > 0
+            ? weeklyScores.reduce((sum, w) => sum + w.percentage, 0) / weeklyScores.length
+            : 0;
+
+        return {
+            totalWeeks: submissions.length,
+            totalCompletions,
+            averageCompletion,
+            weeklyScores
+        };
+    },
+
+    async getAllSubmissions() {
+        // Return all submissions with student and group data joined
+        return MOCK_DATA.weeklySubmissions.map(sub => {
+            const student = MOCK_DATA.students.find(s => s.id === sub.student_id);
+            const group = student ? MOCK_DATA.groups.find(g => g.id === student.group_id) : null;
+            return {
+                ...sub,
+                students: student ? { ...student, groups: group } : null
+            };
+        });
+    },
+
     getLastNWeeks(n) {
         const weeks = [];
         const today = new Date();
@@ -393,11 +449,14 @@ function isDebugMode() {
 
 // Use mock data in debug mode - Override DatabaseHelper for demo pages only
 if (typeof window !== 'undefined' && isDebugMode()) {
-    // Store the real DatabaseHelper if it exists
-    if (window.DatabaseHelper) {
-        window.RealDatabaseHelper = window.DatabaseHelper;
-    }
+    // Set flag for demo mode
+    window.__DEMO_MODE__ = true;
 
-    // Override with mock data
+    // Override DatabaseHelper immediately (before db-helper.js loads)
     window.DatabaseHelper = MockDatabaseHelper;
+
+    // Also override after DOM loads in case db-helper.js overwrites it
+    document.addEventListener('DOMContentLoaded', function() {
+        window.DatabaseHelper = MockDatabaseHelper;
+    });
 }
