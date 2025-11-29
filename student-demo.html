@@ -5,44 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cetele — Student Portal</title>
 
-    <!-- CRITICAL: Block redirects BEFORE anything else loads -->
+    <!-- Demo mode setup -->
     <script>
-        console.log('🚫 DEMO MODE: Installing redirect blockers IMMEDIATELY');
-
-        // Set demo mode flag FIRST
+        // Set demo mode flag
         window.DEMO_MODE = true;
-
-        // Store original methods
-        const _assign = window.location.assign.bind(window.location);
-        const _replace = window.location.replace.bind(window.location);
-        const _reload = window.location.reload.bind(window.location);
-        const _alert = window.alert.bind(window);
+        window.__DEMO_MODE__ = true;
 
         // Override alert to suppress errors in demo mode
         window.alert = function(msg) {
             console.warn('🔕 DEMO MODE: Suppressed alert:', msg);
         };
-
-        // Override ALL navigation methods
-        Object.defineProperties(window.location, {
-            href: {
-                get: function() { return window.location.toString(); },
-                set: function(v) { console.error('🚫 BLOCKED: location.href =', v); }
-            },
-            assign: {
-                value: function(v) { console.error('🚫 BLOCKED: location.assign()', v); }
-            },
-            replace: {
-                value: function(v) { console.error('🚫 BLOCKED: location.replace()', v); }
-            }
-        });
-
-        console.log('✅ Redirect protection installed in <head>');
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <link rel="stylesheet" href="css/student.css">
 </head>
@@ -283,39 +261,7 @@
             console.error('Line:', e.lineno);
         }, true);
 
-        console.log('Step 2: Preventing redirects in demo mode...');
-
-        // CRITICAL: Intercept ALL navigation attempts
-        const originalAssign = window.location.assign;
-        const originalReplace = window.location.replace;
-
-        // Block location.assign
-        window.location.assign = function(url) {
-            console.warn('🚫 DEMO MODE: Blocked location.assign to', url);
-            return false;
-        };
-
-        // Block location.replace
-        window.location.replace = function(url) {
-            console.warn('🚫 DEMO MODE: Blocked location.replace to', url);
-            return false;
-        };
-
-        // Intercept location.href setter
-        let href = window.location.href;
-        Object.defineProperty(window.location, 'href', {
-            get: function() {
-                return href;
-            },
-            set: function(value) {
-                console.warn('🚫 DEMO MODE: Blocked location.href assignment to', value);
-                return false;
-            },
-            configurable: true
-        });
-
-        console.log('✓ Redirect protection enabled (assign, replace, href)');
-        console.log('Step 3: Loading Supabase config...');
+        console.log('Step 2: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
     <script>
