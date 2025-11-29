@@ -10,13 +10,14 @@ let userRegion = null;
 function initCurrentWeek() {
     if (!currentWeek && typeof DatabaseHelper !== 'undefined') {
         currentWeek = DatabaseHelper.getWeekStartDate();
+        console.log('🗓️ initCurrentWeek: Initialized to', currentWeek);
     }
     return currentWeek;
 }
 
 // ==================== TOAST NOTIFICATION SYSTEM ====================
 
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', position = 'top-right') {
     // Remove existing toast if any
     const existingToast = document.querySelector('.toast-notification');
     if (existingToast) {
@@ -25,6 +26,20 @@ function showToast(message, type = 'success') {
 
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${type}`;
+
+    // Position below week navigation if specified
+    if (position === 'below-week-nav') {
+        const weekNav = document.querySelector('.week-navigation');
+        if (weekNav) {
+            const rect = weekNav.getBoundingClientRect();
+            toast.style.position = 'fixed';
+            toast.style.top = (rect.bottom + 10) + 'px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%) scale(0.9)';
+            toast.style.right = 'auto';
+            toast.classList.add('toast-centered');
+        }
+    }
 
     const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
     toast.innerHTML = `
@@ -35,11 +50,21 @@ function showToast(message, type = 'success') {
     document.body.appendChild(toast);
 
     // Trigger animation
-    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        if (position === 'below-week-nav') {
+            toast.style.transform = 'translateX(-50%) scale(1)';
+            toast.style.opacity = '1';
+        }
+        toast.classList.add('show');
+    }, 10);
 
     // Auto-remove after 3 seconds
     setTimeout(() => {
         toast.classList.remove('show');
+        if (position === 'below-week-nav') {
+            toast.style.transform = 'translateX(-50%) scale(0.9)';
+            toast.style.opacity = '0';
+        }
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
@@ -272,18 +297,84 @@ function renderLeaderboard(leaderboard) {
 async function renderTrendsChart(groupFilter) {
     const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
     const activities = await DatabaseHelper.getActivities();
+    const groups = await DatabaseHelper.getGroups();
 
-    const weeklyAverages = await Promise.all(weeks.map(async week => {
-        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(week, groupFilter);
-        if (submissions.length === 0) return 0;
+    // Colors for each group
+    const groupColors = [
+        { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },   // Indigo
+        { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },   // Purple
+        { border: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },   // Green
+        { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },   // Amber
+        { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },    // Red
+        { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },    // Cyan
+    ];
 
-        const totalScore = submissions.reduce((sum, sub) => {
-            const score = Object.values(sub.activity_completions).filter(v => v === true).length;
-            return sum + score;
-        }, 0);
+    // Helper function to calculate completion score
+    const calculateScore = (submission) => {
+        let score = 0;
+        activities.forEach(activity => {
+            const value = submission.activity_completions[activity.id];
+            if (value === true || (typeof value === 'number' && value >= activity.target)) {
+                score++;
+            }
+        });
+        return score;
+    };
 
+    // Build datasets - one line per group
+    const datasets = await Promise.all(groups.map(async (group, index) => {
+        const color = groupColors[index % groupColors.length];
+
+        const weeklyData = await Promise.all(weeks.map(async week => {
+            const submissions = await DatabaseHelper.getAllSubmissionsForWeek(week, group.id);
+            if (submissions.length === 0) return null; // null for no data
+
+            const totalScore = submissions.reduce((sum, sub) => sum + calculateScore(sub), 0);
+            return Math.round((totalScore / (submissions.length * activities.length)) * 100);
+        }));
+
+        return {
+            label: group.name,
+            data: weeklyData,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            pointBackgroundColor: color.border,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            spanGaps: true // Connect lines even with null values
+        };
+    }));
+
+    // Also add an "Overall" line
+    const overallData = await Promise.all(weeks.map(async week => {
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(week);
+        if (submissions.length === 0) return null;
+
+        const totalScore = submissions.reduce((sum, sub) => sum + calculateScore(sub), 0);
         return Math.round((totalScore / (submissions.length * activities.length)) * 100);
     }));
+
+    datasets.unshift({
+        label: 'Overall Average',
+        data: overallData,
+        borderColor: '#ffffff',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 3,
+        borderDash: [5, 5],
+        tension: 0.4,
+        fill: false,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#1e1b4b',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        spanGaps: true
+    });
 
     const ctx = document.getElementById('trendsChart');
     if (!ctx) return;
@@ -295,23 +386,44 @@ async function renderTrendsChart(groupFilter) {
     charts.trends = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: weeks.map(w => DatabaseHelper.formatDate(w)),
-            datasets: [{
-                label: 'Average Completion %',
-                data: weeklyAverages,
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true
-            }]
+            labels: weeks.map(w => {
+                const date = DatabaseHelper.formatDate(w);
+                return date.split(',')[0]; // Shorter date format
+            }),
+            datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    labels: { color: '#e2e8f0' }
+                    position: 'top',
+                    labels: {
+                        color: '#e2e8f0',
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 15,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 11, 14, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.parsed.y === null) return `${context.dataset.label}: No data`;
+                            return `${context.dataset.label}: ${context.parsed.y}%`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -323,12 +435,15 @@ async function renderTrendsChart(groupFilter) {
                         callback: value => value + '%'
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: 'rgba(255, 255, 255, 0.05)'
                     }
                 },
                 x: {
-                    ticks: { color: '#94a3b8' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 10 }
+                    },
+                    grid: { display: false }
                 }
             }
         }
@@ -338,26 +453,28 @@ async function renderTrendsChart(groupFilter) {
 async function renderActivityChart(groupFilter) {
     const activities = await DatabaseHelper.getActivities();
     const allSubmissions = await DatabaseHelper.getAllSubmissions();
+    console.log('📊 renderActivityChart: Got', allSubmissions.length, 'submissions');
 
     const filteredSubmissions = groupFilter
-        ? allSubmissions.filter(sub => sub.students.group_id === groupFilter)
+        ? allSubmissions.filter(sub => sub.students && String(sub.students.group_id) === String(groupFilter))
         : allSubmissions;
 
     const activityStats = activities.map(activity => {
         let completed = 0;
-        let total = 0;
+        let total = filteredSubmissions.length;
 
         filteredSubmissions.forEach(sub => {
-            if (sub.activity_completions[activity.name] !== undefined) {
-                if (sub.activity_completions[activity.name] === true) {
-                    completed++;
-                }
-                total++;
+            // Check by activity.id (how mock data stores it) or activity.name (fallback)
+            const completion = sub.activity_completions[activity.id] ?? sub.activity_completions[activity.name];
+            // Count as completed if true (boolean) or if numeric value meets/exceeds target
+            if (completion === true || (typeof completion === 'number' && completion >= activity.target)) {
+                completed++;
             }
         });
 
         return total > 0 ? Math.round((completed / total) * 100) : 0;
     });
+    console.log('📊 renderActivityChart: Activity stats', activityStats);
 
     const ctx = document.getElementById('activityChart');
     if (!ctx) return;
@@ -366,6 +483,14 @@ async function renderActivityChart(groupFilter) {
         charts.activity.destroy();
     }
 
+    // Generate gradient colors based on completion rate
+    const backgroundColors = activityStats.map(stat => {
+        if (stat >= 80) return 'rgba(16, 185, 129, 0.85)';  // Green - excellent
+        if (stat >= 60) return 'rgba(59, 130, 246, 0.85)';  // Blue - good
+        if (stat >= 40) return 'rgba(245, 158, 11, 0.85)';  // Amber - average
+        return 'rgba(239, 68, 68, 0.85)';                    // Red - needs attention
+    });
+
     charts.activity = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -373,22 +498,31 @@ async function renderActivityChart(groupFilter) {
             datasets: [{
                 label: 'Completion Rate %',
                 data: activityStats,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 206, 86, 0.8)',
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(153, 102, 255, 0.8)',
-                    'rgba(255, 159, 64, 0.8)',
-                    'rgba(102, 126, 234, 0.8)'
-                ]
+                backgroundColor: backgroundColors,
+                borderRadius: 8,
+                borderWidth: 0,
+                borderSkipped: false
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 11, 14, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `Completion: ${context.parsed.y}%`;
+                        }
+                    }
+                }
             },
             scales: {
                 y: {
@@ -398,11 +532,14 @@ async function renderActivityChart(groupFilter) {
                         color: '#94a3b8',
                         callback: value => value + '%'
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
                 },
                 x: {
-                    ticks: { color: '#94a3b8' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11 }
+                    },
+                    grid: { display: false }
                 }
             }
         }
@@ -515,13 +652,41 @@ async function loadStudents() {
 
         for (const student of students) {
             const stats = await DatabaseHelper.getStudentStats(student.id);
+            const avgCompletion = Math.round(stats.averageCompletion);
+
+            // Determine color based on completion rate
+            let completionColor, completionBg;
+            if (avgCompletion >= 90) {
+                completionColor = '#10b981'; // Green - excellent
+                completionBg = 'rgba(16, 185, 129, 0.15)';
+            } else if (avgCompletion >= 70) {
+                completionColor = '#3b82f6'; // Blue - good
+                completionBg = 'rgba(59, 130, 246, 0.15)';
+            } else if (avgCompletion >= 50) {
+                completionColor = '#f59e0b'; // Amber - average
+                completionBg = 'rgba(245, 158, 11, 0.15)';
+            } else {
+                completionColor = '#ef4444'; // Red - needs attention
+                completionBg = 'rgba(239, 68, 68, 0.15)';
+            }
+
             tableHTML += `
                 <tr>
                     <td>${student.name}</td>
                     <td>${student.grade}</td>
                     <td>${student.groups?.name || 'No Group'}</td>
                     <td>${stats.totalCompletions}</td>
-                    <td>${Math.round(stats.averageCompletion)}%</td>
+                    <td>
+                        <span class="completion-badge" style="
+                            background: ${completionBg};
+                            color: ${completionColor};
+                            padding: 0.35rem 0.75rem;
+                            border-radius: 20px;
+                            font-weight: 600;
+                            font-size: 0.875rem;
+                            border: 1px solid ${completionColor}33;
+                        ">${avgCompletion}%</span>
+                    </td>
                 </tr>
             `;
         }
@@ -573,16 +738,31 @@ async function loadWeeklyView() {
         // Ensure currentWeek is initialized
         if (!currentWeek) initCurrentWeek();
 
+        console.log('📅 loadWeeklyView called, currentWeek:', currentWeek);
+
         document.getElementById('currentWeekDisplay').textContent = DatabaseHelper.formatDate(currentWeek);
 
+        console.log('🔍 Fetching submissions for week:', currentWeek);
         const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
+        console.log('📊 Got submissions:', submissions.length, 'records');
+
         const activities = await DatabaseHelper.getActivities();
+        console.log('📋 Got activities:', activities.length, 'activities');
+
         const container = document.getElementById('weeklyDataGrid');
 
         if (submissions.length === 0) {
+            console.warn('⚠️ No submissions found for this week');
+            // Show available weeks for debugging
+            if (DatabaseHelper.getValidWeekRange) {
+                const range = DatabaseHelper.getValidWeekRange();
+                console.log('📅 Valid week range:', range);
+            }
             container.innerHTML = '<p style="text-align: center; color: var(--text-dim); grid-column: 1/-1;">No submissions for this week</p>';
             return;
         }
+
+        console.log('✅ Rendering', submissions.length, 'submissions');
 
         container.innerHTML = '';
 
@@ -646,18 +826,22 @@ function changeWeek(direction) {
             setTimeout(() => btn.classList.remove('shake'), 500);
         }
 
-        // Show toast message
+        // Show toast message below week navigation
         if (direction > 0) {
-            showToast('Cannot navigate to future weeks', 'error');
+            showToast('Cannot navigate to future weeks', 'error', 'below-week-nav');
         } else {
-            showToast('No more data available for previous weeks', 'error');
+            showToast('No more data available for previous weeks', 'error', 'below-week-nav');
         }
         return;
     }
 
-    const date = new Date(currentWeek);
+    // Parse date correctly to avoid timezone issues
+    // When parsing "YYYY-MM-DD" strings, use split to get local date
+    const [year, month, day] = currentWeek.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
     date.setDate(date.getDate() + (direction * 7));
     currentWeek = DatabaseHelper.getWeekStartDate(date);
+    console.log('📆 changeWeek: New currentWeek after navigation:', currentWeek);
     loadWeeklyView();
 }
 
@@ -676,13 +860,25 @@ async function loadAnalytics() {
 async function renderProgressChart(groupFilter) {
     const students = await DatabaseHelper.getStudents(groupFilter);
     const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+    const activities = await DatabaseHelper.getActivities();
+
+    // Helper to calculate completion score
+    const calculateScore = (submission) => {
+        let score = 0;
+        activities.forEach(activity => {
+            const value = submission.activity_completions[activity.id] ?? submission.activity_completions[activity.name];
+            if (value === true || (typeof value === 'number' && value >= activity.target)) {
+                score++;
+            }
+        });
+        return score;
+    };
 
     const datasets = await Promise.all(students.slice(0, 5).map(async (student, index) => {
         const weeklyData = await Promise.all(weeks.map(async week => {
             const submission = await DatabaseHelper.getWeeklySubmission(student.id, week);
             if (!submission) return 0;
-            const activities = await DatabaseHelper.getActivities();
-            const score = Object.values(submission.activity_completions).filter(v => v === true).length;
+            const score = calculateScore(submission);
             return Math.round((score / activities.length) * 100);
         }));
 
@@ -739,24 +935,38 @@ async function renderProgressChart(groupFilter) {
 }
 
 async function renderActivityBreakdownChart(groupFilter) {
+    console.log('📊 renderActivityBreakdownChart called');
     const activities = await DatabaseHelper.getActivities();
+    console.log('📊 Activities:', activities.length, activities.map(a => ({id: a.id, name: a.name, target: a.target})));
+
     const allSubmissions = await DatabaseHelper.getAllSubmissions();
+    console.log('📊 All submissions:', allSubmissions.length);
+
+    if (allSubmissions.length > 0) {
+        console.log('📊 Sample submission activity_completions:', allSubmissions[0].activity_completions);
+    }
 
     const filteredSubmissions = groupFilter
-        ? allSubmissions.filter(sub => sub.students.group_id === groupFilter)
+        ? allSubmissions.filter(sub => sub.students && String(sub.students.group_id) === String(groupFilter))
         : allSubmissions;
+    console.log('📊 Filtered submissions:', filteredSubmissions.length);
 
     const activityData = activities.map(activity => {
         let completed = 0;
         filteredSubmissions.forEach(sub => {
-            if (sub.activity_completions[activity.name] === true) {
+            // Check by activity.id (how mock data stores it) or activity.name (fallback)
+            const completion = sub.activity_completions[activity.id] ?? sub.activity_completions[activity.name];
+            // Count as completed if true (boolean) or if numeric value meets/exceeds target
+            if (completion === true || (typeof completion === 'number' && completion >= activity.target)) {
                 completed++;
             }
         });
         return completed;
     });
+    console.log('📊 Activity data (completions per activity):', activityData);
 
     const ctx = document.getElementById('activityBreakdownChart');
+    console.log('📊 Canvas element found:', !!ctx);
     if (!ctx) return;
 
     if (charts.breakdown) {
@@ -806,7 +1016,10 @@ async function renderPerformanceCards(groupFilter) {
         activities.forEach(activity => {
             let completedCount = 0;
             submissions.forEach(sub => {
-                if (sub.activity_completions[activity.name] === true) {
+                // Check by activity.id (how mock data stores it) or activity.name (fallback)
+                const value = sub.activity_completions[activity.id] ?? sub.activity_completions[activity.name];
+                // Count as completed if true (boolean) or if numeric value meets/exceeds target
+                if (value === true || (typeof value === 'number' && value >= activity.target)) {
                     completedCount++;
                 }
             });

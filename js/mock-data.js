@@ -10,7 +10,11 @@ function getWeeksAgo(weeks) {
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(date.setDate(diff));
 
-    return monday.toISOString().split('T')[0];
+    // Format as YYYY-MM-DD using local date (not UTC)
+    const yyyy = monday.getFullYear();
+    const mm = String(monday.getMonth() + 1).padStart(2, '0');
+    const dd = String(monday.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 const MOCK_DATA = {
@@ -168,16 +172,23 @@ const MockDatabaseHelper = {
     async getGroupStats(groupId, weekStartDate = null) {
         const students = await this.getStudents(groupId);
         const currentWeek = weekStartDate || this.getWeekStartDate(new Date());
-        const totalActivities = MOCK_DATA.activities.length;
+        const activities = MOCK_DATA.activities;
+        const totalActivities = activities.length;
 
         const stats = [];
         for (const student of students) {
             const submission = await this.getWeeklySubmission(student.id, currentWeek);
             let score = 0;
             if (submission) {
-                score = Object.values(submission.activity_completions).filter(v =>
-                    v === true || (typeof v === 'number' && v > 0)
-                ).length;
+                // Count completions properly - check against target for numeric values
+                activities.forEach(activity => {
+                    const value = submission.activity_completions[activity.id];
+                    if (value === true) {
+                        score++;
+                    } else if (typeof value === 'number' && value >= activity.target) {
+                        score++;
+                    }
+                });
             }
             const percentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
             stats.push({
@@ -244,16 +255,22 @@ const MockDatabaseHelper = {
         const students = await this.getStudents(groupFilter);
         const currentWeek = this.getWeekStartDate(new Date());
         const submissions = await this.getWeeklySubmissions(currentWeek);
-        const totalActivities = MOCK_DATA.activities.length;
+        const activities = MOCK_DATA.activities;
+        const totalActivities = activities.length;
 
         const leaderboard = students.map(student => {
             const submission = submissions.find(s => s.student_id === student.id);
             let score = 0;
             if (submission) {
-                // Count both boolean true AND numeric values > 0
-                score = Object.values(submission.activity_completions).filter(v =>
-                    v === true || (typeof v === 'number' && v > 0)
-                ).length;
+                // Count completions properly - check against target for numeric values
+                activities.forEach(activity => {
+                    const value = submission.activity_completions[activity.id];
+                    if (value === true) {
+                        score++;
+                    } else if (typeof value === 'number' && value >= activity.target) {
+                        score++;
+                    }
+                });
             }
             const percentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
             return {
@@ -268,11 +285,22 @@ const MockDatabaseHelper = {
     },
 
     getWeekStartDate(date = new Date()) {
-        const d = new Date(date);
+        let d;
+        // Handle string dates to avoid timezone issues
+        if (typeof date === 'string') {
+            const [year, month, day] = date.split('-').map(Number);
+            d = new Date(year, month - 1, day);
+        } else {
+            d = new Date(date);
+        }
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(d.setDate(diff));
-        return monday.toISOString().split('T')[0];
+        // Format as YYYY-MM-DD using local date (not UTC)
+        const yyyy = monday.getFullYear();
+        const mm = String(monday.getMonth() + 1).padStart(2, '0');
+        const dd = String(monday.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
     },
 
     formatDate(dateString) {
@@ -350,6 +378,13 @@ const MockDatabaseHelper = {
     },
 
     async getAllSubmissionsForWeek(weekStartDate, groupId = null) {
+        console.log('🔎 getAllSubmissionsForWeek called with:', weekStartDate);
+        console.log('📦 Total submissions in MOCK_DATA:', MOCK_DATA.weeklySubmissions.length);
+
+        // Log all available week dates
+        const availableWeeks = [...new Set(MOCK_DATA.weeklySubmissions.map(s => s.week_start_date))];
+        console.log('📅 Available weeks in mock data:', availableWeeks);
+
         let submissions = MOCK_DATA.weeklySubmissions.filter(sub => {
             // Compare as ISO date strings to avoid timezone issues
             const subDateStr = typeof sub.week_start_date === 'string'
@@ -358,8 +393,12 @@ const MockDatabaseHelper = {
             const compareDateStr = typeof weekStartDate === 'string'
                 ? weekStartDate
                 : new Date(weekStartDate).toISOString().split('T')[0];
-            return subDateStr === compareDateStr;
+
+            const matches = subDateStr === compareDateStr;
+            return matches;
         });
+
+        console.log('🎯 Matched submissions:', submissions.length);
 
         // Add student and group data to submissions
         submissions = submissions.map(sub => {
@@ -387,7 +426,8 @@ const MockDatabaseHelper = {
 
     async getStudentStats(studentId) {
         const submissions = await this.getAllSubmissionsForStudent(studentId);
-        const totalActivities = MOCK_DATA.activities.length;
+        const activities = MOCK_DATA.activities;
+        const totalActivities = activities.length;
 
         if (!submissions || submissions.length === 0) {
             return {
@@ -400,9 +440,16 @@ const MockDatabaseHelper = {
 
         let totalCompletions = 0;
         const weeklyScores = submissions.map(sub => {
-            const completions = Object.values(sub.activity_completions).filter(v =>
-                v === true || (typeof v === 'number' && v > 0)
-            ).length;
+            // Count completions properly - check against target for numeric values
+            let completions = 0;
+            activities.forEach(activity => {
+                const value = sub.activity_completions[activity.id];
+                if (value === true) {
+                    completions++;
+                } else if (typeof value === 'number' && value >= activity.target) {
+                    completions++;
+                }
+            });
             totalCompletions += completions;
             return {
                 week: sub.week_start_date,
@@ -487,10 +534,18 @@ const MockDatabaseHelper = {
     },
 
     canNavigate(currentWeekDate, direction) {
-        const current = new Date(currentWeekDate);
+        // Parse date string correctly to avoid timezone issues
+        let current;
+        if (typeof currentWeekDate === 'string') {
+            const [year, month, day] = currentWeekDate.split('-').map(Number);
+            current = new Date(year, month - 1, day);
+        } else {
+            current = new Date(currentWeekDate);
+        }
         const targetDate = new Date(current);
         targetDate.setDate(targetDate.getDate() + (direction * 7));
         const targetWeek = this.getWeekStartDate(targetDate);
+        console.log('🧭 canNavigate: current=', currentWeekDate, 'direction=', direction, 'target=', targetWeek);
         return this.isValidWeek(targetWeek);
     }
 };

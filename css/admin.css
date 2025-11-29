@@ -438,6 +438,45 @@ body::after {
     transform: translateX(8px);
 }
 
+.rank-badge {
+    font-size: 1.25rem;
+    font-weight: 700;
+    min-width: 45px;
+    text-align: center;
+    margin-right: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.rank-badge.rank-1 {
+    font-size: 1.5rem;
+}
+
+.rank-badge.rank-2 {
+    font-size: 1.4rem;
+}
+
+.rank-badge.rank-3 {
+    font-size: 1.3rem;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ffffff;
+    margin-right: 1rem;
+}
+
+.leaderboard-score {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .rank {
     font-size: 1.5rem;
     font-weight: 700;
@@ -1201,6 +1240,17 @@ tr:hover td {
 .toast-info {
     border-color: rgba(59, 130, 246, 0.4);
     background: rgba(59, 130, 246, 0.15);
+}
+
+.toast-centered {
+    transform: translateX(-50%) scale(0.9) !important;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+.toast-centered.show {
+    transform: translateX(-50%) scale(1) !important;
+    opacity: 1;
 }
 
 /* ==================== MODAL IMPROVEMENTS ==================== */
