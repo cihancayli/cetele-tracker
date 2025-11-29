@@ -190,21 +190,13 @@ const MockDatabaseHelper = {
     },
 
     async getActivities(groupId = null) {
-        if (groupId) {
-            // Return only activities for this specific group
-            return MOCK_DATA.activities.filter(a => a.group_id === groupId);
-        }
+        // In demo mode, all activities are shared across groups
         return [...MOCK_DATA.activities];
     },
 
     async getActivitiesForGroup(groupId) {
-        if (!groupId) {
-            console.warn('No groupId provided to getActivitiesForGroup');
-            return [];
-        }
-        const activities = MOCK_DATA.activities.filter(a => a.group_id === groupId);
-        console.log(`📋 Mock: Loaded ${activities.length} activities for group ${groupId}`);
-        return activities;
+        // In demo mode, all activities are shared across groups
+        return [...MOCK_DATA.activities];
     },
 
     async getAllActivities() {

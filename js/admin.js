@@ -1,10 +1,18 @@
 // Admin Dashboard JavaScript
 
-let currentWeek = DatabaseHelper.getWeekStartDate();
+let currentWeek = null; // Will be initialized when page loads
 let selectedGroupFilter = null;
 let charts = {};
 let currentUser = null;
 let userRegion = null;
+
+// Initialize currentWeek properly
+function initCurrentWeek() {
+    if (!currentWeek && typeof DatabaseHelper !== 'undefined') {
+        currentWeek = DatabaseHelper.getWeekStartDate();
+    }
+    return currentWeek;
+}
 
 // ==================== TOAST NOTIFICATION SYSTEM ====================
 
@@ -78,6 +86,9 @@ function showConfirmModal(title, message, onConfirm) {
 // Initialize Dashboard
 async function init() {
     try {
+        // Initialize currentWeek first
+        initCurrentWeek();
+
         // Verify user authentication and authorization
         currentUser = DatabaseHelper.getCurrentUser();
 
@@ -559,6 +570,9 @@ async function addStudent() {
 
 async function loadWeeklyView() {
     try {
+        // Ensure currentWeek is initialized
+        if (!currentWeek) initCurrentWeek();
+
         document.getElementById('currentWeekDisplay').textContent = DatabaseHelper.formatDate(currentWeek);
 
         const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
