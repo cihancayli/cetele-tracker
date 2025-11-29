@@ -251,19 +251,22 @@ async function renderActivityBalanceChart() {
                         beginAtZero: true,
                         max: 100,
                         ticks: {
-                            color: '#94a3b8',
-                            stepSize: 20,
-                            callback: value => value + '%'
+                            display: false, // Hide the percentage labels inside
+                            stepSize: 25
                         },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
+                            color: 'rgba(255, 255, 255, 0.08)'
+                        },
+                        angleLines: {
+                            color: 'rgba(255, 255, 255, 0.08)'
                         },
                         pointLabels: {
-                            color: '#f8fafc',
+                            color: '#e2e8f0',
                             font: {
-                                size: 12,
+                                size: 10,
                                 weight: '500'
-                            }
+                            },
+                            padding: 8
                         }
                     }
                 },

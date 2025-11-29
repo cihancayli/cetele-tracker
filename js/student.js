@@ -724,8 +724,9 @@ function calculateStreak(submissions) {
 
 async function loadLeaderboard() {
     try {
-        // Get leaderboard for current week (no limit parameter - getLeaderboard takes groupId, weekStartDate)
-        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, currentWeek);
+        // Get leaderboard for current student's group
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, 10);
+        console.log('📊 Leaderboard loaded:', leaderboard.length, 'students');
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
 
@@ -965,6 +966,11 @@ async function renderProgressChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 25 // Extra padding for points at 100%
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
@@ -993,7 +999,10 @@ async function renderProgressChart() {
                     },
                     x: {
                         ticks: {
-                            color: '#94a3b8'
+                            color: '#94a3b8',
+                            font: { size: 9 },
+                            maxRotation: 45,
+                            minRotation: 45
                         },
                         grid: {
                             display: false
@@ -1125,11 +1134,24 @@ async function renderGroupComparisonChart() {
         const students = await DatabaseHelper.getStudents(currentStudent.group_id);
         const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
 
-        const studentNames = students.map(s => s.name);
+        // Use first name only for compact display
+        const studentNames = students.map(s => {
+            const firstName = s.name.split(' ')[0];
+            return s.id == currentStudentId ? `${firstName} (You)` : firstName;
+        });
+
         const scores = students.map(student => {
             const submission = submissions.find(sub => sub.student_id === student.id);
             if (!submission) return 0;
-            return Object.values(submission.activity_completions).filter(v => v === true).length;
+            // Count proper completions
+            let count = 0;
+            activities.forEach(activity => {
+                const value = submission.activity_completions[activity.id];
+                if (value === true || (typeof value === 'number' && value >= activity.target)) {
+                    count++;
+                }
+            });
+            return count;
         });
 
         const ctx = document.getElementById('groupComparisonChart');
@@ -1155,13 +1177,16 @@ async function renderGroupComparisonChart() {
                     borderColor: students.map(student =>
                         student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.5)'
                     ),
-                    borderWidth: 2,
-                    borderRadius: 8
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 'flex',
+                    maxBarThickness: 25
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal bars - more compact
                 plugins: {
                     legend: {
                         display: false
@@ -1172,27 +1197,29 @@ async function renderGroupComparisonChart() {
                         bodyColor: '#cbd5e1',
                         borderColor: 'rgba(139, 92, 246, 0.3)',
                         borderWidth: 1,
-                        padding: 12
+                        padding: 10,
+                        callbacks: {
+                            label: context => `${context.parsed.x}/${activities.length} activities`
+                        }
                     }
                 },
                 scales: {
-                    y: {
+                    x: {
                         beginAtZero: true,
                         max: activities.length,
                         ticks: {
                             color: '#94a3b8',
-                            stepSize: 1
+                            stepSize: 1,
+                            font: { size: 9 }
                         },
                         grid: {
                             color: 'rgba(255, 255, 255, 0.05)'
                         }
                     },
-                    x: {
+                    y: {
                         ticks: {
-                            color: '#94a3b8',
-                            font: {
-                                size: 10
-                            }
+                            color: '#e2e8f0',
+                            font: { size: 10 }
                         },
                         grid: {
                             display: false
