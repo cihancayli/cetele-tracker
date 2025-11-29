@@ -2821,33 +2821,37 @@ function renderActivitiesList(activities) {
 
 function renderActivityItem(activity, index, isEditable) {
     return `
-        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.02);">
-            <span style="font-size: 1.5rem;">✅</span>
-            <div style="flex: 1;">
-                <div style="font-weight: 500; margin-bottom: 0.25rem;">${activity.name}</div>
-                ${activity.description ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${activity.description}</div>` : ''}
+        <div class="activity-item">
+            <div class="activity-item-icon">✓</div>
+            <div class="activity-item-info">
+                <div class="activity-item-name">${activity.name}</div>
+                ${activity.description ? `<div class="activity-item-desc">${activity.description}</div>` : ''}
             </div>
-            <button class="btn-edit" onclick="editActivity('${activity.id}')">
-                ✏ Edit
-            </button>
-            <button class="btn-delete" onclick="deleteActivity('${activity.id}')">
-                🗑 Delete
-            </button>
+            <div class="activity-item-actions">
+                <button class="btn-edit" onclick="editActivity('${activity.id}')">
+                    Edit
+                </button>
+                <button class="btn-delete" onclick="deleteActivity('${activity.id}')">
+                    Delete
+                </button>
+            </div>
         </div>
     `;
 }
 
 function renderSuggestedActivityItem(activity, index) {
     return `
-        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--glass-border);">
-            <span style="font-size: 1.5rem; opacity: 0.6;">💡</span>
-            <div style="flex: 1;">
-                <div style="font-weight: 500; margin-bottom: 0.25rem; color: rgba(255, 255, 255, 0.7);">${activity.name}</div>
-                ${activity.description ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${activity.description}</div>` : ''}
+        <div class="activity-item activity-item-suggested">
+            <div class="activity-item-icon">💡</div>
+            <div class="activity-item-info">
+                <div class="activity-item-name">${activity.name}</div>
+                ${activity.description ? `<div class="activity-item-desc">${activity.description}</div>` : ''}
             </div>
-            <button class="btn-adopt" onclick="adoptActivity('${activity.id}')">
-                <span>+</span> Adopt
-            </button>
+            <div class="activity-item-actions">
+                <button class="btn-add-suggested" onclick="adoptActivity('${activity.id}')">
+                    <span>+</span> Add
+                </button>
+            </div>
         </div>
     `;
 }
