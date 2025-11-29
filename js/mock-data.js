@@ -151,6 +151,42 @@ const MockDatabaseHelper = {
         return [...MOCK_DATA.groups];
     },
 
+    async createGroup(name, grade) {
+        const newGroup = {
+            id: MOCK_DATA.groups.length + 1,
+            name,
+            grade,
+            mentor_id: null,
+            created_at: new Date()
+        };
+        MOCK_DATA.groups.push(newGroup);
+        return newGroup;
+    },
+
+    async getGroupStats(groupId, weekStartDate = null) {
+        const students = await this.getStudents(groupId);
+        const currentWeek = weekStartDate || this.getWeekStartDate(new Date());
+        const totalActivities = MOCK_DATA.activities.length;
+
+        const stats = [];
+        for (const student of students) {
+            const submission = await this.getWeeklySubmission(student.id, currentWeek);
+            let score = 0;
+            if (submission) {
+                score = Object.values(submission.activity_completions).filter(v =>
+                    v === true || (typeof v === 'number' && v > 0)
+                ).length;
+            }
+            const percentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
+            stats.push({
+                student,
+                score,
+                percentage
+            });
+        }
+        return stats;
+    },
+
     async getActivities(groupId = null) {
         if (groupId) {
             // Return only activities for this specific group
