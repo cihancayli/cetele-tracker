@@ -77,6 +77,32 @@ async function renderActivityHeatmap() {
 
 // ==================== ACHIEVEMENT BADGES (LEVEL-BASED) ====================
 
+// Rank definitions (shared)
+const RANKS = [
+    { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 1, description: '1 perfect week' },
+    { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 2, description: '2 perfect weeks' },
+    { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 3, description: '3 perfect weeks' },
+    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 4, description: '4 perfect weeks' },
+    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 5, description: '5 perfect weeks' },
+    { name: 'Electro Talebe', image: 'Electro.png', requirement: 6, description: '6 perfect weeks' },
+    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 8, description: '8 perfect weeks' },
+    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 10, description: '10 perfect weeks' },
+    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 12, description: '12 perfect weeks' },
+    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 14, description: '14 perfect weeks' },
+    { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 16, description: 'Full semester (16 weeks)' }
+];
+
+function getCurrentRank(perfectWeeks) {
+    let currentRank = null;
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+        if (perfectWeeks >= RANKS[i].requirement) {
+            currentRank = RANKS[i];
+            break;
+        }
+    }
+    return currentRank;
+}
+
 async function renderBadges() {
     try {
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
@@ -96,52 +122,39 @@ async function renderBadges() {
             if (completed === activities.length) perfectWeeks++;
         });
 
-        // Level-based ranks (ordered from lowest to highest)
-        const ranks = [
-            { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 1, description: '1 tam hafta' },
-            { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 2, description: '2 tam hafta' },
-            { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 3, description: '3 tam hafta' },
-            { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 4, description: '4 tam hafta' },
-            { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 5, description: '5 tam hafta' },
-            { name: 'Electro Talebe', image: 'Electro.png', requirement: 6, description: '6 tam hafta' },
-            { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 8, description: '8 tam hafta' },
-            { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 10, description: '10 tam hafta' },
-            { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 12, description: '12 tam hafta' },
-            { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 14, description: '14 tam hafta' },
-            { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 16, description: 'Tam dönem (16 hafta)' }
-        ];
-
         // Find current rank and next rank
-        let currentRank = null;
-        let nextRank = ranks[0];
+        let currentRank = getCurrentRank(perfectWeeks);
+        let nextRank = RANKS[0];
 
-        for (let i = ranks.length - 1; i >= 0; i--) {
-            if (perfectWeeks >= ranks[i].requirement) {
-                currentRank = ranks[i];
-                nextRank = ranks[i + 1] || null;
+        for (let i = RANKS.length - 1; i >= 0; i--) {
+            if (perfectWeeks >= RANKS[i].requirement) {
+                nextRank = RANKS[i + 1] || null;
                 break;
             }
         }
 
         // If no rank yet, next is first rank
         if (!currentRank) {
-            nextRank = ranks[0];
+            nextRank = RANKS[0];
         }
+
+        // Update header rank display
+        updateHeaderRank(currentRank);
 
         let html = '';
 
         // Current Rank Display
         html += `
             <div class="current-rank-display">
-                <div class="rank-label">Mevcut Rütbe</div>
+                <div class="rank-label">Current Rank</div>
                 ${currentRank ? `
                     <img src="assets/${currentRank.image}" alt="${currentRank.name}" class="rank-image current">
                     <div class="rank-name">${currentRank.name}</div>
                 ` : `
                     <div class="rank-image-placeholder">?</div>
-                    <div class="rank-name">Rütbe Yok</div>
+                    <div class="rank-name">No Rank Yet</div>
                 `}
-                <div class="rank-stat">${perfectWeeks} tam hafta</div>
+                <div class="rank-stat">${perfectWeeks} perfect week${perfectWeeks !== 1 ? 's' : ''}</div>
             </div>
         `;
 
@@ -155,8 +168,8 @@ async function renderBadges() {
             html += `
                 <div class="next-rank-progress">
                     <div class="next-rank-header">
-                        <span>Sonraki Rütbe</span>
-                        <span class="weeks-needed">${weeksNeeded} hafta kaldı</span>
+                        <span>Next Rank</span>
+                        <span class="weeks-needed">${weeksNeeded} week${weeksNeeded !== 1 ? 's' : ''} to go</span>
                     </div>
                     <div class="next-rank-info">
                         <img src="assets/${nextRank.image}" alt="${nextRank.name}" class="rank-image next">
@@ -173,21 +186,24 @@ async function renderBadges() {
         } else {
             html += `
                 <div class="max-rank-achieved">
-                    <div class="max-rank-text">🏆 En yüksek rütbeye ulaştın!</div>
+                    <div class="max-rank-text">🏆 Maximum rank achieved!</div>
                 </div>
             `;
         }
 
         // All Ranks Preview
-        html += `<div class="all-ranks-label">Tüm Rütbeler</div>`;
+        html += `<div class="all-ranks-label">All Ranks</div>`;
         html += `<div class="all-ranks-grid">`;
-        ranks.forEach((rank, index) => {
+        RANKS.forEach((rank, index) => {
             const isEarned = perfectWeeks >= rank.requirement;
             const isCurrent = currentRank && currentRank.name === rank.name;
             html += `
-                <div class="rank-badge ${isEarned ? 'earned' : 'locked'} ${isCurrent ? 'current' : ''}" title="${rank.name}: ${rank.description}">
-                    <img src="assets/${rank.image}" alt="${rank.name}" class="rank-badge-image ${isEarned ? '' : 'grayscale'}">
-                    ${isCurrent ? '<div class="current-indicator"></div>' : ''}
+                <div class="rank-badge-container ${isEarned ? 'earned' : 'locked'} ${isCurrent ? 'current' : ''}" title="${rank.description}">
+                    <div class="rank-badge">
+                        <img src="assets/${rank.image}" alt="${rank.name}" class="rank-badge-image ${isEarned ? '' : 'grayscale'}">
+                        ${isCurrent ? '<div class="current-indicator"></div>' : ''}
+                    </div>
+                    <div class="rank-badge-name">${rank.name}</div>
                 </div>
             `;
         });
@@ -196,6 +212,23 @@ async function renderBadges() {
         container.innerHTML = html;
     } catch (error) {
         console.error('Error rendering badges:', error);
+    }
+}
+
+function updateHeaderRank(currentRank) {
+    const headerIcon = document.getElementById('headerRankIcon');
+    const headerName = document.getElementById('headerRankName');
+
+    if (headerIcon && headerName) {
+        if (currentRank) {
+            headerIcon.src = `assets/${currentRank.image}`;
+            headerIcon.alt = currentRank.name;
+            headerIcon.style.display = 'inline-block';
+            headerName.textContent = currentRank.name;
+        } else {
+            headerIcon.style.display = 'none';
+            headerName.textContent = 'No Rank';
+        }
     }
 }
 

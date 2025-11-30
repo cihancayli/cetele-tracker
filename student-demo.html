@@ -36,7 +36,10 @@
                 <span class="stat-divider">•</span>
                 <span class="stat-item">🔥 <span id="streakCount">0</span> Week Streak</span>
                 <span class="stat-divider">•</span>
-                <span class="stat-item">⭐ Rank <span id="rankPosition">#-</span></span>
+                <span class="stat-item header-rank-display" id="headerRankDisplay">
+                    <img src="assets/IskeletMuridleri.png" alt="" class="header-rank-icon" id="headerRankIcon">
+                    <span id="headerRankName">No Rank</span>
+                </span>
                 <span class="stat-divider">•</span>
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
             </div>
@@ -167,15 +170,14 @@
             <!-- Center Column: Consistency -->
             <div class="dashboard-center">
                 <!-- Consistency Tracker -->
-                <div class="chart-card compact">
-                    <h3>🔥 Consistency</h3>
-                    <div class="chart-container-small">
-                        <canvas id="consistencyChart"></canvas>
-                    </div>
+                <!-- Rank System -->
+                <div class="stats-card compact">
+                    <h3>🎖️ Your Rank</h3>
+                    <div id="badgesContainer" class="badges-container-compact"></div>
                 </div>
             </div>
 
-            <!-- Right Column: Leaderboards & Badges -->
+            <!-- Right Column: Leaderboards -->
             <div class="dashboard-right">
                 <!-- Group Leaderboard -->
                 <div class="stats-card compact">
@@ -191,12 +193,6 @@
                     <div id="topPerformers" class="top-performers-compact">
                         <!-- Top performers will be populated here -->
                     </div>
-                </div>
-
-                <!-- Achievement Badges -->
-                <div class="stats-card compact">
-                    <h3>🏅 Badges</h3>
-                    <div id="badgesContainer" class="badges-container-compact"></div>
                 </div>
             </div>
         </div>

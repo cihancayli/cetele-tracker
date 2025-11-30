@@ -1702,18 +1702,40 @@ body::before {
 }
 
 .all-ranks-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+}
+
+.rank-badge-container {
     display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+}
+
+.rank-badge-container:hover {
+    transform: scale(1.08);
+}
+
+.rank-badge-container.current .rank-badge {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+    animation: currentRankPulse 2s ease-in-out infinite;
+}
+
+@keyframes currentRankPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(139, 92, 246, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.9); }
 }
 
 .rank-badge {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1721,40 +1743,75 @@ body::before {
     transition: all 0.2s ease;
 }
 
-.rank-badge.earned {
+.rank-badge-container.earned .rank-badge {
     background: rgba(139, 92, 246, 0.15);
     border-color: rgba(139, 92, 246, 0.3);
 }
 
-.rank-badge.current {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
-}
-
-.rank-badge:hover {
-    transform: scale(1.1);
-}
-
 .rank-badge-image {
-    width: 30px;
-    height: 30px;
+    width: 38px;
+    height: 38px;
     object-fit: contain;
 }
 
 .rank-badge-image.grayscale {
     filter: grayscale(100%);
-    opacity: 0.4;
+    opacity: 0.35;
+}
+
+.rank-badge-name {
+    font-size: 0.6rem;
+    color: #64748b;
+    text-align: center;
+    line-height: 1.1;
+    max-width: 60px;
+    word-wrap: break-word;
+}
+
+.rank-badge-container.earned .rank-badge-name {
+    color: #a78bfa;
+}
+
+.rank-badge-container.current .rank-badge-name {
+    color: #f8fafc;
+    font-weight: 600;
 }
 
 .current-indicator {
     position: absolute;
-    bottom: -4px;
+    bottom: -6px;
     left: 50%;
     transform: translateX(-50%);
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     background: #8b5cf6;
     border-radius: 50%;
+    box-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
+}
+
+/* Header rank display */
+.header-rank-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.header-rank-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.4));
+    animation: headerRankFloat 3s ease-in-out infinite;
+}
+
+@keyframes headerRankFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+#headerRankName {
+    font-weight: 500;
+    color: #a78bfa;
 }
 
 /* ==================== COMPACT DASHBOARD LAYOUT ==================== */
@@ -2010,17 +2067,32 @@ body::before {
     }
 
     .all-ranks-grid {
-        gap: 0.35rem !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.5rem !important;
     }
 
     .rank-badge {
-        width: 32px !important;
-        height: 32px !important;
+        width: 40px !important;
+        height: 40px !important;
     }
 
     .rank-badge-image {
-        width: 24px !important;
-        height: 24px !important;
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .rank-badge-name {
+        font-size: 0.5rem !important;
+        max-width: 50px !important;
+    }
+
+    .header-rank-icon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    #headerRankName {
+        font-size: 0.8rem !important;
     }
 
     /* Week selector responsive */
