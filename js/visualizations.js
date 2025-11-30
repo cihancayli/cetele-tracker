@@ -79,9 +79,9 @@ async function renderActivityHeatmap() {
 
 // Rank definitions (shared)
 const RANKS = [
-    { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 0, description: 'Starting rank' },
-    { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 1, description: '1 perfect week' },
-    { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 2, description: '2 perfect weeks' },
+    { name: 'İskelet Talebe', image: 'IskeletMuridleri.png', requirement: 0, description: 'Starting rank' },
+    { name: 'İskelet Muridi', image: 'IskeletBeyi.png', requirement: 1, description: '1 perfect week' },
+    { name: 'Goblin Sâliki', image: 'GoblinSaliki.webp', requirement: 2, description: '2 perfect weeks' },
     { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 3, description: '3 perfect weeks' },
     { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 4, description: '4 perfect weeks' },
     { name: 'Electro Talebe', image: 'Electro.png', requirement: 5, description: '5 perfect weeks' },
