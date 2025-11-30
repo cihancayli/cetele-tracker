@@ -79,16 +79,16 @@ async function renderActivityHeatmap() {
 
 // Rank definitions (shared)
 const RANKS = [
-    { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 1, description: '1 perfect week' },
-    { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 2, description: '2 perfect weeks' },
-    { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 3, description: '3 perfect weeks' },
-    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 4, description: '4 perfect weeks' },
-    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 5, description: '5 perfect weeks' },
-    { name: 'Electro Talebe', image: 'Electro.png', requirement: 6, description: '6 perfect weeks' },
-    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 8, description: '8 perfect weeks' },
-    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 10, description: '10 perfect weeks' },
-    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 12, description: '12 perfect weeks' },
-    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 14, description: '14 perfect weeks' },
+    { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 0, description: 'Starting rank' },
+    { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 1, description: '1 perfect week' },
+    { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 2, description: '2 perfect weeks' },
+    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 3, description: '3 perfect weeks' },
+    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 4, description: '4 perfect weeks' },
+    { name: 'Electro Talebe', image: 'Electro.png', requirement: 5, description: '5 perfect weeks' },
+    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 7, description: '7 perfect weeks' },
+    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 9, description: '9 perfect weeks' },
+    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 11, description: '11 perfect weeks' },
+    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 13, description: '13 perfect weeks' },
     { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 16, description: 'Full semester (16 weeks)' }
 ];
 
