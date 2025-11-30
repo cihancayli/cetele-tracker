@@ -1653,7 +1653,15 @@ body::before {
 }
 
 /* Compact card styles */
-.chart-card.compact,
+.chart-card.compact {
+    border-radius: 16px;
+    padding: 1.5rem;
+    padding-top: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
 .stats-card.compact {
     border-radius: 16px;
     padding: 1.5rem;
