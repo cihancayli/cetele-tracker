@@ -37,10 +37,14 @@ body {
 .week-selector,
 .cetele-table-card,
 .dashboard-grid,
-.chart-card,
 .stats-card {
     max-width: 100%;
     overflow-x: hidden;
+}
+
+.chart-card {
+    max-width: 100%;
+    overflow: visible;
 }
 
 /* Background with blurred image */
@@ -1667,6 +1671,8 @@ body::before {
 
 .chart-container-small {
     height: 380px;
+    padding-top: 15px;
+    overflow: visible;
 }
 
 .stats-grid-compact {
