@@ -757,8 +757,7 @@ body::before {
 }
 
 .cell-partial {
-    background: rgba(251, 191, 36, 0.15) !important;
-    border-left: 3px solid #fbbf24;
+    background: rgba(251, 191, 36, 0.1) !important;
 }
 
 .cell-low {
