@@ -75,7 +75,7 @@ async function renderActivityHeatmap() {
     }
 }
 
-// ==================== ACHIEVEMENT BADGES ====================
+// ==================== ACHIEVEMENT BADGES (LEVEL-BASED) ====================
 
 async function renderBadges() {
     try {
@@ -83,103 +83,119 @@ async function renderBadges() {
         const container = document.getElementById('badgesContainer');
         if (!container) return;
 
-        // Calculate badge progress
-        const streak = calculateStreak(allMySubmissions);
-        const totalWeeks = allMySubmissions.length;
-
-        let maxPagesInWeek = 0;
+        // Calculate perfect weeks (100% completion)
         let perfectWeeks = 0;
-        let consistentWeeks = 0;
-
         allMySubmissions.forEach(sub => {
-            const kitapPages = sub.activity_completions[1] || 0;
-            const kuranPages = sub.activity_completions[4] || 0;
-            const totalPages = kitapPages + kuranPages;
-
-            if (totalPages > maxPagesInWeek) maxPagesInWeek = totalPages;
-
-            const completed = Object.values(sub.activity_completions).filter(v => {
-                return (typeof v === 'number' && v > 0) || v === true;
-            }).length;
-            const percentage = (completed / activities.length) * 100;
-
-            if (percentage === 100) perfectWeeks++;
-            if (percentage >= 80) consistentWeeks++;
+            let completed = 0;
+            activities.forEach(activity => {
+                const value = sub.activity_completions[activity.id];
+                if (value === true || (typeof value === 'number' && value >= activity.target)) {
+                    completed++;
+                }
+            });
+            if (completed === activities.length) perfectWeeks++;
         });
 
-        const badges = [
-            {
-                icon: '🔥',
-                name: '4-Week Streak',
-                description: 'Complete 4 weeks in a row',
-                progress: Math.min(streak, 4),
-                target: 4,
-                earned: streak >= 4
-            },
-            {
-                icon: '📚',
-                name: 'Book Worm',
-                description: 'Read 150+ pages in one week',
-                progress: Math.min(maxPagesInWeek, 150),
-                target: 150,
-                earned: maxPagesInWeek >= 150
-            },
-            {
-                icon: '⭐',
-                name: 'Perfect Week',
-                description: '100% completion all activities',
-                progress: perfectWeeks,
-                target: 1,
-                earned: perfectWeeks >= 1
-            },
-            {
-                icon: '💪',
-                name: 'Consistency Champion',
-                description: '8 weeks of 80%+ completion',
-                progress: consistentWeeks,
-                target: 8,
-                earned: consistentWeeks >= 8
-            },
-            {
-                icon: '🎯',
-                name: 'Completionist',
-                description: 'Track for 12 weeks',
-                progress: totalWeeks,
-                target: 12,
-                earned: totalWeeks >= 12
-            },
-            {
-                icon: '⚡',
-                name: 'Lightning Fast',
-                description: '3 perfect weeks in a row',
-                progress: 0,
-                target: 3,
-                earned: false
-            }
+        // Level-based ranks (ordered from lowest to highest)
+        const ranks = [
+            { name: 'İskelet Muridi', image: 'IskeletMuridleri.png', requirement: 1, description: '1 tam hafta' },
+            { name: 'İskelet Beyi', image: 'IskeletBeyi.png', requirement: 2, description: '2 tam hafta' },
+            { name: 'Goblin Salığı', image: 'GoblinSaliki.webp', requirement: 3, description: '3 tam hafta' },
+            { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 4, description: '4 tam hafta' },
+            { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 5, description: '5 tam hafta' },
+            { name: 'Electro Talebe', image: 'Electro.png', requirement: 6, description: '6 tam hafta' },
+            { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 8, description: '8 tam hafta' },
+            { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 10, description: '10 tam hafta' },
+            { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 12, description: '12 tam hafta' },
+            { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 14, description: '14 tam hafta' },
+            { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 16, description: 'Tam dönem (16 hafta)' }
         ];
 
+        // Find current rank and next rank
+        let currentRank = null;
+        let nextRank = ranks[0];
+
+        for (let i = ranks.length - 1; i >= 0; i--) {
+            if (perfectWeeks >= ranks[i].requirement) {
+                currentRank = ranks[i];
+                nextRank = ranks[i + 1] || null;
+                break;
+            }
+        }
+
+        // If no rank yet, next is first rank
+        if (!currentRank) {
+            nextRank = ranks[0];
+        }
+
         let html = '';
-        badges.forEach(badge => {
-            const progressPercent = Math.min((badge.progress / badge.target) * 100, 100);
+
+        // Current Rank Display
+        html += `
+            <div class="current-rank-display">
+                <div class="rank-label">Mevcut Rütbe</div>
+                ${currentRank ? `
+                    <img src="assets/${currentRank.image}" alt="${currentRank.name}" class="rank-image current">
+                    <div class="rank-name">${currentRank.name}</div>
+                ` : `
+                    <div class="rank-image-placeholder">?</div>
+                    <div class="rank-name">Rütbe Yok</div>
+                `}
+                <div class="rank-stat">${perfectWeeks} tam hafta</div>
+            </div>
+        `;
+
+        // Next Rank Progress
+        if (nextRank) {
+            const progress = currentRank
+                ? ((perfectWeeks - currentRank.requirement) / (nextRank.requirement - currentRank.requirement)) * 100
+                : (perfectWeeks / nextRank.requirement) * 100;
+            const weeksNeeded = nextRank.requirement - perfectWeeks;
 
             html += `
-                <div class="badge-card ${badge.earned ? 'earned' : 'locked'}">
-                    ${badge.earned ? '<div class="badge-earned-checkmark">✓</div>' : ''}
-                    <div class="badge-icon">${badge.icon}</div>
-                    <div class="badge-name">${badge.name}</div>
-                    <div class="badge-description">${badge.description}</div>
-                    ${!badge.earned ? `
-                        <div class="badge-progress">
-                            <div class="badge-progress-fill" style="width: ${progressPercent}%"></div>
+                <div class="next-rank-progress">
+                    <div class="next-rank-header">
+                        <span>Sonraki Rütbe</span>
+                        <span class="weeks-needed">${weeksNeeded} hafta kaldı</span>
+                    </div>
+                    <div class="next-rank-info">
+                        <img src="assets/${nextRank.image}" alt="${nextRank.name}" class="rank-image next">
+                        <div class="next-rank-details">
+                            <div class="next-rank-name">${nextRank.name}</div>
+                            <div class="next-rank-req">${nextRank.description}</div>
+                            <div class="rank-progress-bar">
+                                <div class="rank-progress-fill" style="width: ${Math.min(progress, 100)}%"></div>
+                            </div>
                         </div>
-                        <div class="badge-progress-text">${badge.progress} / ${badge.target}</div>
-                    ` : ''}
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="max-rank-achieved">
+                    <div class="max-rank-text">🏆 En yüksek rütbeye ulaştın!</div>
+                </div>
+            `;
+        }
+
+        // All Ranks Preview
+        html += `<div class="all-ranks-label">Tüm Rütbeler</div>`;
+        html += `<div class="all-ranks-grid">`;
+        ranks.forEach((rank, index) => {
+            const isEarned = perfectWeeks >= rank.requirement;
+            const isCurrent = currentRank && currentRank.name === rank.name;
+            html += `
+                <div class="rank-badge ${isEarned ? 'earned' : 'locked'} ${isCurrent ? 'current' : ''}" title="${rank.name}: ${rank.description}">
+                    <img src="assets/${rank.image}" alt="${rank.name}" class="rank-badge-image ${isEarned ? '' : 'grayscale'}">
+                    ${isCurrent ? '<div class="current-indicator"></div>' : ''}
                 </div>
             `;
         });
+        html += `</div>`;
 
         container.innerHTML = html;
     } catch (error) {
+        console.error('Error rendering badges:', error);
     }
 }
 
