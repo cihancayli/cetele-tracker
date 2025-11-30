@@ -207,9 +207,12 @@ async function loadCeteleTable() {
                     if (activity.input_type === 'number') {
                         if (value !== null && value !== undefined) {
                             const percentage = (value / activity.target) * 100;
-                            if (percentage >= 50) {
+                            if (percentage >= 100) {
                                 displayValue = 'Yes';
                                 cellClass = 'cell-yes';
+                            } else if (percentage >= 50) {
+                                displayValue = 'Partial';
+                                cellClass = 'cell-partial';
                             } else if (percentage > 0) {
                                 displayValue = 'No';
                                 cellClass = 'cell-no';
@@ -294,9 +297,12 @@ async function loadCeteleTable() {
                         if (value !== null && value !== undefined) {
                             const percentage = (value / activity.target) * 100;
 
-                            if (percentage >= 50) {
+                            if (percentage >= 100) {
                                 displayValue = 'Yes';
                                 cellClass = 'cell-yes';
+                            } else if (percentage >= 50) {
+                                displayValue = 'Partial';
+                                cellClass = 'cell-partial';
                             } else if (percentage > 0) {
                                 displayValue = 'No';
                                 cellClass = 'cell-no';
@@ -362,10 +368,12 @@ function attachInputEventListeners() {
             const value = parseInt(this.value) || 0;
             const percentage = (value / target) * 100;
 
-            cell.classList.remove('cell-yes', 'cell-no', 'cell-empty');
+            cell.classList.remove('cell-yes', 'cell-no', 'cell-partial', 'cell-empty');
 
-            if (percentage >= 50) {
+            if (percentage >= 100) {
                 cell.classList.add('cell-yes');
+            } else if (percentage >= 50) {
+                cell.classList.add('cell-partial');
             } else if (percentage > 0) {
                 cell.classList.add('cell-no');
             } else {
@@ -598,9 +606,12 @@ async function animateToBadges(activityCompletions) {
             if (activity.input_type === 'number') {
                 if (value !== null && value !== undefined && value !== 0) {
                     const percentage = (value / activity.target) * 100;
-                    if (percentage >= 50) {
+                    if (percentage >= 100) {
                         displayValue = 'Yes';
                         cellClass = 'cell-yes';
+                    } else if (percentage >= 50) {
+                        displayValue = 'Partial';
+                        cellClass = 'cell-partial';
                     } else {
                         displayValue = 'No';
                         cellClass = 'cell-no';
