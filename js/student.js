@@ -988,10 +988,10 @@ async function renderProgressChart() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100,
+                        max: 110,
                         ticks: {
                             color: '#94a3b8',
-                            callback: value => value + '%'
+                            callback: value => value <= 100 ? value + '%' : ''
                         },
                         grid: {
                             color: 'rgba(255, 255, 255, 0.05)'
