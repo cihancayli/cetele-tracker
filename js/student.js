@@ -841,8 +841,11 @@ async function loadTopPerformers() {
 }
 
 function changeWeek(direction) {
-    const date = new Date(currentWeek);
+    // Parse currentWeek properly to avoid timezone issues
+    const [year, month, day] = currentWeek.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     date.setDate(date.getDate() + (direction * 7));
+
     const newWeek = DatabaseHelper.getWeekStartDate(date);
 
     // Check if week is allowed
@@ -862,8 +865,6 @@ function goToCurrentWeek() {
 }
 
 function isWeekAllowed(weekString) {
-    const weekDate = new Date(weekString);
-    const today = new Date();
     const currentWeekStart = DatabaseHelper.getWeekStartDate();
 
     // Current week is ALWAYS allowed
@@ -871,13 +872,20 @@ function isWeekAllowed(weekString) {
         return true;
     }
 
-    // For past weeks: Calculate the Saturday of the week at midnight
-    const saturdayOfWeek = new Date(weekDate);
-    saturdayOfWeek.setDate(saturdayOfWeek.getDate() + 5); // Monday + 5 = Saturday
-    saturdayOfWeek.setHours(0, 0, 0, 0);
+    // Parse the week string to compare
+    const [year, month, day] = weekString.split('-').map(Number);
+    const weekDate = new Date(year, month - 1, day);
 
-    // Past week is accessible if today is >= Saturday of that week
-    return today >= saturdayOfWeek;
+    const [cYear, cMonth, cDay] = currentWeekStart.split('-').map(Number);
+    const currentWeekDate = new Date(cYear, cMonth - 1, cDay);
+
+    // Don't allow future weeks (weeks after current week)
+    if (weekDate > currentWeekDate) {
+        return false;
+    }
+
+    // Allow all past weeks up to current week
+    return true;
 }
 
 function updateWeekNavigationState() {

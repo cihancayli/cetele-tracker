@@ -75,27 +75,49 @@ async function renderActivityHeatmap() {
     }
 }
 
-// ==================== ACHIEVEMENT BADGES (LEVEL-BASED) ====================
+// ==================== ACHIEVEMENT BADGES (TROPHY-BASED) ====================
 
-// Rank definitions (shared)
+// Trophy calculation: 100% = 10, 90% = 8, 80% = 6, 70% = 4, <70% = 2, no submission = -5
+function calculateTrophiesForWeek(submission, hasSubmission = true) {
+    if (!hasSubmission || !submission) return -5; // Penalty for missing week
+    if (!submission.activity_completions) return -5;
+
+    let completed = 0;
+    activities.forEach(activity => {
+        const value = submission.activity_completions[activity.id];
+        if (value === true || (typeof value === 'number' && value >= activity.target)) {
+            completed++;
+        }
+    });
+
+    const percentage = (completed / activities.length) * 100;
+
+    if (percentage >= 100) return 10;
+    if (percentage >= 90) return 8;
+    if (percentage >= 80) return 6;
+    if (percentage >= 70) return 4;
+    return 2;
+}
+
+// Rank definitions (trophy-based)
 const RANKS = [
     { name: 'İskelet Talebe', image: 'IskeletMuridleri.png', requirement: 0, description: 'Starting rank' },
-    { name: 'İskelet Muridi', image: 'IskeletBeyi.png', requirement: 1, description: '1 perfect week' },
-    { name: 'Goblin Sâliki', image: 'GoblinSaliki.webp', requirement: 2, description: '2 perfect weeks' },
-    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 3, description: '3 perfect weeks' },
-    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 4, description: '4 perfect weeks' },
-    { name: 'Electro Talebe', image: 'Electro.png', requirement: 5, description: '5 perfect weeks' },
-    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 7, description: '7 perfect weeks' },
-    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 9, description: '9 perfect weeks' },
-    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 11, description: '11 perfect weeks' },
-    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 13, description: '13 perfect weeks' },
-    { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 16, description: 'Full semester (16 weeks)' }
+    { name: 'İskelet Muridi', image: 'IskeletBeyi.png', requirement: 10, description: '10 trophies' },
+    { name: 'Goblin Sâliki', image: 'GoblinSaliki.webp', requirement: 25, description: '25 trophies' },
+    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 40, description: '40 trophies' },
+    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 55, description: '55 trophies' },
+    { name: 'Electro Talebe', image: 'Electro.png', requirement: 70, description: '70 trophies' },
+    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 90, description: '90 trophies' },
+    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 110, description: '110 trophies' },
+    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 130, description: '130 trophies' },
+    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 145, description: '145 trophies' },
+    { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 160, description: '160 trophies (max)' }
 ];
 
-function getCurrentRank(perfectWeeks) {
+function getCurrentRank(trophies) {
     let currentRank = null;
     for (let i = RANKS.length - 1; i >= 0; i--) {
-        if (perfectWeeks >= RANKS[i].requirement) {
+        if (trophies >= RANKS[i].requirement) {
             currentRank = RANKS[i];
             break;
         }
@@ -109,25 +131,18 @@ async function renderBadges() {
         const container = document.getElementById('badgesContainer');
         if (!container) return;
 
-        // Calculate perfect weeks (100% completion)
-        let perfectWeeks = 0;
+        // Calculate total trophies
+        let totalTrophies = 0;
         allMySubmissions.forEach(sub => {
-            let completed = 0;
-            activities.forEach(activity => {
-                const value = sub.activity_completions[activity.id];
-                if (value === true || (typeof value === 'number' && value >= activity.target)) {
-                    completed++;
-                }
-            });
-            if (completed === activities.length) perfectWeeks++;
+            totalTrophies += calculateTrophiesForWeek(sub);
         });
 
         // Find current rank and next rank
-        let currentRank = getCurrentRank(perfectWeeks);
+        let currentRank = getCurrentRank(totalTrophies);
         let nextRank = RANKS[0];
 
         for (let i = RANKS.length - 1; i >= 0; i--) {
-            if (perfectWeeks >= RANKS[i].requirement) {
+            if (totalTrophies >= RANKS[i].requirement) {
                 nextRank = RANKS[i + 1] || null;
                 break;
             }
@@ -139,7 +154,7 @@ async function renderBadges() {
         }
 
         // Update header rank display
-        updateHeaderRank(currentRank);
+        updateHeaderRank(currentRank, totalTrophies);
 
         let html = '';
 
@@ -154,22 +169,40 @@ async function renderBadges() {
                     <div class="rank-image-placeholder">?</div>
                     <div class="rank-name">No Rank Yet</div>
                 `}
-                <div class="rank-stat">${perfectWeeks} perfect week${perfectWeeks !== 1 ? 's' : ''}</div>
+                <div class="rank-stat">
+                    <img src="assets/trophycrown.png" alt="trophy" class="trophy-icon-small">
+                    ${totalTrophies}
+                    <div class="trophy-help-wrapper">
+                        <span class="trophy-help-icon">?</span>
+                        <div class="trophy-help-popup">
+                            <div class="trophy-help-title">Weekly Trophies</div>
+                            <div class="trophy-help-row"><span>100%</span><span>+10</span></div>
+                            <div class="trophy-help-row"><span>90%</span><span>+8</span></div>
+                            <div class="trophy-help-row"><span>80%</span><span>+6</span></div>
+                            <div class="trophy-help-row"><span>70%</span><span>+4</span></div>
+                            <div class="trophy-help-row"><span>&lt;70%</span><span>+2</span></div>
+                            <div class="trophy-help-row penalty"><span>Missed</span><span>-5</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
         // Next Rank Progress
         if (nextRank) {
             const progress = currentRank
-                ? ((perfectWeeks - currentRank.requirement) / (nextRank.requirement - currentRank.requirement)) * 100
-                : (perfectWeeks / nextRank.requirement) * 100;
-            const weeksNeeded = nextRank.requirement - perfectWeeks;
+                ? ((totalTrophies - currentRank.requirement) / (nextRank.requirement - currentRank.requirement)) * 100
+                : (totalTrophies / nextRank.requirement) * 100;
+            const trophiesNeeded = nextRank.requirement - totalTrophies;
 
             html += `
                 <div class="next-rank-progress">
                     <div class="next-rank-header">
                         <span>Next Rank</span>
-                        <span class="weeks-needed">${weeksNeeded} week${weeksNeeded !== 1 ? 's' : ''} to go</span>
+                        <span class="weeks-needed">
+                            <img src="assets/trophycrown.png" alt="trophy" class="trophy-icon-tiny">
+                            ${trophiesNeeded} to go
+                        </span>
                     </div>
                     <div class="next-rank-info">
                         <img src="assets/${nextRank.image}" alt="${nextRank.name}" class="rank-image next">
@@ -191,11 +224,12 @@ async function renderBadges() {
             `;
         }
 
+
         // All Ranks Preview
         html += `<div class="all-ranks-label">All Ranks</div>`;
         html += `<div class="all-ranks-grid">`;
         RANKS.forEach((rank, index) => {
-            const isEarned = perfectWeeks >= rank.requirement;
+            const isEarned = totalTrophies >= rank.requirement;
             const isCurrent = currentRank && currentRank.name === rank.name;
             html += `
                 <div class="rank-badge-container ${isEarned ? 'earned' : 'locked'} ${isCurrent ? 'current' : ''}" title="${rank.description}">
@@ -215,7 +249,7 @@ async function renderBadges() {
     }
 }
 
-function updateHeaderRank(currentRank) {
+function updateHeaderRank(currentRank, totalTrophies) {
     const headerIcon = document.getElementById('headerRankIcon');
     const headerName = document.getElementById('headerRankName');
 
@@ -224,7 +258,7 @@ function updateHeaderRank(currentRank) {
             headerIcon.src = `assets/${currentRank.image}`;
             headerIcon.alt = currentRank.name;
             headerIcon.style.display = 'inline-block';
-            headerName.textContent = currentRank.name;
+            headerName.innerHTML = `${currentRank.name} <img src="assets/trophycrown.png" class="trophy-icon-tiny" alt=""> ${totalTrophies}`;
         } else {
             headerIcon.style.display = 'none';
             headerName.textContent = 'No Rank';

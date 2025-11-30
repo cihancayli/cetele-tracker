@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - Cetele Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0b0e 0%, #1a1b2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f8fafc;
+        }
+
+        .debug-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .debug-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .debug-badge {
+            display: inline-block;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .debug-header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .debug-header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .account-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .account-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .account-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .account-card.student { border-left: 3px solid #10b981; }
+        .account-card.mentor { border-left: 3px solid #8b5cf6; }
+        .account-card.coordinator { border-left: 3px solid #f59e0b; }
+
+        .account-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .account-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .account-card.student .account-avatar { background: rgba(16, 185, 129, 0.2); }
+        .account-card.mentor .account-avatar { background: rgba(139, 92, 246, 0.2); }
+        .account-card.coordinator .account-avatar { background: rgba(245, 158, 11, 0.2); }
+
+        .account-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .account-role {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .account-card.student .account-role { color: #10b981; }
+        .account-card.mentor .account-role { color: #8b5cf6; }
+        .account-card.coordinator .account-role { color: #f59e0b; }
+
+        .account-details {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .account-details span {
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .hierarchy-note {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #a78bfa;
+        }
+
+        .hierarchy-note strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #c4b5fd;
+        }
+
+        .localhost-warning {
+            margin-top: 1.5rem;
+            padding: 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #fca5a5;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="debug-header">
+            <div class="debug-badge">Localhost Only</div>
+            <h1>Debug Login</h1>
+            <p>Select an account to test the full flow</p>
+        </div>
+
+        <div class="account-grid">
+            <!-- Student Account -->
+            <div class="account-card student" onclick="loginAs('student')">
+                <div class="account-header">
+                    <div class="account-avatar">👨‍🎓</div>
+                    <div class="account-info">
+                        <h3>Ahmet Yilmaz</h3>
+                        <div class="account-role">Student</div>
+                    </div>
+                </div>
+                <div class="account-details">
+                    <span>Group: Nur Talebeleri - 9th Grade</span>
+                    <span>Mentor: Hoca Mehmet</span>
+                </div>
+            </div>
+
+            <!-- Mentor Account -->
+            <div class="account-card mentor" onclick="loginAs('mentor')">
+                <div class="account-header">
+                    <div class="account-avatar">👨‍🏫</div>
+                    <div class="account-info">
+                        <h3>Hoca Mehmet</h3>
+                        <div class="account-role">Mentor</div>
+                    </div>
+                </div>
+                <div class="account-details">
+                    <span>Manages: Nur Talebeleri group</span>
+                    <span>Students: 8 active students</span>
+                </div>
+            </div>
+
+            <!-- Coordinator Account -->
+            <div class="account-card coordinator" onclick="loginAs('coordinator')">
+                <div class="account-header">
+                    <div class="account-avatar">👑</div>
+                    <div class="account-info">
+                        <h3>Admin Fatih</h3>
+                        <div class="account-role">Coordinator</div>
+                    </div>
+                </div>
+                <div class="account-details">
+                    <span>Oversees: All groups & mentors</span>
+                    <span>Mentors: Hoca Mehmet, Hoca Ali</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hierarchy-note">
+            <strong>Account Hierarchy:</strong>
+            Coordinator (Admin Fatih) → Mentor (Hoca Mehmet) → Student (Ahmet Yilmaz)
+            <br><br>
+            Changes made by the student will be visible to the mentor and coordinator.
+        </div>
+
+        <div class="localhost-warning">
+            This page only works on localhost for development testing.
+        </div>
+    </div>
+
+    <script>
+        // Only allow on localhost
+        if (!['localhost', '127.0.0.1', ''].includes(window.location.hostname)) {
+            document.body.innerHTML = '<div style="text-align: center; padding: 50px; color: #ef4444;"><h1>Access Denied</h1><p>Debug login is only available on localhost.</p></div>';
+        }
+
+        // Debug account data - all connected
+        const debugAccounts = {
+            student: {
+                id: 'debug-student-1',
+                name: 'Ahmet Yilmaz',
+                role: 'student',
+                student_id: '1',
+                group_id: '1',
+                group_name: 'Nur Talebeleri',
+                mentor_id: 'debug-mentor-1',
+                mentor_name: 'Hoca Mehmet'
+            },
+            mentor: {
+                id: 'debug-mentor-1',
+                name: 'Hoca Mehmet',
+                role: 'mentor',
+                group_ids: ['1'],
+                group_names: ['Nur Talebeleri'],
+                student_ids: ['1', '2', '3', '4', '5', '6', '7', '8'],
+                coordinator_id: 'debug-coordinator-1'
+            },
+            coordinator: {
+                id: 'debug-coordinator-1',
+                name: 'Admin Fatih',
+                role: 'coordinator',
+                mentor_ids: ['debug-mentor-1', 'debug-mentor-2'],
+                mentor_names: ['Hoca Mehmet', 'Hoca Ali'],
+                all_groups: true
+            }
+        };
+
+        function loginAs(role) {
+            const account = debugAccounts[role];
+
+            // Store debug session
+            localStorage.setItem('cetele_debug', 'true');
+            localStorage.setItem('cetele_debug_account', JSON.stringify(account));
+
+            // Create user session
+            const userSession = {
+                id: account.id,
+                role: account.role,
+                name: account.name,
+                ...account
+            };
+            localStorage.setItem('cetele_user', JSON.stringify(userSession));
+
+            // Create session for backward compatibility
+            const session = {
+                role: account.role,
+                identifier: account.name,
+                userId: account.id,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('cetele_session', JSON.stringify(session));
+
+            // Set student ID if student
+            if (role === 'student') {
+                sessionStorage.setItem('studentId', account.student_id);
+            }
+
+            // Redirect based on role
+            switch(role) {
+                case 'student':
+                    window.location.href = 'student.html';
+                    break;
+                case 'mentor':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'coordinator':
+                    window.location.href = 'admin.html';
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>
