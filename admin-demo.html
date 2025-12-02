@@ -4,19 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard — Cetele Tracker</title>
-
-    <!-- Demo mode setup -->
-    <script>
-        // Set demo mode flag
-        window.DEMO_MODE = true;
-        window.__DEMO_MODE__ = true;
-
-        // Override alert to suppress errors in demo mode
-        window.alert = function(msg) {
-            console.warn('🔕 DEMO MODE: Suppressed alert:', msg);
-        };
-    </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -35,90 +22,15 @@
             <div class="nav-menu">
                 <div class="nav-section-label">MAIN MENU</div>
                 <button class="nav-btn active" onclick="showSection('overview')">📈 Overview</button>
-                <button class="nav-btn" onclick="showSection('groups')">👥 Groups</button>
-                <button class="nav-btn" onclick="showSection('students')">🎓 Students</button>
-                <button class="nav-btn" onclick="showSection('cetele')">📋 Manage Cetele</button>
+                <button id="navGroups" class="nav-btn" onclick="showSection('groups')">👥 Groups</button>
+                <button id="navStudents" class="nav-btn" onclick="showSection('students')">🎓 Students</button>
+                <button id="navCetele" class="nav-btn" onclick="showSection('cetele')">📋 Manage Cetele</button>
                 <button class="nav-btn" onclick="showSection('weekly')">📅 Weekly View</button>
-                <button class="nav-btn" onclick="showSection('analytics')">📊 Analytics</button>
 
                 <button class="nav-btn logout" onclick="logout()">🚪 Logout</button>
             </div>
         </div>
     </nav>
-
-    <!-- Debug Console -->
-    <div id="debugConsole" style="
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 200px;
-        background: rgba(0, 0, 0, 0.95);
-        border-top: 2px solid #6366f1;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        font-family: 'Monaco', 'Menlo', monospace;
-        font-size: 12px;
-    ">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #1a1a2e; border-bottom: 1px solid #333;">
-            <span style="color: #6366f1; font-weight: bold;">🔧 Debug Console</span>
-            <div>
-                <button onclick="clearDebugLog()" style="padding: 4px 8px; margin-right: 8px; font-size: 11px;">Clear</button>
-                <button onclick="document.getElementById('debugConsole').style.display='none'" style="padding: 4px 8px; font-size: 11px;">Hide</button>
-            </div>
-        </div>
-        <div id="debugLog" style="flex: 1; overflow-y: auto; padding: 8px 12px; color: #e0e0e0;"></div>
-    </div>
-
-    <script>
-        // Debug logging system
-        const debugLog = document.getElementById('debugLog');
-
-        function logDebug(message, type = 'info') {
-            const colors = { info: '#60a5fa', success: '#34d399', error: '#f87171', warn: '#fbbf24', data: '#a78bfa' };
-            const time = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.style.marginBottom = '4px';
-            entry.style.borderLeft = `3px solid ${colors[type] || colors.info}`;
-            entry.style.paddingLeft = '8px';
-
-            if (typeof message === 'object') {
-                entry.innerHTML = `<span style="color: #888;">[${time}]</span> <span style="color: ${colors[type]};">${JSON.stringify(message, null, 2)}</span>`;
-            } else {
-                entry.innerHTML = `<span style="color: #888;">[${time}]</span> <span style="color: ${colors[type]};">${message}</span>`;
-            }
-            debugLog.appendChild(entry);
-            debugLog.scrollTop = debugLog.scrollHeight;
-        }
-
-        function clearDebugLog() {
-            debugLog.innerHTML = '';
-            logDebug('Console cleared', 'info');
-        }
-
-        // Override console methods to also show in debug panel
-        const originalConsoleLog = console.log;
-        const originalConsoleError = console.error;
-        const originalConsoleWarn = console.warn;
-
-        console.log = function(...args) {
-            originalConsoleLog.apply(console, args);
-            logDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'info');
-        };
-
-        console.error = function(...args) {
-            originalConsoleError.apply(console, args);
-            logDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'error');
-        };
-
-        console.warn = function(...args) {
-            originalConsoleWarn.apply(console, args);
-            logDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'warn');
-        };
-
-        logDebug('Debug console initialized', 'success');
-    </script>
 
     <div class="container">
         <!-- Loading State -->
@@ -171,11 +83,11 @@
                 </div>
             </div>
 
-            <!-- Charts Row -->
+            <!-- Charts Row - Activity Trends (for everyone) -->
             <div class="charts-grid">
                 <div class="chart-card">
-                    <h3>📊 Weekly Trends</h3>
-                    <canvas id="trendsChart"></canvas>
+                    <h3>📈 Activity Trends</h3>
+                    <canvas id="activityTrendsChart"></canvas>
                 </div>
                 <div class="chart-card">
                     <h3>🎯 Activity Completion</h3>
@@ -183,10 +95,41 @@
                 </div>
             </div>
 
+            <!-- Group Trends - Coordinator Only -->
+            <div id="groupTrendsSection" class="chart-card" style="margin-top: 1.5rem;">
+                <h3>📊 Group Weekly Trends</h3>
+                <canvas id="trendsChart"></canvas>
+            </div>
+
             <!-- Leaderboard -->
             <div class="leaderboard-card">
                 <h2>🏆 Leaderboard</h2>
                 <div id="leaderboardContent"></div>
+            </div>
+
+            <!-- Student Ranks Section -->
+            <div class="ranks-section">
+                <h2>🎖️ Student Ranks</h2>
+                <p class="section-subtitle">Current ranks based on accumulated trophies</p>
+                <div id="studentRanksGrid" class="student-ranks-grid"></div>
+            </div>
+
+            <!-- Additional Analytics Charts -->
+            <div class="charts-grid" style="margin-top: 2rem;">
+                <div class="chart-card">
+                    <h3>📈 Student Progress Over Time</h3>
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🎯 Activity Breakdown</h3>
+                    <canvas id="activityBreakdownChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance Cards -->
+            <div class="chart-card" style="margin-top: 20px;">
+                <h3>📊 Individual Performance</h3>
+                <div id="performanceCards" class="students-grid"></div>
             </div>
         </section>
 
@@ -291,32 +234,6 @@
             <div id="weeklyDataGrid" class="students-grid"></div>
         </section>
 
-        <!-- Analytics Section -->
-        <section id="analyticsSection" class="content-section" style="display: none;">
-            <div class="section-header">
-                <h1>📊 Advanced Analytics</h1>
-                <label for="analyticsGroupFilter" class="visually-hidden">Filter by group</label>
-                <select id="analyticsGroupFilter" class="filter-select" onchange="loadAnalytics()" aria-label="Filter by group">
-                    <option value="">All Groups</option>
-                </select>
-            </div>
-
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <h3>📈 Student Progress Over Time</h3>
-                    <canvas id="progressChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>🎯 Activity Breakdown</h3>
-                    <canvas id="activityBreakdownChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-card" style="margin-top: 20px;">
-                <h3>📊 Individual Performance Cards</h3>
-                <div id="performanceCards" class="students-grid"></div>
-            </div>
-        </section>
     </div>
 
     <!-- Add Group Modal -->
@@ -375,154 +292,115 @@
 
     <!-- Scripts -->
     <script>
-        // DEBUG: Log everything
-        console.log('%c🎬 ADMIN DEMO PAGE LOADING', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-        console.log('Step 1: Setting up demo mode...');
-
-        // Auto-enable demo/debug mode
+        // Set demo mode flag BEFORE any other scripts
+        window.DEMO_MODE = true;
+        window.__DEMO_MODE__ = true;
+        window.__FORCE_MOCK__ = true; // Force mock data mode
         localStorage.setItem('cetele_debug', 'true');
 
-        console.log('✓ Debug mode enabled:', localStorage.getItem('cetele_debug'));
-
-        // Monitor script loading
-        window.addEventListener('error', (e) => {
-            console.error('%c❌ ERROR DETECTED', 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px;');
-            console.error('Error:', e.message);
-            console.error('Source:', e.filename);
-            console.error('Line:', e.lineno);
-        }, true);
-
-        console.log('Step 2: Loading Supabase config...');
+        // Suppress alerts in demo mode
+        window.alert = function(msg) {
+            console.warn('Demo mode: Suppressed alert:', msg);
+        };
     </script>
     <script src="js/supabase-config.js"></script>
-    <script>
-        console.log('Step 4: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
-        console.log('Step 5: Loading mock data...');
-    </script>
     <script src="js/mock-data.js"></script>
     <script>
-        console.log('Step 6: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
-        console.log('Step 7: Loading db-helper...');
+        // Ensure MockDatabaseHelper is assigned AFTER mock-data.js loads
+        if (window.MockDatabaseHelper) {
+            window.DatabaseHelper = window.MockDatabaseHelper;
+        }
     </script>
     <script src="js/db-helper.js"></script>
     <script>
-        console.log('Step 8: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
-        console.log('Step 9: Loading auth.js...');
+        // Double-check: Force MockDatabaseHelper after db-helper.js
+        if (window.__FORCE_MOCK__ && window.MockDatabaseHelper) {
+            window.DatabaseHelper = window.MockDatabaseHelper;
+        }
     </script>
     <script src="js/auth.js"></script>
     <script>
-        console.log('Step 10: Auth.js loaded');
-        console.log('Step 11: Overriding auth functions for demo mode...');
+        // Get debug account from localStorage (set by debug-login.html)
+        const debugAccountStr = localStorage.getItem('cetele_debug_account');
+        const debugAccount = debugAccountStr ? JSON.parse(debugAccountStr) : null;
 
-        // CRITICAL: Override checkAuth to prevent redirects in demo mode
+        // Determine role and group restrictions
+        const isMentor = debugAccount?.role === 'mentor';
+        const isCoordinator = debugAccount?.role === 'coordinator';
+        const mentorGroupIds = debugAccount?.group_ids || null;
+
+        // Store for use in admin.js
+        window.DEMO_ROLE = debugAccount?.role || 'coordinator';
+        window.DEMO_GROUP_IDS = mentorGroupIds;
+        window.DEMO_ACCOUNT = debugAccount;
+
+        // Override checkAuth to prevent redirects in demo mode
         window.checkAuth = function(requiredRole) {
-            console.log('Demo mode: checkAuth called with role:', requiredRole);
-
-            // Return a fake session for demo - use 'ed' not 'admin'
             const demoSession = {
-                role: 'ed',
-                identifier: 'Demo ED',
-                userId: 'demo-ed-id',
+                role: isMentor ? 'mentor' : 'ed',
+                identifier: debugAccount?.name || 'Demo Admin',
+                userId: debugAccount?.id || 'demo-ed-id',
                 timestamp: Date.now()
             };
-
-            // Store it so other code can use it
             localStorage.setItem('cetele_session', JSON.stringify(demoSession));
-
-            console.log('Demo mode: Returning fake session, NO redirect');
             return demoSession;
         };
 
-        console.log('Step 12: Configuring demo-specific functions...');
-
-        // Toggle Debug Mode
-        function toggleDebugMode() {
-            const isDebug = localStorage.getItem('cetele_debug') === 'true';
-            if (isDebug) {
-                disableDebugMode();
-            } else {
-                enableDebugMode();
-            }
-            // Reload to apply changes
-            setTimeout(() => window.location.reload(), 500);
-        }
-
-        // Update debug button state
-        document.addEventListener('DOMContentLoaded', () => {
-            const debugBtn = document.getElementById('debugToggle');
-            const isDebug = localStorage.getItem('cetele_debug') === 'true';
-            if (debugBtn) {
-                if (isDebug) {
-                    debugBtn.textContent = '✅ Mock Data ON';
-                    debugBtn.style.background = 'rgba(34, 197, 94, 0.15)';
-                    debugBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-                    debugBtn.style.color = '#86efac';
-                } else {
-                    debugBtn.textContent = '🔧 Mock Data OFF';
-                }
-            }
-        });
-
-        console.log('Step 13: Creating demo session...');
-
-        // Create a fake session for demo mode to bypass auth checks
-        // IMPORTANT: Use 'ed' role which is valid in admin.js
+        // Create demo session based on debug account
         const demoSession = {
-            role: 'ed',
-            identifier: 'Demo ED',
-            userId: 'demo-ed-id',
+            role: isMentor ? 'mentor' : 'ed',
+            identifier: debugAccount?.name || 'Demo Admin',
+            userId: debugAccount?.id || 'demo-ed-id',
             timestamp: Date.now()
         };
 
-        // Also create the user object that admin.js expects
         const demoUser = {
-            id: 'demo-ed-id',
-            role: 'ed',
+            id: debugAccount?.id || 'demo-ed-id',
+            role: isMentor ? 'mentor' : 'ed',
             email: 'demo@cetele.app',
             region_id: 'demo-region-id',
+            group_ids: mentorGroupIds,
             division: null
         };
 
         localStorage.setItem('cetele_session', JSON.stringify(demoSession));
         localStorage.setItem('cetele_user', JSON.stringify(demoUser));
-        console.log('✓ Demo session and user created');
 
-        console.log('Step 14: Checking authentication...');
-
-        // Check authentication before loading admin dashboard
+        // Check auth (will use our override)
         const session = checkAuth('admin');
-        console.log('Auth check result:', session);
 
-        if (!session) {
-            console.warn('%c⚠️ NO SESSION - This should not happen in demo mode', 'background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px;');
-        } else {
-            console.log('✓ Session valid:', session.identifier);
-            // Update navbar with admin info
-            document.addEventListener('DOMContentLoaded', () => {
-                const navTitle = document.querySelector('.nav-title');
-                if (navTitle && session.identifier) {
-                    navTitle.textContent = `Cetele Admin - ${session.identifier}`;
+        // Update navbar with role info
+        document.addEventListener('DOMContentLoaded', () => {
+            const navTitle = document.querySelector('.nav-title');
+            if (navTitle) {
+                const roleLabel = isMentor ? 'Mentor' : 'Coordinator';
+                navTitle.textContent = `Cetele ${roleLabel} - ${session.identifier}`;
+            }
+
+            // If mentor (not coordinator), hide Groups tab and restrict access
+            if (isMentor && !isCoordinator) {
+                // Hide Groups navigation - mentors don't manage groups
+                const navGroups = document.getElementById('navGroups');
+                if (navGroups) {
+                    navGroups.style.display = 'none';
                 }
-            });
-        }
 
-        console.log('Step 15: Loading admin.js...');
+                // Hide the group filter dropdowns entirely for mentors
+                const overviewFilter = document.getElementById('overviewGroupFilter');
+                const studentFilter = document.getElementById('studentGroupFilter');
+
+                [overviewFilter, studentFilter].forEach(filter => {
+                    if (filter) {
+                        // Hide the filter since mentor only has one group
+                        filter.parentElement.style.display = 'none';
+                    }
+                });
+            }
+
+            // If coordinator, they see everything (even if also a mentor of a specific group)
+            // No restrictions needed - they have full access
+        });
     </script>
     <script src="js/admin.js"></script>
-    <script>
-        console.log('Step 16: Admin.js loaded');
-        console.log('%c✅ ALL SCRIPTS LOADED', 'background: #3b82f6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-
-        // Check if page initialized
-        setTimeout(() => {
-            const loadingState = document.getElementById('loadingState');
-            if (loadingState && loadingState.style.display !== 'none') {
-                console.error('%c⚠️ PAGE STILL LOADING AFTER 3 SECONDS', 'background: #f59e0b; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-                console.error('Loading state is still visible. Check for JavaScript errors above.');
-            } else {
-                console.log('%c🎉 PAGE INITIALIZED SUCCESSFULLY', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-            }
-        }, 3000);
-    </script>
 </body>
 </html>

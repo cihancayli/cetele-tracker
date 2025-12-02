@@ -173,13 +173,13 @@
                 <div class="account-header">
                     <div class="account-avatar">👨‍🎓</div>
                     <div class="account-info">
-                        <h3>Ahmet Yilmaz</h3>
+                        <h3>Emma Thompson</h3>
                         <div class="account-role">Student</div>
                     </div>
                 </div>
                 <div class="account-details">
-                    <span>Group: Nur Talebeleri - 9th Grade</span>
-                    <span>Mentor: Hoca Mehmet</span>
+                    <span>Group: Eagles - 10th Grade</span>
+                    <span>ID: 1 (first student in mock data)</span>
                 </div>
             </div>
 
@@ -188,13 +188,13 @@
                 <div class="account-header">
                     <div class="account-avatar">👨‍🏫</div>
                     <div class="account-info">
-                        <h3>Hoca Mehmet</h3>
+                        <h3>Demo Mentor</h3>
                         <div class="account-role">Mentor</div>
                     </div>
                 </div>
                 <div class="account-details">
-                    <span>Manages: Nur Talebeleri group</span>
-                    <span>Students: 8 active students</span>
+                    <span>Manages: Eagles - 10th Grade</span>
+                    <span>Students: 5 students</span>
                 </div>
             </div>
 
@@ -203,22 +203,22 @@
                 <div class="account-header">
                     <div class="account-avatar">👑</div>
                     <div class="account-info">
-                        <h3>Admin Fatih</h3>
+                        <h3>Demo Coordinator</h3>
                         <div class="account-role">Coordinator</div>
                     </div>
                 </div>
                 <div class="account-details">
-                    <span>Oversees: All groups & mentors</span>
-                    <span>Mentors: Hoca Mehmet, Hoca Ali</span>
+                    <span>Oversees: All 4 groups</span>
+                    <span>Students: 20 total</span>
                 </div>
             </div>
         </div>
 
         <div class="hierarchy-note">
             <strong>Account Hierarchy:</strong>
-            Coordinator (Admin Fatih) → Mentor (Hoca Mehmet) → Student (Ahmet Yilmaz)
+            Coordinator → Mentor → Student (Emma Thompson)
             <br><br>
-            Changes made by the student will be visible to the mentor and coordinator.
+            All accounts use the same mock data. Changes are visible across roles.
         </div>
 
         <div class="localhost-warning">
@@ -232,33 +232,28 @@
             document.body.innerHTML = '<div style="text-align: center; padding: 50px; color: #ef4444;"><h1>Access Denied</h1><p>Debug login is only available on localhost.</p></div>';
         }
 
-        // Debug account data - all connected
+        // Debug account data - all connected, matches mock-data.js
         const debugAccounts = {
             student: {
                 id: 'debug-student-1',
-                name: 'Ahmet Yilmaz',
+                name: 'Emma Thompson',
                 role: 'student',
                 student_id: '1',
                 group_id: '1',
-                group_name: 'Nur Talebeleri',
-                mentor_id: 'debug-mentor-1',
-                mentor_name: 'Hoca Mehmet'
+                group_name: 'Eagles - 10th Grade'
             },
             mentor: {
                 id: 'debug-mentor-1',
-                name: 'Hoca Mehmet',
+                name: 'Demo Mentor',
                 role: 'mentor',
                 group_ids: ['1'],
-                group_names: ['Nur Talebeleri'],
-                student_ids: ['1', '2', '3', '4', '5', '6', '7', '8'],
-                coordinator_id: 'debug-coordinator-1'
+                group_names: ['Eagles - 10th Grade'],
+                student_ids: ['1', '2', '3', '4', '5']
             },
             coordinator: {
                 id: 'debug-coordinator-1',
-                name: 'Admin Fatih',
+                name: 'Demo Coordinator',
                 role: 'coordinator',
-                mentor_ids: ['debug-mentor-1', 'debug-mentor-2'],
-                mentor_names: ['Hoca Mehmet', 'Hoca Ali'],
                 all_groups: true
             }
         };
@@ -266,7 +261,7 @@
         function loginAs(role) {
             const account = debugAccounts[role];
 
-            // Store debug session
+            // Store debug session - enables mock data mode
             localStorage.setItem('cetele_debug', 'true');
             localStorage.setItem('cetele_debug_account', JSON.stringify(account));
 
@@ -293,16 +288,16 @@
                 sessionStorage.setItem('studentId', account.student_id);
             }
 
-            // Redirect based on role
+            // Redirect to DEMO pages (which use mock data)
             switch(role) {
                 case 'student':
-                    window.location.href = 'student.html';
+                    window.location.href = 'student-demo.html';
                     break;
                 case 'mentor':
-                    window.location.href = 'admin.html';
+                    window.location.href = 'admin-demo.html';
                     break;
                 case 'coordinator':
-                    window.location.href = 'admin.html';
+                    window.location.href = 'admin-demo.html';
                     break;
             }
         }

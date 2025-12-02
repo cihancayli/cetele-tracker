@@ -68,36 +68,46 @@ const MOCK_DATA = {
     weeklySubmissions: []  // Will be generated below
 };
 
+// Seeded random number generator for consistent mock data
+function seededRandom(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
 // Generate realistic submission data for the past 3 weeks only (for demo)
 const weeklySubmissions = [];
 let submissionId = 1;
+let seedCounter = 1;
 
 // Store the valid week range for navigation limits
 const DEMO_WEEKS_COUNT = 3;
 
 for (let weekOffset = 0; weekOffset < DEMO_WEEKS_COUNT; weekOffset++) {
     const weekDate = getWeeksAgo(weekOffset);
-    console.log(`  Week ${weekOffset}: ${weekDate}`);
 
     MOCK_DATA.students.forEach(student => {
-        // Create varied completion patterns
+        // Create varied completion patterns based on student ID (deterministic)
         const isHighPerformer = student.id % 3 === 0; // Every 3rd student is high performer
         const isStruggling = student.id % 7 === 0; // Every 7th student struggles
 
         let completions = {};
 
-        // Generate realistic activity completion
+        // Generate realistic activity completion with seeded random
         MOCK_DATA.activities.forEach(activity => {
+            // Create a unique seed for each student/week/activity combination
+            const seed = student.id * 1000 + weekOffset * 100 + activity.id;
+            const rand = seededRandom(seed);
+
             if (activity.input_type === 'number') {
                 // For number inputs, generate realistic values
                 let percentage;
 
                 if (isHighPerformer) {
-                    percentage = 0.85 + (Math.random() * 0.2); // 85-105%
+                    percentage = 0.85 + (rand * 0.2); // 85-105%
                 } else if (isStruggling) {
-                    percentage = 0.2 + (Math.random() * 0.4); // 20-60%
+                    percentage = 0.2 + (rand * 0.4); // 20-60%
                 } else {
-                    percentage = 0.5 + (Math.random() * 0.4); // 50-90%
+                    percentage = 0.5 + (rand * 0.4); // 50-90%
                 }
 
                 // More recent weeks have slightly better completion
@@ -113,16 +123,17 @@ for (let weekOffset = 0; weekOffset < DEMO_WEEKS_COUNT; weekOffset++) {
                 let shouldComplete;
 
                 if (isHighPerformer) {
-                    shouldComplete = Math.random() > 0.1; // 90% completion rate
+                    shouldComplete = rand > 0.1; // 90% completion rate
                 } else if (isStruggling) {
-                    shouldComplete = Math.random() > 0.6; // 40% completion rate
+                    shouldComplete = rand > 0.6; // 40% completion rate
                 } else {
-                    shouldComplete = Math.random() > 0.3; // 70% completion rate
+                    shouldComplete = rand > 0.3; // 70% completion rate
                 }
 
                 // More recent weeks have slightly better completion
                 if (weekOffset < 2) {
-                    shouldComplete = shouldComplete || (Math.random() > 0.7);
+                    const rand2 = seededRandom(seed + 500);
+                    shouldComplete = shouldComplete || (rand2 > 0.7);
                 }
 
                 completions[activity.id] = shouldComplete;
@@ -141,8 +152,8 @@ for (let weekOffset = 0; weekOffset < DEMO_WEEKS_COUNT; weekOffset++) {
 
 MOCK_DATA.weeklySubmissions = weeklySubmissions;
 
-// Mock Database Helper
-const MockDatabaseHelper = {
+// Mock Database Helper - exposed to window for demo pages
+window.MockDatabaseHelper = {
     __isMock: true,
 
     async getStudents(groupFilter = null) {
@@ -253,34 +264,60 @@ const MockDatabaseHelper = {
 
     async getLeaderboard(groupFilter = null, limit = 10) {
         const students = await this.getStudents(groupFilter);
-        const currentWeek = this.getWeekStartDate(new Date());
-        const submissions = await this.getWeeklySubmissions(currentWeek);
         const activities = MOCK_DATA.activities;
         const totalActivities = activities.length;
 
-        const leaderboard = students.map(student => {
-            const submission = submissions.find(s => s.student_id === student.id);
-            let score = 0;
-            if (submission) {
-                // Count completions properly - check against target for numeric values
-                activities.forEach(activity => {
-                    const value = submission.activity_completions[activity.id];
-                    if (value === true) {
-                        score++;
-                    } else if (typeof value === 'number' && value >= activity.target) {
-                        score++;
-                    }
-                });
+        // Get last N weeks (up to 4, or however many exist)
+        const allWeeks = this.getLastNWeeks(4);
+        const weeksWithData = [];
+
+        // Check which weeks have any submissions
+        for (const week of allWeeks) {
+            const subs = await this.getWeeklySubmissions(week);
+            if (subs.length > 0) {
+                weeksWithData.push(week);
             }
-            const percentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
+        }
+
+        // Use 1-4 weeks based on available data
+        const weeksToUse = weeksWithData.slice(0, Math.min(4, weeksWithData.length));
+        const numWeeks = weeksToUse.length || 1;
+
+        const leaderboard = await Promise.all(students.map(async student => {
+            let totalPercentage = 0;
+            let weeksWithSubmission = 0;
+
+            for (const week of weeksToUse) {
+                const submission = await this.getWeeklySubmission(student.id, week);
+                if (submission) {
+                    let score = 0;
+                    activities.forEach(activity => {
+                        const value = submission.activity_completions[activity.id];
+                        if (value === true) {
+                            score++;
+                        } else if (typeof value === 'number' && value >= activity.target) {
+                            score++;
+                        }
+                    });
+                    const weekPercentage = totalActivities > 0 ? (score / totalActivities) * 100 : 0;
+                    totalPercentage += weekPercentage;
+                    weeksWithSubmission++;
+                }
+            }
+
+            // Average percentage over weeks with submissions
+            const avgPercentage = weeksWithSubmission > 0 ? totalPercentage / weeksWithSubmission : 0;
+            const avgScore = Math.round((avgPercentage / 100) * totalActivities);
+
             return {
                 student: student,
-                score,
-                percentage
+                score: avgScore,
+                percentage: avgPercentage,
+                weeksCount: weeksWithSubmission
             };
-        });
+        }));
 
-        leaderboard.sort((a, b) => b.score - a.score);
+        leaderboard.sort((a, b) => b.percentage - a.percentage);
         return leaderboard.slice(0, limit);
     },
 
@@ -558,15 +595,15 @@ function isDebugMode() {
 }
 
 // Use mock data in debug mode - Override DatabaseHelper for demo pages only
-if (typeof window !== 'undefined' && isDebugMode()) {
+if (typeof window !== 'undefined' && (isDebugMode() || window.__FORCE_MOCK__)) {
     // Set flag for demo mode
     window.__DEMO_MODE__ = true;
 
     // Override DatabaseHelper immediately (before db-helper.js loads)
-    window.DatabaseHelper = MockDatabaseHelper;
+    window.DatabaseHelper = window.MockDatabaseHelper;
 
     // Also override after DOM loads in case db-helper.js overwrites it
     document.addEventListener('DOMContentLoaded', function() {
-        window.DatabaseHelper = MockDatabaseHelper;
+        window.DatabaseHelper = window.MockDatabaseHelper;
     });
 }

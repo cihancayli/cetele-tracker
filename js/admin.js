@@ -173,9 +173,6 @@ function showSection(sectionName) {
         case 'weekly':
             loadWeeklyView();
             break;
-        case 'analytics':
-            loadAnalytics();
-            break;
     }
 }
 
@@ -183,27 +180,36 @@ function showSection(sectionName) {
 async function loadGroupFilters() {
     try {
         // Filter groups by user's region and division
-        let groups;
+        let groups = await DatabaseHelper.getGroups();
 
-        if (currentUser.role === 'ed') {
-            // ED sees all groups in their region
-            groups = await DatabaseHelper.getGroups(userRegion.id);
-        } else if (currentUser.role === 'coordinator' && currentUser.is_mentor) {
-            // Coordinator with mentor group sees their division
-            groups = await DatabaseHelper.getGroups(userRegion.id, currentUser.division);
-        } else if (currentUser.role === 'coordinator') {
-            // Coordinator-only sees their division
-            groups = await DatabaseHelper.getGroups(userRegion.id, currentUser.division);
-        } else if (currentUser.role === 'mentor') {
-            // Mentor sees only their own group
-            groups = await DatabaseHelper.getGroups(userRegion.id);
-            groups = groups.filter(g => g.mentor_id === currentUser.id);
+        // In demo mode, check for role-based filtering
+        if (window.DEMO_MODE || window.__DEMO_MODE__) {
+            if (window.DEMO_ROLE === 'mentor' && window.DEMO_GROUP_IDS) {
+                // Mentor sees only their assigned groups
+                groups = groups.filter(g => window.DEMO_GROUP_IDS.includes(String(g.id)));
+            }
+            // Coordinator sees all groups (no filter)
+        } else {
+            // Production mode filtering
+            if (currentUser.role === 'ed') {
+                // ED sees all groups in their region
+                groups = await DatabaseHelper.getGroups(userRegion?.id);
+            } else if (currentUser.role === 'coordinator' && currentUser.is_mentor) {
+                // Coordinator with mentor group sees their division
+                groups = await DatabaseHelper.getGroups(userRegion?.id, currentUser.division);
+            } else if (currentUser.role === 'coordinator') {
+                // Coordinator-only sees their division
+                groups = await DatabaseHelper.getGroups(userRegion?.id, currentUser.division);
+            } else if (currentUser.role === 'mentor') {
+                // Mentor sees only their own group
+                groups = await DatabaseHelper.getGroups(userRegion?.id);
+                groups = groups.filter(g => g.mentor_id === currentUser.id);
+            }
         }
 
         const filterSelects = [
             'overviewGroupFilter',
             'studentGroupFilter',
-            'analyticsGroupFilter',
             'studentGroup'
         ];
 
@@ -221,17 +227,40 @@ async function loadGroupFilters() {
                     option.textContent = `${group.name} - ${group.grade}`;
                     select.appendChild(option);
                 });
+
+                // For mentors in demo mode, auto-select their group
+                if ((window.DEMO_MODE || window.__DEMO_MODE__) && window.DEMO_ROLE === 'mentor' && groups.length === 1) {
+                    select.value = groups[0].id;
+                }
             }
         });
     } catch (error) {
+        console.error('Error loading group filters:', error);
     }
+}
+
+// ==================== HELPER: GET EFFECTIVE GROUP FILTER ====================
+
+// For mentors, always filter by their assigned group(s)
+// For coordinators, use the selected filter (or all if none selected)
+function getEffectiveGroupFilter(selectedFilter) {
+    // In demo mode, check role
+    if (window.DEMO_MODE || window.__DEMO_MODE__) {
+        if (window.DEMO_ROLE === 'mentor' && window.DEMO_GROUP_IDS && window.DEMO_GROUP_IDS.length > 0) {
+            // Mentor always sees only their group - ignore selected filter
+            return window.DEMO_GROUP_IDS[0];
+        }
+    }
+    // Coordinator or no demo mode - use selected filter
+    return selectedFilter || null;
 }
 
 // ==================== OVERVIEW SECTION ====================
 
 async function loadOverview() {
     try {
-        const groupFilter = document.getElementById('overviewGroupFilter').value || null;
+        const selectedFilter = document.getElementById('overviewGroupFilter')?.value || null;
+        const groupFilter = getEffectiveGroupFilter(selectedFilter);
         const leaderboard = await DatabaseHelper.getLeaderboard(groupFilter);
         const students = await DatabaseHelper.getStudents(groupFilter);
         const activities = await DatabaseHelper.getActivities();
@@ -261,9 +290,30 @@ async function loadOverview() {
         // Render leaderboard
         renderLeaderboard(leaderboard);
 
-        // Render charts
-        await renderTrendsChart(groupFilter);
+        // Render Activity Trends chart (for everyone)
+        await renderActivityTrendsChart(groupFilter);
         await renderActivityChart(groupFilter);
+
+        // Render Group Trends chart (coordinator-only)
+        const groupTrendsSection = document.getElementById('groupTrendsSection');
+        const isMentor = (window.DEMO_MODE || window.__DEMO_MODE__) && window.DEMO_ROLE === 'mentor';
+
+        if (groupTrendsSection) {
+            if (isMentor) {
+                groupTrendsSection.style.display = 'none';
+            } else {
+                groupTrendsSection.style.display = 'block';
+                await renderTrendsChart(groupFilter);
+            }
+        }
+
+        // Render student ranks with Clash Royale badges
+        await renderStudentRanks(groupFilter);
+
+        // Render analytics charts (consolidated from Analytics section)
+        await renderProgressChart(groupFilter);
+        await renderActivityBreakdownChart(groupFilter);
+        await renderPerformanceCards(groupFilter);
 
     } catch (error) {
     }
@@ -283,14 +333,297 @@ function renderLeaderboard(leaderboard) {
         const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
         const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
 
+        // Color code percentage: green >= 80%, yellow >= 50%, red < 50%
+        const pct = Math.round(item.percentage);
+        let scoreColor = '#ef4444'; // red
+        if (pct >= 80) {
+            scoreColor = '#10b981'; // green
+        } else if (pct >= 50) {
+            scoreColor = '#fbbf24'; // yellow
+        }
+
         const element = document.createElement('div');
         element.className = 'leaderboard-item';
         element.innerHTML = `
             <div class="rank-badge ${rankClass}">${rankIcon}</div>
             <div class="leaderboard-name">${item.student.name}</div>
-            <div class="leaderboard-score">${Math.round(item.percentage)}%</div>
+            <div class="leaderboard-score" style="color: ${scoreColor}; font-weight: 600;">${pct}%</div>
         `;
         container.appendChild(element);
+    });
+}
+
+// ==================== STUDENT RANKS WITH CLASH ROYALE BADGES ====================
+
+// Rank definitions (same as in visualizations.js for student portal)
+const ADMIN_RANKS = [
+    { name: 'Iskelet Talebe', image: 'IskeletMuridleri.png', requirement: 0 },
+    { name: 'Iskelet Muridi', image: 'IskeletBeyi.png', requirement: 10 },
+    { name: 'Goblin Saliki', image: 'GoblinSaliki.webp', requirement: 25 },
+    { name: 'Minion Dervisleri', image: 'MinionDervisleri.png', requirement: 40 },
+    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 55 },
+    { name: 'Electro Talebe', image: 'Electro.png', requirement: 70 },
+    { name: 'Sovalye Agasi', image: 'SovalyeAgasi.png', requirement: 90 },
+    { name: 'Hisar Padisahi', image: 'HisarPadisahi.png', requirement: 110 },
+    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 130 },
+    { name: 'Ustat Hog', image: 'UstatHog.png', requirement: 145 },
+    { name: 'Pirlanta Talebe', image: 'PirlantaTalebe.png', requirement: 160 }
+];
+
+function getAdminRank(trophies) {
+    let currentRank = ADMIN_RANKS[0];
+    for (let i = ADMIN_RANKS.length - 1; i >= 0; i--) {
+        if (trophies >= ADMIN_RANKS[i].requirement) {
+            currentRank = ADMIN_RANKS[i];
+            break;
+        }
+    }
+    return currentRank;
+}
+
+// Trophy calculation: 100% = 10, 90% = 8, 80% = 6, 70% = 4, <70% = 2, no submission = -5
+function calculateTrophiesForSubmission(submission, activities) {
+    if (!submission || !submission.activity_completions) return -5;
+
+    let completed = 0;
+    activities.forEach(activity => {
+        const value = submission.activity_completions[activity.id];
+        if (value === true || (typeof value === 'number' && value >= activity.target)) {
+            completed++;
+        }
+    });
+
+    const percentage = (completed / activities.length) * 100;
+
+    if (percentage >= 100) return 10;
+    if (percentage >= 90) return 8;
+    if (percentage >= 80) return 6;
+    if (percentage >= 70) return 4;
+    return 2;
+}
+
+async function renderStudentRanks(groupFilter) {
+    const container = document.getElementById('studentRanksGrid');
+    if (!container) return;
+
+    try {
+        const students = await DatabaseHelper.getStudents(groupFilter);
+        const activities = await DatabaseHelper.getActivities();
+
+        // Calculate trophies for each student
+        const studentRanks = await Promise.all(students.map(async student => {
+            const allSubmissions = await DatabaseHelper.getAllSubmissionsForStudent(student.id);
+
+            let totalTrophies = 0;
+            allSubmissions.forEach(sub => {
+                totalTrophies += calculateTrophiesForSubmission(sub, activities);
+            });
+
+            const rank = getAdminRank(totalTrophies);
+            return {
+                student,
+                trophies: totalTrophies,
+                rank
+            };
+        }));
+
+        // Sort by trophies descending
+        studentRanks.sort((a, b) => b.trophies - a.trophies);
+
+        if (studentRanks.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-dim);">No students found</p>';
+            return;
+        }
+
+        // Group students by rank
+        const rankGroups = {};
+        studentRanks.forEach(item => {
+            const rankName = item.rank.name;
+            if (!rankGroups[rankName]) {
+                rankGroups[rankName] = {
+                    rank: item.rank,
+                    students: []
+                };
+            }
+            rankGroups[rankName].students.push(item);
+        });
+
+        // Sort rank groups by requirement (highest first)
+        const sortedRankGroups = Object.values(rankGroups).sort((a, b) =>
+            b.rank.requirement - a.rank.requirement
+        );
+
+        // Render grouped by rank
+        container.innerHTML = sortedRankGroups.map(group => {
+            const { rank, students: rankStudents } = group;
+            const studentCount = rankStudents.length;
+
+            // Determine grid columns based on student count
+            let gridClass = 'rank-students-grid';
+            if (studentCount === 1) gridClass += ' single';
+            else if (studentCount === 2) gridClass += ' double';
+            else if (studentCount <= 4) gridClass += ' few';
+
+            return `
+                <div class="rank-group-card">
+                    <div class="rank-group-header">
+                        <div class="rank-group-badge">
+                            <img src="assets/${rank.image}" alt="${rank.name}" class="rank-group-img" onerror="this.style.display='none'">
+                        </div>
+                        <div class="rank-group-info">
+                            <div class="rank-group-name">${rank.name}</div>
+                            <div class="rank-group-req">
+                                <img src="assets/trophycrown.png" alt="trophy" class="trophy-icon-tiny">
+                                ${rank.requirement}+ trophies
+                            </div>
+                        </div>
+                        <div class="rank-group-count">${studentCount} student${studentCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="${gridClass}">
+                        ${rankStudents.map(item => {
+                            const { student, trophies } = item;
+                            return `
+                                <div class="rank-student-chip">
+                                    <span class="rank-student-name">${student.name}</span>
+                                    <span class="rank-student-trophies">
+                                        <img src="assets/trophycrown.png" alt="" class="trophy-icon-micro">
+                                        ${trophies}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error rendering student ranks:', error);
+        container.innerHTML = '<p style="text-align: center; color: var(--text-dim);">Error loading ranks</p>';
+    }
+}
+
+// ==================== ACTIVITY TRENDS CHART (For Both Mentors & Coordinators) ====================
+
+async function renderActivityTrendsChart(groupFilter) {
+    const ctx = document.getElementById('activityTrendsChart');
+    if (!ctx) return;
+
+    const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+    const activities = await DatabaseHelper.getActivities();
+
+    // Colors for each activity
+    const activityColors = [
+        { border: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },   // Green
+        { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },   // Indigo
+        { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },   // Amber
+        { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },    // Red
+        { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },   // Purple
+        { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },    // Cyan
+        { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },   // Pink
+    ];
+
+    // Build datasets - one line per activity
+    const datasets = await Promise.all(activities.map(async (activity, index) => {
+        const color = activityColors[index % activityColors.length];
+
+        const weeklyData = await Promise.all(weeks.map(async week => {
+            const submissions = await DatabaseHelper.getAllSubmissionsForWeek(week, groupFilter);
+            if (submissions.length === 0) return null;
+
+            let completedCount = 0;
+            submissions.forEach(sub => {
+                const value = sub.activity_completions[activity.id];
+                if (value === true || (typeof value === 'number' && value >= activity.target)) {
+                    completedCount++;
+                }
+            });
+
+            return Math.round((completedCount / submissions.length) * 100);
+        }));
+
+        return {
+            label: activity.name,
+            data: weeklyData,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            pointBackgroundColor: color.border,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            spanGaps: true
+        };
+    }));
+
+    // Format week labels
+    const weekLabels = weeks.map(week => {
+        const date = new Date(week);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    if (charts.activityTrends) {
+        charts.activityTrends.destroy();
+    }
+
+    charts.activityTrends = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weekLabels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 11, 14, 0.9)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: context => `${context.dataset.label}: ${context.parsed.y}% completion`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#64748b', font: { size: 11 } }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 110,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 11 },
+                        stepSize: 20,
+                        callback: value => value <= 100 ? value + '%' : ''
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -429,10 +762,11 @@ async function renderTrendsChart(groupFilter) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
+                    max: 110,
                     ticks: {
                         color: '#94a3b8',
-                        callback: value => value + '%'
+                        stepSize: 20,
+                        callback: value => value <= 100 ? value + '%' : ''
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.05)'
@@ -527,10 +861,11 @@ async function renderActivityChart(groupFilter) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
+                    max: 110,
                     ticks: {
                         color: '#94a3b8',
-                        callback: value => value + '%'
+                        stepSize: 20,
+                        callback: value => value <= 100 ? value + '%' : ''
                     },
                     grid: { color: 'rgba(255, 255, 255, 0.05)' }
                 },
@@ -626,7 +961,8 @@ async function addGroup() {
 
 async function loadStudents() {
     try {
-        const groupFilter = document.getElementById('studentGroupFilter').value || null;
+        const selectedFilter = document.getElementById('studentGroupFilter')?.value || null;
+        const groupFilter = getEffectiveGroupFilter(selectedFilter);
         const students = await DatabaseHelper.getStudents(groupFilter);
         const container = document.getElementById('studentsTable');
 
@@ -738,12 +1074,12 @@ async function loadWeeklyView() {
         // Ensure currentWeek is initialized
         if (!currentWeek) initCurrentWeek();
 
-        console.log('📅 loadWeeklyView called, currentWeek:', currentWeek);
+        // Get effective group filter for mentors
+        const groupFilter = getEffectiveGroupFilter(null);
 
         document.getElementById('currentWeekDisplay').textContent = DatabaseHelper.formatDate(currentWeek);
 
-        console.log('🔍 Fetching submissions for week:', currentWeek);
-        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, groupFilter);
         console.log('📊 Got submissions:', submissions.length, 'records');
 
         const activities = await DatabaseHelper.getActivities();
@@ -845,17 +1181,7 @@ function changeWeek(direction) {
     loadWeeklyView();
 }
 
-// ==================== ANALYTICS ====================
-
-async function loadAnalytics() {
-    try {
-        const groupFilter = document.getElementById('analyticsGroupFilter').value || null;
-        await renderProgressChart(groupFilter);
-        await renderActivityBreakdownChart(groupFilter);
-        await renderPerformanceCards(groupFilter);
-    } catch (error) {
-    }
-}
+// ==================== ANALYTICS (Now part of Overview) ====================
 
 async function renderProgressChart(groupFilter) {
     const students = await DatabaseHelper.getStudents(groupFilter);
@@ -918,10 +1244,11 @@ async function renderProgressChart(groupFilter) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
+                    max: 110,
                     ticks: {
                         color: '#94a3b8',
-                        callback: value => value + '%'
+                        stepSize: 20,
+                        callback: value => value <= 100 ? value + '%' : ''
                     },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },

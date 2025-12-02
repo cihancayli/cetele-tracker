@@ -4,19 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cetele — Student Portal</title>
-
-    <!-- Demo mode setup -->
-    <script>
-        // Set demo mode flag
-        window.DEMO_MODE = true;
-        window.__DEMO_MODE__ = true;
-
-        // Override alert to suppress errors in demo mode
-        window.alert = function(msg) {
-            console.warn('🔕 DEMO MODE: Suppressed alert:', msg);
-        };
-    </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -211,15 +198,19 @@
 
     <!-- Scripts -->
     <script>
-        // DEBUG: Log everything
-        console.log('%c🎬 STUDENT DEMO PAGE LOADING', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-        console.log('Step 1: Setting up demo mode...');
-
-        // Auto-enable demo/debug mode
+        // Set demo mode flag BEFORE any other scripts
+        window.DEMO_MODE = true;
+        window.__DEMO_MODE__ = true;
+        window.__FORCE_MOCK__ = true; // Force mock data mode
         localStorage.setItem('cetele_debug', 'true');
         sessionStorage.setItem('studentId', '1'); // Demo student Emma Thompson
 
-        // Create fake user session to bypass auth checks
+        // Suppress alerts in demo mode
+        window.alert = function(msg) {
+            console.warn('Demo mode: Suppressed alert:', msg);
+        };
+
+        // Create demo user session
         const demoUser = {
             id: 'demo-student-id',
             role: 'student',
@@ -228,7 +219,7 @@
         };
         localStorage.setItem('cetele_user', JSON.stringify(demoUser));
 
-        // Also create session for backward compatibility
+        // Create session for backward compatibility
         const demoSession = {
             role: 'student',
             identifier: 'Emma Thompson (Demo)',
@@ -236,53 +227,24 @@
             timestamp: Date.now()
         };
         localStorage.setItem('cetele_session', JSON.stringify(demoSession));
-
-        console.log('✓ Debug mode enabled:', localStorage.getItem('cetele_debug'));
-        console.log('✓ Student ID set:', sessionStorage.getItem('studentId'));
-        console.log('✓ Demo user created:', demoUser);
-        console.log('✓ Demo session created');
-
-        // Monitor script loading
-        window.addEventListener('error', (e) => {
-            console.error('%c❌ ERROR DETECTED', 'background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px;');
-            console.error('Error:', e.message);
-            console.error('Source:', e.filename);
-            console.error('Line:', e.lineno);
-        }, true);
-
-        console.log('Step 2: Loading Supabase config...');
     </script>
     <script src="js/supabase-config.js"></script>
-    <script>
-        console.log('Step 4: Supabase config loaded. Supabase available?', typeof supabase !== 'undefined');
-        console.log('Step 5: Loading mock data...');
-    </script>
     <script src="js/mock-data.js"></script>
     <script>
-        console.log('Step 6: Mock data loaded. DatabaseHelper is mock?', window.DatabaseHelper?.__isMock);
-        console.log('Step 7: Loading db-helper...');
+        // Ensure MockDatabaseHelper is assigned AFTER mock-data.js loads
+        // This prevents db-helper.js from overwriting it
+        if (window.MockDatabaseHelper) {
+            window.DatabaseHelper = window.MockDatabaseHelper;
+        }
     </script>
     <script src="js/db-helper.js"></script>
     <script>
-        console.log('Step 8: DB helper loaded. DatabaseHelper available?', typeof DatabaseHelper !== 'undefined');
-        console.log('Step 9: Loading student.js...');
+        // Double-check: Force MockDatabaseHelper after db-helper.js
+        if (window.__FORCE_MOCK__ && window.MockDatabaseHelper) {
+            window.DatabaseHelper = window.MockDatabaseHelper;
+        }
     </script>
     <script src="js/student.js"></script>
     <script src="js/visualizations.js"></script>
-    <script>
-        console.log('Step 10: Student.js loaded');
-        console.log('Step 11: Visualizations.js loaded');
-        console.log('%c✅ ALL SCRIPTS LOADED', 'background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-
-        // Check if page initialized
-        setTimeout(() => {
-            const loadingState = document.getElementById('loadingState');
-            if (loadingState && loadingState.style.display !== 'none') {
-                console.error('%c⚠️ PAGE STILL LOADING AFTER 3 SECONDS', 'background: #f59e0b; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
-                console.error('Loading state is still visible. Check for JavaScript errors above.');
-            }
-        }, 3000);
-
-    </script>
 </body>
 </html>

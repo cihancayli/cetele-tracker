@@ -158,6 +158,22 @@ async function renderBadges() {
 
         let html = '';
 
+        // Trophy help overlay (will be shown on click)
+        html += `
+            <div id="trophyHelpOverlay" class="trophy-help-overlay" onclick="closeTrophyHelp(event)">
+                <div class="trophy-help-popup" onclick="event.stopPropagation()">
+                    <div class="trophy-help-close" onclick="closeTrophyHelp()">&times;</div>
+                    <div class="trophy-help-title">Weekly Trophies</div>
+                    <div class="trophy-help-row"><span>100%</span><span>+10</span></div>
+                    <div class="trophy-help-row"><span>90%</span><span>+8</span></div>
+                    <div class="trophy-help-row"><span>80%</span><span>+6</span></div>
+                    <div class="trophy-help-row"><span>70%</span><span>+4</span></div>
+                    <div class="trophy-help-row"><span>&lt;70%</span><span>+2</span></div>
+                    <div class="trophy-help-row penalty"><span>Missed</span><span>-5</span></div>
+                </div>
+            </div>
+        `;
+
         // Current Rank Display
         html += `
             <div class="current-rank-display">
@@ -173,16 +189,7 @@ async function renderBadges() {
                     <img src="assets/trophycrown.png" alt="trophy" class="trophy-icon-small">
                     ${totalTrophies}
                     <div class="trophy-help-wrapper">
-                        <span class="trophy-help-icon">?</span>
-                        <div class="trophy-help-popup">
-                            <div class="trophy-help-title">Weekly Trophies</div>
-                            <div class="trophy-help-row"><span>100%</span><span>+10</span></div>
-                            <div class="trophy-help-row"><span>90%</span><span>+8</span></div>
-                            <div class="trophy-help-row"><span>80%</span><span>+6</span></div>
-                            <div class="trophy-help-row"><span>70%</span><span>+4</span></div>
-                            <div class="trophy-help-row"><span>&lt;70%</span><span>+2</span></div>
-                            <div class="trophy-help-row penalty"><span>Missed</span><span>-5</span></div>
-                        </div>
+                        <span class="trophy-help-icon" onclick="openTrophyHelp()">?</span>
                     </div>
                 </div>
             </div>
@@ -374,3 +381,31 @@ async function renderActivityBalanceChart() {
     } catch (error) {
     }
 }
+
+// ==================== TROPHY HELP POPUP ====================
+
+function openTrophyHelp() {
+    const overlay = document.getElementById('trophyHelpOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+}
+
+function closeTrophyHelp(event) {
+    // If called from overlay click, only close if clicking the overlay itself
+    if (event && event.target !== event.currentTarget) return;
+
+    const overlay = document.getElementById('trophyHelpOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scroll
+    }
+}
+
+// Close on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeTrophyHelp();
+    }
+});

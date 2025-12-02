@@ -669,11 +669,14 @@ async function loadPersonalStats() {
         allMySubmissions.forEach(sub => {
             if (!sub.activity_completions) return;
 
-            // Only count completions for current activities
+            // Only count completions for current activities (must meet target)
             let score = 0;
             currentActivityIds.forEach(actId => {
+                const activity = activities.find(a => a.id === actId);
                 const value = sub.activity_completions[actId];
-                if (value === true || (typeof value === 'number' && value > 0)) {
+                if (value === true) {
+                    score++;
+                } else if (typeof value === 'number' && activity && value >= activity.target) {
                     score++;
                 }
             });
@@ -735,9 +738,10 @@ function calculateStreak(submissions) {
 
 async function loadLeaderboard() {
     try {
-        // Get leaderboard for current student's group
+        // Get leaderboard for current student's group (rolling average of last 1-4 weeks)
+        console.log('Loading leaderboard for group:', currentStudent.group_id);
         const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, 10);
-        console.log('📊 Leaderboard loaded:', leaderboard.length, 'students');
+        console.log('Leaderboard results:', leaderboard.map(l => l.student?.name));
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
 
@@ -747,8 +751,16 @@ async function loadLeaderboard() {
         top10.forEach((item, index) => {
             const studentId = item.student?.id || item.id;
             const studentName = item.student?.name || item.name || 'Unknown';
-            const isCurrentStudent = studentId === currentStudentId;
+            const isCurrentStudent = studentId == currentStudentId;
             const percentage = Math.round(item.percentage || 0);
+
+            // Color code percentage: green >= 80%, yellow >= 50%, red < 50%
+            let scoreColor = '#ef4444'; // red
+            if (percentage >= 80) {
+                scoreColor = '#10b981'; // green
+            } else if (percentage >= 50) {
+                scoreColor = '#fbbf24'; // yellow
+            }
 
             const div = document.createElement('div');
             div.className = `leaderboard-item ${isCurrentStudent ? 'current-student' : ''}`;
@@ -762,9 +774,9 @@ async function loadLeaderboard() {
             div.innerHTML = `
                 <div class="leaderboard-rank">${medal}</div>
                 <div class="leaderboard-name">${studentName}${isCurrentStudent ? ' (You)' : ''}</div>
-                <div class="leaderboard-score">${item.score || 0} pts</div>
+                <div class="leaderboard-score" style="color: ${scoreColor}; font-weight: 600;">${percentage}%</div>
                 <div class="leaderboard-bar">
-                    <div class="leaderboard-fill" style="width: ${percentage}%"></div>
+                    <div class="leaderboard-fill" style="width: ${percentage}%; background: ${scoreColor};"></div>
                 </div>
             `;
 
@@ -943,11 +955,14 @@ async function renderProgressChart() {
             if (!submission || !submission.activity_completions) return 0;
             if (activities.length === 0) return 0;
 
-            // Only count completions for current activities
+            // Only count completions for current activities (must meet target)
             let completions = 0;
             currentActivityIds.forEach(actId => {
+                const activity = activities.find(a => a.id === actId);
                 const value = submission.activity_completions[actId];
-                if (value === true || (typeof value === 'number' && value > 0)) {
+                if (value === true) {
+                    completions++;
+                } else if (typeof value === 'number' && activity && value >= activity.target) {
                     completions++;
                 }
             });
