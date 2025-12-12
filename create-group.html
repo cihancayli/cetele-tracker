@@ -494,11 +494,18 @@
 
             hideError();
 
+            console.log('🔍 Verifying code:', code);
+            console.log('📡 Supabase URL:', SUPABASE_URL);
+            console.log('🔑 Supabase client:', supabase ? 'initialized' : 'NOT initialized');
+
             try {
                 // Query the regions table - check all code types
+                console.log('📊 Querying regions table...');
                 const { data: regions, error: regionError } = await supabase
                     .from('regions')
                     .select('*');
+
+                console.log('📦 Response - data:', regions, 'error:', regionError);
 
                 if (regionError) throw regionError;
 
@@ -564,6 +571,10 @@
                 }
 
             } catch (error) {
+                console.error('❌ Error verifying code:', error);
+                console.error('❌ Error type:', error.name);
+                console.error('❌ Error message:', error.message);
+                console.error('❌ Error stack:', error.stack);
                 showError('Error verifying code: ' + error.message);
             }
         }
