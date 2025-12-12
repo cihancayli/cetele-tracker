@@ -495,68 +495,73 @@
             hideError();
 
             try {
-                // Check if it's an ED code
-                const { data: edCodes, error: edError } = await supabase
-                    .from('ed_code')
-                    .select('*')
-                    .eq('code', code);
+                // Query the regions table - check all code types
+                const { data: regions, error: regionError } = await supabase
+                    .from('regions')
+                    .select('*');
 
-                if (edError) throw edError;
+                if (regionError) throw regionError;
 
-                if (edCodes && edCodes.length > 0) {
-                    // It's an ED code
-                    const edCode = edCodes[0];
+                // Find matching region by checking all code columns
+                let matchedRegion = null;
+                let codeType = null;
+
+                for (const region of regions || []) {
+                    if (region.ed_code === code) {
+                        matchedRegion = region;
+                        codeType = 'ed';
+                        break;
+                    } else if (region.hs_code === code) {
+                        matchedRegion = region;
+                        codeType = 'hs';
+                        break;
+                    } else if (region.ms_code === code) {
+                        matchedRegion = region;
+                        codeType = 'ms';
+                        break;
+                    }
+                }
+
+                if (!matchedRegion) {
+                    showError('Invalid access code');
+                    return;
+                }
+
+                // Show welcome message
+                const welcomeMsg = document.getElementById('welcomeMessage');
+                const welcomeTitle = document.getElementById('welcomeTitle');
+                const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+
+                if (codeType === 'ed') {
+                    // ED code
                     codeData = {
                         codeType: 'ed',
-                        state: edCode.state,
+                        regionId: matchedRegion.id,
+                        state: matchedRegion.name,
                         division: null
                     };
 
-                    // Show welcome message
-                    const welcomeMsg = document.getElementById('welcomeMessage');
-                    const welcomeTitle = document.getElementById('welcomeTitle');
-                    const welcomeSubtitle = document.getElementById('welcomeSubtitle');
-
-                    welcomeTitle.textContent = `Welcome to ${edCode.state}`;
+                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
                     welcomeSubtitle.textContent = 'Education Director';
                     welcomeMsg.classList.add('show');
 
                     showEdRole();
-                    return;
-                }
-
-                // Check if it's a region code (HS or MS)
-                const { data: regionCodes, error: regionError } = await supabase
-                    .from('region_codes')
-                    .select('*')
-                    .eq('code', code);
-
-                if (regionError) throw regionError;
-
-                if (regionCodes && regionCodes.length > 0) {
-                    // It's a region code
-                    const regionCode = regionCodes[0];
+                } else {
+                    // HS or MS code
+                    const division = codeType === 'hs' ? 'High School' : 'Middle School';
                     codeData = {
-                        codeType: regionCode.region_name === 'High School' ? 'hs' : 'ms',
-                        state: regionCode.state,
-                        division: regionCode.region_name
+                        codeType: codeType,
+                        regionId: matchedRegion.id,
+                        state: matchedRegion.name,
+                        division: division
                     };
 
-                    // Show welcome message
-                    const welcomeMsg = document.getElementById('welcomeMessage');
-                    const welcomeTitle = document.getElementById('welcomeTitle');
-                    const welcomeSubtitle = document.getElementById('welcomeSubtitle');
-
-                    welcomeTitle.textContent = `Welcome to ${regionCode.state}`;
-                    welcomeSubtitle.textContent = regionCode.region_name;
+                    welcomeTitle.textContent = `Welcome to ${matchedRegion.name}`;
+                    welcomeSubtitle.textContent = division;
                     welcomeMsg.classList.add('show');
 
                     showCoordinatorMentorRoles();
-                    return;
                 }
-
-                // Code not found in either table
-                showError('Invalid access code');
 
             } catch (error) {
                 showError('Error verifying code: ' + error.message);
@@ -747,8 +752,8 @@
                         email,
                         password_hash: passwordHash,
                         role: actualRole,
-                        state: codeData.state,
-                        region: codeData.division,
+                        region_id: codeData.regionId,
+                        division: codeData.division,
                         is_coordinator: isCoordinator,
                         is_mentor: isMentor
                     }])
@@ -774,8 +779,8 @@
                             name: groupName,
                             grade: codeData.division || 'Mixed',
                             mentor_id: newUser.id,
-                            state: codeData.state,
-                            region: codeData.division
+                            region_id: codeData.regionId,
+                            division: codeData.division
                         }])
                         .select()
                         .single();
