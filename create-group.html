@@ -583,10 +583,9 @@
             const roleSection = document.getElementById('roleSection');
             const roleSelector = document.getElementById('roleSelector');
 
-            // Clear and show ED-only role
+            // Clear and show ED-only role (no hidden inputs to avoid validation issues)
             roleSelector.innerHTML = `
-                <div class="role-card ed-only selected" onclick="selectRole('ed')">
-                    <input type="radio" name="role" value="ed" id="roleEd" checked>
+                <div class="role-card ed-only selected" data-role="ed">
                     <div class="role-content">
                         <div class="role-icon">👔</div>
                         <div class="role-label">Education Director</div>
@@ -607,24 +606,21 @@
             const roleSection = document.getElementById('roleSection');
             const roleSelector = document.getElementById('roleSelector');
 
-            // Show coordinator, mentor, both options
+            // Show coordinator, mentor, both options (no hidden inputs to avoid validation issues)
             roleSelector.innerHTML = `
-                <div class="role-card" onclick="selectRole('coordinator')">
-                    <input type="radio" name="role" value="coordinator" id="roleCoordinator">
+                <div class="role-card" onclick="selectRole('coordinator')" data-role="coordinator">
                     <div class="role-content">
                         <div class="role-icon">📊</div>
                         <div class="role-label">Coordinator</div>
                     </div>
                 </div>
-                <div class="role-card" onclick="selectRole('mentor')">
-                    <input type="radio" name="role" value="mentor" id="roleMentor">
+                <div class="role-card" onclick="selectRole('mentor')" data-role="mentor">
                     <div class="role-content">
                         <div class="role-icon">👨‍🏫</div>
                         <div class="role-label">Mentor</div>
                     </div>
                 </div>
-                <div class="role-card" onclick="selectRole('both')">
-                    <input type="radio" name="role" value="both" id="roleBoth">
+                <div class="role-card" onclick="selectRole('both')" data-role="both">
                     <div class="role-content">
                         <div class="role-icon">⭐</div>
                         <div class="role-label">Both</div>
@@ -644,33 +640,31 @@
             });
             event.currentTarget.classList.add('selected');
 
-            // Update radio button
-            const radioId = 'role' + role.charAt(0).toUpperCase() + role.slice(1);
-            const radio = document.getElementById(radioId);
-            if (radio) radio.checked = true;
-
             // Show appropriate info
             const infoBox = document.getElementById('infoBox');
             const groupNameSection = document.getElementById('groupNameSection');
+            const groupNameInput = document.getElementById('groupName');
 
             if (role === 'ed') {
                 infoBox.innerHTML = '<strong>Education Director:</strong> You will have full access to all groups and analytics within your region.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'none';
+                groupNameInput.required = false;
             } else if (role === 'coordinator') {
                 infoBox.innerHTML = '<strong>Coordinator:</strong> You will have access to view all groups in your division. You can also create your own mentor group if needed.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'none';
+                groupNameInput.required = false;
             } else if (role === 'mentor') {
                 infoBox.innerHTML = '<strong>Mentor:</strong> You will create a new group and receive a mentor code to share with your students.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'block';
-                document.getElementById('groupName').required = true;
+                groupNameInput.required = true;
             } else if (role === 'both') {
                 infoBox.innerHTML = '<strong>Both:</strong> You will have coordinator access to all groups in your division AND your own mentor group.';
                 infoBox.classList.add('show');
                 groupNameSection.style.display = 'block';
-                document.getElementById('groupName').required = true;
+                groupNameInput.required = true;
             }
         }
 
