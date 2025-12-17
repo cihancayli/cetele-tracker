@@ -1451,10 +1451,10 @@ async function loadCeteleManagement() {
                 <td>${activity.unit || '-'}</td>
                 <td><span class="badge ${scopeClass}">${scope}</span></td>
                 <td>
-                    <button class="btn-small btn-edit" onclick="openEditActivityModal(${activity.id})" ${!activity.group_id ? 'disabled title="Cannot edit default activities"' : ''}>
+                    <button class="btn-small btn-edit" onclick="openEditActivityModal('${activity.id}')">
                         ✏️ Edit
                     </button>
-                    <button class="btn-small btn-delete" onclick="deleteActivity(${activity.id})" ${!activity.group_id ? 'disabled title="Cannot delete default activities"' : ''}>
+                    <button class="btn-small btn-delete" onclick="deleteActivity('${activity.id}')">
                         🗑️ Delete
                     </button>
                 </td>
