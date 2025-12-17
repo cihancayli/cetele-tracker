@@ -23,7 +23,10 @@
                 <span class="stat-divider">•</span>
                 <span class="stat-item">🔥 <span id="streakCount">0</span> Week Streak</span>
                 <span class="stat-divider">•</span>
-                <span class="stat-item">⭐ Rank <span id="rankPosition">#-</span></span>
+                <span class="stat-item header-rank-display" id="headerRankDisplay">
+                    <img src="assets/IskeletMuridleri.png" alt="" class="header-rank-icon" id="headerRankIcon" style="width: 24px; height: 24px; vertical-align: middle;">
+                    <span id="headerRankName">Loading...</span>
+                </span>
                 <span class="stat-divider">•</span>
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
             </div>
@@ -75,6 +78,12 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Rank System - Right under Weekly Cetele -->
+        <div class="chart-card-full">
+            <h3>🎖️ Your Rank</h3>
+            <div id="badgesContainer" class="badges-container-compact"></div>
         </div>
 
         <!-- Charts Row -->
@@ -146,11 +155,6 @@
             </div>
         </div>
 
-        <!-- Rank System -->
-        <div class="chart-card-full">
-            <h3>🎖️ Your Rank</h3>
-            <div id="badgesContainer" class="badges-container-compact"></div>
-        </div>
     </div>
 
     <!-- Success Modal -->
