@@ -702,7 +702,7 @@ async function loadPersonalStats() {
         document.getElementById('bestScore').textContent = bestScore + '/' + activities.length;
         document.getElementById('currentStreak').textContent = streak;
         document.getElementById('streakCount').textContent = streak;
-        document.getElementById('rankPosition').textContent = myRank > 0 ? '#' + myRank : '#-';
+        // Rank is now displayed in header via visualizations.js updateHeaderRank()
 
     } catch (error) {
     }

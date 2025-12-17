@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetele Backend Test Console</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        h1 { color: #00ffff; margin-bottom: 20px; }
+        h2 { color: #ffff00; margin: 20px 0 10px; }
+        .console {
+            background: #0d0d1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 13px;
+        }
+        .error { color: #ff4444; }
+        .success { color: #00ff00; }
+        .info { color: #00ffff; }
+        .warn { color: #ffaa00; }
+        button {
+            background: #00aaff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover { background: #0088cc; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        .btn-danger { background: #ff4444; }
+        .btn-danger:hover { background: #cc0000; }
+        .btn-success { background: #00aa00; }
+        .section { margin: 20px 0; padding: 15px; background: #0d0d1a; border-radius: 8px; }
+        input {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            color: white;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Cetele Backend Test Console</h1>
+
+    <div class="section">
+        <h2>1. Database Schema Check</h2>
+        <button onclick="checkSchema()">Check Schema</button>
+        <button onclick="checkRegions()">Check Regions</button>
+        <button onclick="checkUsers()">Check Users</button>
+        <div class="console" id="schemaLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Create Coordinator Account</h2>
+        <div>
+            <input type="text" id="coordUsername" placeholder="Username" value="test_coordinator">
+            <input type="password" id="coordPassword" placeholder="Password" value="test123">
+        </div>
+        <button onclick="createCoordinator()">Create Coordinator (NC-HS-2025)</button>
+        <div class="console" id="coordLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Create Student Account</h2>
+        <div>
+            <input type="text" id="studentName" placeholder="Student Name" value="Test Student">
+            <input type="text" id="mentorCode" placeholder="Mentor Code" id="mentorCodeInput">
+        </div>
+        <button onclick="createStudent()">Create Student</button>
+        <div class="console" id="studentLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Test Cetele Flow</h2>
+        <button onclick="getActivities()">Get Activities</button>
+        <button onclick="submitCetele()">Submit Student Cetele</button>
+        <button onclick="checkSubmissions()">Check Submissions (Coordinator View)</button>
+        <div class="console" id="ceteleLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>5. Cleanup</h2>
+        <button class="btn-danger" onclick="cleanupTestData()">Delete Test Data</button>
+        <div class="console" id="cleanupLog"></div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let testCoordinator = null;
+        let testStudent = null;
+        let testGroup = null;
+        let testMentorCode = null;
+
+        function log(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            el.innerHTML += `<span class="${type}">[${timestamp}] ${message}</span>\n`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        // 1. Schema Check
+        async function checkSchema() {
+            clearLog('schemaLog');
+            log('schemaLog', '📊 Checking database schema...', 'info');
+
+            try {
+                // Check users table columns
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .limit(1);
+
+                if (userError) {
+                    log('schemaLog', `❌ Users table error: ${userError.message}`, 'error');
+                    if (userError.message.includes('division')) {
+                        log('schemaLog', '⚠️ MISSING: division column on users table', 'warn');
+                        log('schemaLog', '💡 FIX: Run setup-regions-system.sql in Supabase SQL Editor', 'warn');
+                    }
+                } else {
+                    log('schemaLog', '✅ Users table accessible', 'success');
+                    if (userData && userData.length > 0) {
+                        log('schemaLog', `   Columns: ${Object.keys(userData[0]).join(', ')}`, 'info');
+                    }
+                }
+
+                // Check regions table
+                const { data: regionData, error: regionError } = await supabase
+                    .from('regions')
+                    .select('*')
+                    .limit(1);
+
+                if (regionError) {
+                    log('schemaLog', `❌ Regions table error: ${regionError.message}`, 'error');
+                    log('schemaLog', '⚠️ MISSING: regions table', 'warn');
+                    log('schemaLog', '💡 FIX: Run setup-regions-system.sql in Supabase SQL Editor', 'warn');
+                } else {
+                    log('schemaLog', '✅ Regions table accessible', 'success');
+                }
+
+                // Check groups table
+                const { data: groupData, error: groupError } = await supabase
+                    .from('groups')
+                    .select('*')
+                    .limit(1);
+
+                if (groupError) {
+                    log('schemaLog', `❌ Groups table error: ${groupError.message}`, 'error');
+                } else {
+                    log('schemaLog', '✅ Groups table accessible', 'success');
+                    if (groupData && groupData.length > 0) {
+                        const hasRegionId = 'region_id' in groupData[0];
+                        const hasDivision = 'division' in groupData[0];
+                        if (!hasRegionId || !hasDivision) {
+                            log('schemaLog', '⚠️ Groups table missing region_id or division columns', 'warn');
+                        }
+                    }
+                }
+
+                // Check mentor_codes table
+                const { data: mentorData, error: mentorError } = await supabase
+                    .from('mentor_codes')
+                    .select('*')
+                    .limit(1);
+
+                if (mentorError) {
+                    log('schemaLog', `❌ Mentor codes table error: ${mentorError.message}`, 'error');
+                } else {
+                    log('schemaLog', '✅ Mentor codes table accessible', 'success');
+                }
+
+                // Check activities table
+                const { data: actData, error: actError } = await supabase
+                    .from('activities')
+                    .select('*');
+
+                if (actError) {
+                    log('schemaLog', `❌ Activities table error: ${actError.message}`, 'error');
+                } else {
+                    log('schemaLog', `✅ Activities table: ${actData?.length || 0} activities found`, 'success');
+                }
+
+            } catch (error) {
+                log('schemaLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkRegions() {
+            clearLog('schemaLog');
+            log('schemaLog', '🌍 Checking regions...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('regions')
+                    .select('*');
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    data.forEach(region => {
+                        log('schemaLog', `\n📍 ${region.name}:`, 'success');
+                        log('schemaLog', `   ED Code: ${region.ed_code}`, 'info');
+                        log('schemaLog', `   HS Code: ${region.hs_code}`, 'info');
+                        log('schemaLog', `   MS Code: ${region.ms_code}`, 'info');
+                    });
+                } else {
+                    log('schemaLog', '⚠️ No regions found!', 'warn');
+                }
+            } catch (error) {
+                log('schemaLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkUsers() {
+            clearLog('schemaLog');
+            log('schemaLog', '👥 Checking users...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, username, role, division, is_coordinator, is_mentor, region_id');
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    log('schemaLog', `Found ${data.length} users:`, 'success');
+                    data.forEach(user => {
+                        log('schemaLog', `\n👤 ${user.username} (${user.role})`, 'info');
+                        log('schemaLog', `   Division: ${user.division || 'N/A'}`, 'info');
+                        log('schemaLog', `   Coordinator: ${user.is_coordinator}, Mentor: ${user.is_mentor}`, 'info');
+                    });
+                } else {
+                    log('schemaLog', '⚠️ No users found', 'warn');
+                }
+            } catch (error) {
+                log('schemaLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. Create Coordinator
+        async function createCoordinator() {
+            clearLog('coordLog');
+            const username = document.getElementById('coordUsername').value;
+            const password = document.getElementById('coordPassword').value;
+
+            log('coordLog', `🔨 Creating coordinator: ${username}...`, 'info');
+
+            try {
+                // Get NC region
+                const { data: regions, error: regionError } = await supabase
+                    .from('regions')
+                    .select('*')
+                    .eq('name', 'North Carolina')
+                    .single();
+
+                if (regionError) throw new Error('Region not found: ' + regionError.message);
+
+                log('coordLog', `✅ Found region: ${regions.name}`, 'success');
+
+                // Simple password hash for testing (in production use proper hashing)
+                const passwordHash = btoa(password); // Just base64 for testing
+
+                // Create coordinator user
+                const { data: newUser, error: userError } = await supabase
+                    .from('users')
+                    .insert([{
+                        username: username,
+                        password_hash: passwordHash,
+                        role: 'coordinator',
+                        region_id: regions.id,
+                        division: 'High School',
+                        is_coordinator: true,
+                        is_mentor: true  // Also a mentor to create groups
+                    }])
+                    .select()
+                    .single();
+
+                if (userError) throw userError;
+
+                testCoordinator = newUser;
+                log('coordLog', `✅ Coordinator created: ID ${newUser.id}`, 'success');
+
+                // Create a group for this coordinator
+                const { data: newGroup, error: groupError } = await supabase
+                    .from('groups')
+                    .insert([{
+                        name: 'Test Group',
+                        grade: 'High School',
+                        mentor_id: newUser.id,
+                        region_id: regions.id,
+                        division: 'High School'
+                    }])
+                    .select()
+                    .single();
+
+                if (groupError) throw groupError;
+
+                testGroup = newGroup;
+                log('coordLog', `✅ Group created: ${newGroup.name} (ID: ${newGroup.id})`, 'success');
+
+                // Get the auto-generated mentor code
+                const { data: mentorCode, error: mcError } = await supabase
+                    .from('mentor_codes')
+                    .select('*')
+                    .eq('mentor_id', newUser.id)
+                    .single();
+
+                if (mentorCode) {
+                    testMentorCode = mentorCode.code;
+
+                    // Update mentor code with group_id
+                    await supabase
+                        .from('mentor_codes')
+                        .update({ group_id: newGroup.id })
+                        .eq('id', mentorCode.id);
+
+                    log('coordLog', `✅ Mentor code: ${mentorCode.code}`, 'success');
+                    document.getElementById('mentorCode').value = mentorCode.code;
+                } else {
+                    log('coordLog', '⚠️ No mentor code generated (trigger may not exist)', 'warn');
+                }
+
+            } catch (error) {
+                log('coordLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. Create Student
+        async function createStudent() {
+            clearLog('studentLog');
+            const studentName = document.getElementById('studentName').value;
+            const mentorCode = document.getElementById('mentorCode').value;
+
+            log('studentLog', `🎓 Creating student: ${studentName}...`, 'info');
+
+            try {
+                // Find mentor code
+                const { data: mc, error: mcError } = await supabase
+                    .from('mentor_codes')
+                    .select('*, groups(*)')
+                    .eq('code', mentorCode)
+                    .single();
+
+                if (mcError || !mc) throw new Error('Invalid mentor code');
+
+                log('studentLog', `✅ Valid mentor code, Group: ${mc.groups?.name}`, 'success');
+
+                // Create student record
+                const { data: newStudentRecord, error: studentRecordError } = await supabase
+                    .from('students')
+                    .insert([{
+                        name: studentName,
+                        grade: mc.groups?.grade || 'High School',
+                        group_id: mc.group_id,
+                        region_id: mc.region_id
+                    }])
+                    .select()
+                    .single();
+
+                if (studentRecordError) throw studentRecordError;
+
+                log('studentLog', `✅ Student record created: ID ${newStudentRecord.id}`, 'success');
+
+                // Create student user
+                const { data: newUser, error: userError } = await supabase
+                    .from('users')
+                    .insert([{
+                        username: studentName.toLowerCase().replace(/\s+/g, '_'),
+                        password_hash: btoa('student123'),
+                        role: 'student',
+                        region_id: mc.region_id,
+                        division: mc.groups?.division,
+                        student_id: newStudentRecord.id,
+                        mentor_id: mc.mentor_id
+                    }])
+                    .select()
+                    .single();
+
+                if (userError) throw userError;
+
+                // Update student record with user_id
+                await supabase
+                    .from('students')
+                    .update({ user_id: newUser.id })
+                    .eq('id', newStudentRecord.id);
+
+                testStudent = { ...newStudentRecord, user: newUser };
+                log('studentLog', `✅ Student user created: ${newUser.username}`, 'success');
+
+            } catch (error) {
+                log('studentLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. Cetele Flow Tests
+        async function getActivities() {
+            clearLog('ceteleLog');
+            log('ceteleLog', '📋 Fetching activities...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .order('order_index');
+
+                if (error) throw error;
+
+                log('ceteleLog', `✅ Found ${data.length} activities:`, 'success');
+                data.forEach(act => {
+                    log('ceteleLog', `   ${act.order_index}. ${act.name} - ${act.description}`, 'info');
+                });
+            } catch (error) {
+                log('ceteleLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function submitCetele() {
+            clearLog('ceteleLog');
+            log('ceteleLog', '📝 Submitting cetele for student...', 'info');
+
+            if (!testStudent) {
+                log('ceteleLog', '❌ No test student created. Create one first!', 'error');
+                return;
+            }
+
+            try {
+                // Get activities
+                const { data: activities } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .order('order_index');
+
+                // Create completions object
+                const completions = {};
+                activities.forEach(act => {
+                    completions[act.id] = Math.floor(Math.random() * 10); // Random values for testing
+                });
+
+                // Get week start date (Sunday)
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - dayOfWeek);
+                const weekStartStr = weekStart.toISOString().split('T')[0];
+
+                log('ceteleLog', `📅 Week: ${weekStartStr}`, 'info');
+                log('ceteleLog', `📊 Completions: ${JSON.stringify(completions)}`, 'info');
+
+                // Submit
+                const { data, error } = await supabase
+                    .from('weekly_submissions')
+                    .upsert([{
+                        student_id: testStudent.id,
+                        week_start_date: weekStartStr,
+                        activity_completions: completions
+                    }], { onConflict: 'student_id,week_start_date' })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                log('ceteleLog', `✅ Cetele submitted! ID: ${data.id}`, 'success');
+
+            } catch (error) {
+                log('ceteleLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkSubmissions() {
+            clearLog('ceteleLog');
+            log('ceteleLog', '👀 Checking submissions (coordinator view)...', 'info');
+
+            try {
+                // Get all submissions with student info
+                const { data, error } = await supabase
+                    .from('weekly_submissions')
+                    .select(`
+                        *,
+                        students (
+                            name,
+                            grade,
+                            group_id
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    log('ceteleLog', `✅ Found ${data.length} submissions:`, 'success');
+                    data.forEach(sub => {
+                        log('ceteleLog', `\n📄 ${sub.students?.name || 'Unknown'} - Week ${sub.week_start_date}`, 'info');
+                        log('ceteleLog', `   Completions: ${JSON.stringify(sub.activity_completions)}`, 'info');
+                    });
+                } else {
+                    log('ceteleLog', '⚠️ No submissions found', 'warn');
+                }
+
+            } catch (error) {
+                log('ceteleLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. Cleanup
+        async function cleanupTestData() {
+            clearLog('cleanupLog');
+            log('cleanupLog', '🗑️ Cleaning up test data...', 'info');
+
+            try {
+                // Delete test submissions
+                if (testStudent) {
+                    const { error: subError } = await supabase
+                        .from('weekly_submissions')
+                        .delete()
+                        .eq('student_id', testStudent.id);
+
+                    if (!subError) log('cleanupLog', '✅ Deleted test submissions', 'success');
+                }
+
+                // Delete test student user
+                if (testStudent?.user) {
+                    await supabase.from('users').delete().eq('id', testStudent.user.id);
+                    log('cleanupLog', '✅ Deleted test student user', 'success');
+                }
+
+                // Delete test student
+                if (testStudent) {
+                    await supabase.from('students').delete().eq('id', testStudent.id);
+                    log('cleanupLog', '✅ Deleted test student', 'success');
+                }
+
+                // Delete test mentor code
+                if (testCoordinator) {
+                    await supabase.from('mentor_codes').delete().eq('mentor_id', testCoordinator.id);
+                    log('cleanupLog', '✅ Deleted test mentor code', 'success');
+                }
+
+                // Delete test group
+                if (testGroup) {
+                    await supabase.from('groups').delete().eq('id', testGroup.id);
+                    log('cleanupLog', '✅ Deleted test group', 'success');
+                }
+
+                // Delete test coordinator
+                if (testCoordinator) {
+                    await supabase.from('users').delete().eq('id', testCoordinator.id);
+                    log('cleanupLog', '✅ Deleted test coordinator', 'success');
+                }
+
+                testCoordinator = null;
+                testStudent = null;
+                testGroup = null;
+                testMentorCode = null;
+
+                log('cleanupLog', '✅ Cleanup complete!', 'success');
+
+            } catch (error) {
+                log('cleanupLog', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
