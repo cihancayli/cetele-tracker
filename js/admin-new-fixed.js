@@ -16,6 +16,54 @@ function logError(operation, details) {
     // No-op in production
 }
 
+// ==================== RANK SYSTEM (Clash Royale Style) ====================
+
+const ADMIN_RANKS = [
+    { name: 'İskelet Talebe', image: 'IskeletMuridleri.png', requirement: 0 },
+    { name: 'İskelet Muridi', image: 'IskeletBeyi.png', requirement: 10 },
+    { name: 'Goblin Sâliki', image: 'GoblinSaliki.webp', requirement: 25 },
+    { name: 'Minion Dervişleri', image: 'MinionDervisleri.png', requirement: 40 },
+    { name: 'Talebe-i Ceryan', image: 'Talebe-iCeryan.png', requirement: 55 },
+    { name: 'Electro Talebe', image: 'Electro.png', requirement: 70 },
+    { name: 'Şövalye Ağası', image: 'SovalyeAgasi.png', requirement: 90 },
+    { name: 'Hisar Padişahı', image: 'HisarPadisahi.png', requirement: 110 },
+    { name: 'Talebe-i Nur', image: 'Talebe-iNur.png', requirement: 130 },
+    { name: 'Üstat Hog', image: 'UstatHog.png', requirement: 145 },
+    { name: 'Pırlanta Talebe', image: 'PirlantaTalebe.png', requirement: 160 }
+];
+
+function getAdminRank(trophies) {
+    let currentRank = ADMIN_RANKS[0];
+    for (let i = ADMIN_RANKS.length - 1; i >= 0; i--) {
+        if (trophies >= ADMIN_RANKS[i].requirement) {
+            currentRank = ADMIN_RANKS[i];
+            break;
+        }
+    }
+    return currentRank;
+}
+
+// Trophy calculation: 100% = 10, 90% = 8, 80% = 6, 70% = 4, <70% = 2, no submission = -5
+function calculateTrophiesForSubmission(submission, activities) {
+    if (!submission || !submission.activity_completions) return -5;
+
+    let completed = 0;
+    activities.forEach(activity => {
+        const value = submission.activity_completions[activity.id];
+        if (value === true || (typeof value === 'number' && value >= activity.target)) {
+            completed++;
+        }
+    });
+
+    const percentage = activities.length > 0 ? (completed / activities.length) * 100 : 0;
+
+    if (percentage >= 100) return 10;
+    if (percentage >= 90) return 8;
+    if (percentage >= 80) return 6;
+    if (percentage >= 70) return 4;
+    return 2;
+}
+
 // ==================== TOAST NOTIFICATION SYSTEM ====================
 
 function showToast(message, type = 'success') {
@@ -1382,18 +1430,34 @@ function filterStudents() {
     tbody.innerHTML = filtered.map(student => {
         const submissions = allSubmissions.filter(s => s.student_id === student.id);
         let totalScore = 0;
+        let totalTrophies = 0;
+
         submissions.forEach(sub => {
             const completions = sub.activity_completions || {};
             const completed = Object.values(completions).filter(v => v === true || (typeof v === 'number' && v > 0)).length;
             if (allActivities.length > 0) {
                 totalScore += (completed / allActivities.length) * 100;
             }
+            // Calculate trophies for this submission
+            totalTrophies += calculateTrophiesForSubmission(sub, allActivities);
         });
         const avgScore = submissions.length > 0 ? Math.round(totalScore / submissions.length) : 0;
+        const rank = getAdminRank(totalTrophies);
 
         return `
             <tr>
-                <td>${student.name}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img src="assets/${rank.image}" alt="${rank.name}" style="width: 28px; height: 28px; object-fit: contain;" onerror="this.style.display='none'">
+                        <div>
+                            <div style="font-weight: 500;">${student.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
+                                <img src="assets/trophycrown.png" alt="" style="width: 12px; height: 12px;">
+                                ${totalTrophies} • ${rank.name}
+                            </div>
+                        </div>
+                    </div>
+                </td>
                 <td>${student.groups?.name || 'No group'}</td>
                 <td>${student.grade || 'N/A'}</td>
                 <td>
