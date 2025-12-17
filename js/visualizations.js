@@ -174,6 +174,9 @@ async function renderBadges() {
             </div>
         `;
 
+        // LEFT COLUMN - Current Rank + Progress
+        html += `<div class="rank-left-column">`;
+
         // Current Rank Display
         html += `
             <div class="current-rank-display">
@@ -231,8 +234,10 @@ async function renderBadges() {
             `;
         }
 
+        html += `</div>`; // Close rank-left-column
 
-        // All Ranks Preview
+        // RIGHT COLUMN - All Ranks
+        html += `<div class="rank-right-column">`;
         html += `<div class="all-ranks-label">All Ranks</div>`;
         html += `<div class="all-ranks-grid">`;
         RANKS.forEach((rank, index) => {
@@ -249,6 +254,7 @@ async function renderBadges() {
             `;
         });
         html += `</div>`;
+        html += `</div>`; // Close rank-right-column
 
         container.innerHTML = html;
     } catch (error) {
