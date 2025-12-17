@@ -964,6 +964,7 @@ async function loadStudents() {
         const selectedFilter = document.getElementById('studentGroupFilter')?.value || null;
         const groupFilter = getEffectiveGroupFilter(selectedFilter);
         const students = await DatabaseHelper.getStudents(groupFilter);
+        const activities = await DatabaseHelper.getActivities();
         const container = document.getElementById('studentsTable');
 
         if (students.length === 0) {
@@ -977,10 +978,10 @@ async function loadStudents() {
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Grade</th>
                             <th>Group</th>
-                            <th>Total Score</th>
-                            <th>Avg Completion</th>
+                            <th>Grade</th>
+                            <th>Completion Rate</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -989,6 +990,14 @@ async function loadStudents() {
         for (const student of students) {
             const stats = await DatabaseHelper.getStudentStats(student.id);
             const avgCompletion = Math.round(stats.averageCompletion);
+
+            // Calculate trophies for rank
+            const allSubmissions = await DatabaseHelper.getAllSubmissionsForStudent(student.id);
+            let totalTrophies = 0;
+            allSubmissions.forEach(sub => {
+                totalTrophies += calculateTrophiesForSubmission(sub, activities);
+            });
+            const rank = getAdminRank(totalTrophies);
 
             // Determine color based on completion rate
             let completionColor, completionBg;
@@ -1008,10 +1017,20 @@ async function loadStudents() {
 
             tableHTML += `
                 <tr>
-                    <td>${student.name}</td>
-                    <td>${student.grade}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="assets/${rank.image}" alt="${rank.name}" style="width: 28px; height: 28px; object-fit: contain;" onerror="this.style.display='none'">
+                            <div>
+                                <div style="font-weight: 500;">${student.name}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
+                                    <img src="assets/trophycrown.png" alt="" style="width: 12px; height: 12px;">
+                                    ${totalTrophies} • ${rank.name}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
                     <td>${student.groups?.name || 'No Group'}</td>
-                    <td>${stats.totalCompletions}</td>
+                    <td>${student.grade}</td>
                     <td>
                         <span class="completion-badge" style="
                             background: ${completionBg};
@@ -1023,6 +1042,7 @@ async function loadStudents() {
                             border: 1px solid ${completionColor}33;
                         ">${avgCompletion}%</span>
                     </td>
+                    <td>-</td>
                 </tr>
             `;
         }
