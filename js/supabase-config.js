@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://fkagbfrkowrhvchnqbqt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrYWdiZnJrb3dyaHZjaG5xYnF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMTczMjAsImV4cCI6MjA3ODY5MzMyMH0.QhIHqXBoAnd-OV96DZJL4Qx-k76L5GHSa35pBaThFpY';
 
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Database schema reference:
 // Tables needed:
