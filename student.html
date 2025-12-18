@@ -33,6 +33,36 @@
         </div>
     </header>
 
+    <!-- Mobile Fill Cetele Button (shown on mobile only) -->
+    <div class="mobile-fill-button-container">
+        <button class="btn-fill-mobile" onclick="openMobileWizard()">
+            📝 Fill This Week's Cetele
+        </button>
+    </div>
+
+    <!-- Mobile Cetele Wizard (card-by-card system) -->
+    <div id="mobileWizard" class="mobile-wizard-overlay">
+        <div class="mobile-wizard-container">
+            <div class="mobile-wizard-header">
+                <h3 id="mobileWizardTitle">Activity 1 of 7</h3>
+                <button class="btn-close-wizard" onclick="closeMobileWizard()">✕</button>
+            </div>
+
+            <div class="mobile-wizard-cards" id="mobileWizardCards">
+                <!-- Cards will be dynamically generated here -->
+            </div>
+
+            <div class="mobile-wizard-footer">
+                <div class="wizard-progress">
+                    <div class="wizard-progress-bar" id="wizardProgressBar"></div>
+                </div>
+                <button class="btn-wizard-next" id="wizardNextBtn" onclick="nextWizardCard()">
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="container">
         <!-- Week Selector -->
