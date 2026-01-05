@@ -73,7 +73,8 @@ async function init() {
             console.log('[DEBUG] Warning: No activities found for this group');
         }
 
-        currentWeek = DatabaseHelper.getWeekStartDate();
+        // Get the effective current week (advances after late window closes)
+        currentWeek = getEffectiveCurrentWeek();
 
         // Update header
         updateHeader();
@@ -181,6 +182,30 @@ function getGroupDeadline(weekStart) {
     deadline.setDate(deadline.getDate() + dayOffset);
     deadline.setHours(groupDeadlineHour, 0, 0, 0);
     return deadline;
+}
+
+// Get the effective current week (advances to next week after late window closes)
+function getEffectiveCurrentWeek() {
+    const calendarWeek = DatabaseHelper.getWeekStartDate();
+    const calendarWeekDate = new Date(calendarWeek);
+
+    // Get deadline for calendar week
+    const deadline = getGroupDeadline(calendarWeekDate);
+
+    // Calculate end of late window (11:59:59 PM on deadline day)
+    const lateDeadline = new Date(deadline);
+    lateDeadline.setHours(23, 59, 59, 999);
+
+    const now = new Date();
+
+    // If we're past the late deadline, advance to next week
+    if (now > lateDeadline) {
+        const nextWeekDate = new Date(calendarWeekDate);
+        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        return DatabaseHelper.getWeekStartDate(nextWeekDate);
+    }
+
+    return calendarWeek;
 }
 
 // Countdown timer
@@ -1024,7 +1049,7 @@ function changeWeek(direction) {
 }
 
 function goToCurrentWeek() {
-    currentWeek = DatabaseHelper.getWeekStartDate();
+    currentWeek = getEffectiveCurrentWeek();
     updateWeekDisplay();
     loadAllData();
 }
