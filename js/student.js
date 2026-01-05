@@ -9,6 +9,10 @@ let groupStudents = [];
 let allSubmissions = [];
 let charts = {};
 
+// Group deadline settings (defaults: Friday 6PM)
+let groupDeadlineDay = 5; // 0=Sunday, 5=Friday, 6=Saturday
+let groupDeadlineHour = 18; // 18 = 6:00 PM
+
 // Mobile wizard state
 let wizardCurrentIndex = 0;
 let wizardData = {};
@@ -56,6 +60,9 @@ async function init() {
         if (currentStudent.group_id) {
             activities = await DatabaseHelper.getActivitiesForGroup(currentStudent.group_id);
             console.log('[DEBUG] Loaded activities for group', currentStudent.group_id, ':', activities.length);
+
+            // Load group's deadline settings
+            await loadGroupDeadlineSettings(currentStudent.group_id);
         } else {
             // Fallback: if no group, show no activities (mentor needs to set up cetele)
             activities = [];
@@ -127,11 +134,50 @@ function updateWeekDisplay() {
 
     document.getElementById('currentWeekDisplay').textContent = formattedDate;
 
-    // Calculate due date (Sunday)
-    const dueDate = new Date(weekDate);
-    dueDate.setDate(dueDate.getDate() + 6);
-    const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Calculate due date based on group's custom deadline
+    const dueDate = getGroupDeadline(weekDate);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const hourStr = groupDeadlineHour > 12
+        ? `${groupDeadlineHour - 12}PM`
+        : groupDeadlineHour === 12
+            ? '12PM'
+            : `${groupDeadlineHour}AM`;
+    const dueDateStr = `${dayNames[dueDate.getDay()]} ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${hourStr}`;
     document.getElementById('dueDate').textContent = dueDateStr;
+}
+
+// Load group's deadline settings
+async function loadGroupDeadlineSettings(groupId) {
+    try {
+        const { data: group, error } = await supabase
+            .from('groups')
+            .select('deadline_day, deadline_hour')
+            .eq('id', groupId)
+            .single();
+
+        if (error) throw error;
+
+        // Update global variables with group settings (or use defaults)
+        groupDeadlineDay = group?.deadline_day ?? 5; // Default: Friday
+        groupDeadlineHour = group?.deadline_hour ?? 18; // Default: 6 PM
+        console.log('[DEBUG] Loaded deadline settings:', { day: groupDeadlineDay, hour: groupDeadlineHour });
+    } catch (error) {
+        console.log('[DEBUG] Could not load deadline settings, using defaults (Friday 6PM)');
+        groupDeadlineDay = 5;
+        groupDeadlineHour = 18;
+    }
+}
+
+// Get deadline for a given week using group's custom settings
+function getGroupDeadline(weekStart) {
+    const deadline = new Date(weekStart);
+    // Calculate days from Monday to deadline day
+    // groupDeadlineDay: 0=Sunday, 1=Monday... 6=Saturday
+    // Week starts on Monday, so: Monday=offset 0, Tuesday=offset 1, ... Sunday=offset 6
+    const dayOffset = groupDeadlineDay === 0 ? 6 : groupDeadlineDay - 1;
+    deadline.setDate(deadline.getDate() + dayOffset);
+    deadline.setHours(groupDeadlineHour, 0, 0, 0);
+    return deadline;
 }
 
 async function loadCeteleTable() {

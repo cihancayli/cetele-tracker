@@ -2656,11 +2656,20 @@ function getCurrentUnlockedWeek() {
     }
 }
 
-// Get deadline for a given week (Friday 6:00 PM of that week)
+// Current group's deadline settings (defaults: Friday 6PM)
+let groupDeadlineDay = 5; // 0=Sunday, 5=Friday, 6=Saturday
+let groupDeadlineHour = 18; // 18 = 6:00 PM
+
+// Get deadline for a given week using custom group settings
 function getWeekDeadline(weekStart) {
     const deadline = new Date(weekStart);
-    deadline.setDate(weekStart.getDate() + 4); // Monday + 4 = Friday
-    deadline.setHours(18, 0, 0, 0); // 6:00 PM
+    // Calculate days from Monday (0) to deadline day
+    // Monday=0 in our week, Sunday=6 in JS Date.getDay() where Sunday=0
+    // Convert: groupDeadlineDay where 0=Sunday, 1=Monday... to offset from Monday
+    // Monday(1) -> offset 0, Tuesday(2) -> offset 1, ... Sunday(0) -> offset 6
+    const dayOffset = groupDeadlineDay === 0 ? 6 : groupDeadlineDay - 1;
+    deadline.setDate(weekStart.getDate() + dayOffset);
+    deadline.setHours(groupDeadlineHour, 0, 0, 0);
     return deadline;
 }
 
@@ -2669,6 +2678,93 @@ function isDeadlinePassed(weekStart) {
     const now = new Date();
     const deadline = getWeekDeadline(weekStart);
     return now > deadline;
+}
+
+// Load deadline settings for current group
+async function loadDeadlineSettings() {
+    if (!currentUser?.group_id) return;
+
+    try {
+        const { data: group, error } = await supabase
+            .from('groups')
+            .select('deadline_day, deadline_hour')
+            .eq('id', currentUser.group_id)
+            .single();
+
+        if (error) throw error;
+
+        // Update global variables with group settings (or defaults)
+        groupDeadlineDay = group?.deadline_day ?? 5; // Default: Friday
+        groupDeadlineHour = group?.deadline_hour ?? 18; // Default: 6 PM
+
+        // Update UI if on Manage Cetele page
+        const daySelect = document.getElementById('deadlineDay');
+        const hourSelect = document.getElementById('deadlineHour');
+        const displayEl = document.getElementById('currentDeadlineDisplay');
+
+        if (daySelect) daySelect.value = groupDeadlineDay;
+        if (hourSelect) hourSelect.value = groupDeadlineHour;
+        if (displayEl) {
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const hourStr = groupDeadlineHour > 12
+                ? `${groupDeadlineHour - 12}:00 PM`
+                : groupDeadlineHour === 12
+                    ? '12:00 PM'
+                    : `${groupDeadlineHour}:00 AM`;
+            displayEl.textContent = `Current deadline: ${dayNames[groupDeadlineDay]} at ${hourStr}`;
+        }
+    } catch (error) {
+        console.log('Could not load deadline settings, using defaults');
+    }
+}
+
+// Save deadline settings for current group
+async function saveDeadlineSettings() {
+    if (!currentUser?.group_id) {
+        showToast('No group assigned', 'error');
+        return;
+    }
+
+    const daySelect = document.getElementById('deadlineDay');
+    const hourSelect = document.getElementById('deadlineHour');
+
+    if (!daySelect || !hourSelect) return;
+
+    const deadlineDay = parseInt(daySelect.value);
+    const deadlineHour = parseInt(hourSelect.value);
+
+    try {
+        const { error } = await supabase
+            .from('groups')
+            .update({
+                deadline_day: deadlineDay,
+                deadline_hour: deadlineHour
+            })
+            .eq('id', currentUser.group_id);
+
+        if (error) throw error;
+
+        // Update global variables
+        groupDeadlineDay = deadlineDay;
+        groupDeadlineHour = deadlineHour;
+
+        // Update display
+        const displayEl = document.getElementById('currentDeadlineDisplay');
+        if (displayEl) {
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const hourStr = deadlineHour > 12
+                ? `${deadlineHour - 12}:00 PM`
+                : deadlineHour === 12
+                    ? '12:00 PM'
+                    : `${deadlineHour}:00 AM`;
+            displayEl.textContent = `Current deadline: ${dayNames[deadlineDay]} at ${hourStr}`;
+        }
+
+        showToast('Deadline updated successfully!', 'success');
+    } catch (error) {
+        console.error('Error saving deadline:', error);
+        showToast('Failed to save deadline. Make sure deadline_day and deadline_hour columns exist in the groups table.', 'error');
+    }
 }
 
 // Get color based on performance score (0-100)
@@ -2727,6 +2823,9 @@ async function loadManageCetelePage() {
     container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
     try {
+        // Load deadline settings for the group
+        await loadDeadlineSettings();
+
         // Activities are already loaded in allActivities with proper filtering
         renderActivitiesList(allActivities);
     } catch (error) {

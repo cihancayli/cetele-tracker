@@ -441,7 +441,65 @@
         <div id="manageCetelePage" class="page" style="display: none;">
             <div class="page-header">
                 <h1 class="page-title">Manage My Cetele</h1>
-                <p class="page-subtitle">Customize activities for your group's weekly cetele.</p>
+                <p class="page-subtitle">Customize activities and deadline for your group's weekly cetele.</p>
+            </div>
+
+            <!-- Deadline Settings Card -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>⏰</span>
+                        <span>Weekly Deadline</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 1.5rem;">
+                    <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">
+                        Set when students must submit their weekly cetele. After this deadline, submissions will be marked as late.
+                    </p>
+                    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="margin: 0; min-width: 150px;">
+                            <label for="deadlineDay" style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;">Day of Week</label>
+                            <select id="deadlineDay" class="modal-select" style="width: 100%;">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5" selected>Friday</option>
+                                <option value="6">Saturday</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0; min-width: 120px;">
+                            <label for="deadlineHour" style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;">Time</label>
+                            <select id="deadlineHour" class="modal-select" style="width: 100%;">
+                                <option value="6">6:00 AM</option>
+                                <option value="7">7:00 AM</option>
+                                <option value="8">8:00 AM</option>
+                                <option value="9">9:00 AM</option>
+                                <option value="10">10:00 AM</option>
+                                <option value="11">11:00 AM</option>
+                                <option value="12">12:00 PM</option>
+                                <option value="13">1:00 PM</option>
+                                <option value="14">2:00 PM</option>
+                                <option value="15">3:00 PM</option>
+                                <option value="16">4:00 PM</option>
+                                <option value="17">5:00 PM</option>
+                                <option value="18" selected>6:00 PM</option>
+                                <option value="19">7:00 PM</option>
+                                <option value="20">8:00 PM</option>
+                                <option value="21">9:00 PM</option>
+                                <option value="22">10:00 PM</option>
+                                <option value="23">11:00 PM</option>
+                            </select>
+                        </div>
+                        <button class="btn-submit" onclick="saveDeadlineSettings()" style="height: 42px; padding: 0 1.5rem;">
+                            Save Deadline
+                        </button>
+                    </div>
+                    <p id="currentDeadlineDisplay" style="color: #64748b; margin-top: 1rem; font-size: 0.85rem;">
+                        Current deadline: Friday at 6:00 PM
+                    </p>
+                </div>
             </div>
 
             <div class="card" style="margin-bottom: 2rem;">
