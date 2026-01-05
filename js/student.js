@@ -129,7 +129,9 @@ function updateHeader() {
 }
 
 function updateWeekDisplay() {
-    const weekDate = new Date(currentWeek);
+    // Parse date string properly to avoid timezone issues
+    const [year, month, day] = currentWeek.split('-').map(Number);
+    const weekDate = new Date(year, month - 1, day);
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
     const formattedDate = weekDate.toLocaleDateString('en-US', options);
 
@@ -173,8 +175,16 @@ async function loadGroupDeadlineSettings(groupId) {
 }
 
 // Get deadline for a given week using group's custom settings
+// weekStart can be a Date object or a date string like "2026-01-05"
 function getGroupDeadline(weekStart) {
-    const deadline = new Date(weekStart);
+    let deadline;
+    if (typeof weekStart === 'string') {
+        // Parse date string properly to avoid timezone issues
+        const [year, month, day] = weekStart.split('-').map(Number);
+        deadline = new Date(year, month - 1, day);
+    } else {
+        deadline = new Date(weekStart);
+    }
     // Calculate days from Monday to deadline day
     // groupDeadlineDay: 0=Sunday, 1=Monday... 6=Saturday
     // Week starts on Monday, so: Monday=offset 0, Tuesday=offset 1, ... Sunday=offset 6
@@ -187,7 +197,9 @@ function getGroupDeadline(weekStart) {
 // Get the effective current week (advances to next week after late window closes)
 function getEffectiveCurrentWeek() {
     const calendarWeek = DatabaseHelper.getWeekStartDate();
-    const calendarWeekDate = new Date(calendarWeek);
+    // Parse date string properly to avoid timezone issues
+    const [year, month, day] = calendarWeek.split('-').map(Number);
+    const calendarWeekDate = new Date(year, month - 1, day);
 
     // Get deadline for calendar week
     const deadline = getGroupDeadline(calendarWeekDate);
@@ -228,7 +240,9 @@ function updateCountdownTimer() {
     const timerEl = document.getElementById('countdownTimer');
     if (!timerEl) return;
 
-    const weekDate = new Date(currentWeek);
+    // Parse date string properly to avoid timezone issues
+    const [year, month, day] = currentWeek.split('-').map(Number);
+    const weekDate = new Date(year, month - 1, day);
     const deadline = getGroupDeadline(weekDate);
     const now = new Date();
     const diff = deadline - now;
