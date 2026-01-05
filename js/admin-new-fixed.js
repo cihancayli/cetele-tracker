@@ -2853,7 +2853,6 @@ async function performAdoptActivity(activity) {
             input_type: activity.input_type || 'checkbox',
             target: activity.target,
             unit: activity.unit,
-            response_type: activity.response_type,
             group_id: currentUser.group_id,
             order_index: maxOrder + 1
         };
@@ -2921,8 +2920,17 @@ function editActivity(activityId) {
     // Fill form with activity data
     document.getElementById('activityName').value = activity.name;
     document.getElementById('activityDescription').value = activity.description || '';
-    document.getElementById('activityResponseType').value = activity.response_type || 'boolean';
+    document.getElementById('activityResponseType').value = activity.input_type || 'checkbox';
     document.getElementById('charCount').textContent = (activity.description || '').length;
+
+    // Populate target/unit fields
+    const targetEl = document.getElementById('activityTarget');
+    const unitEl = document.getElementById('activityUnit');
+    if (targetEl) targetEl.value = activity.target || '';
+    if (unitEl) unitEl.value = activity.unit || '';
+
+    // Show/hide target fields based on input type
+    toggleTargetFields();
 
     // Show modal
     modal.classList.add('active');
@@ -2931,13 +2939,25 @@ function editActivity(activityId) {
 
 async function submitActivityForm(event) {
     event.preventDefault();
+    console.log('[DEBUG] submitActivityForm called');
 
     const name = document.getElementById('activityName').value.trim();
     const description = document.getElementById('activityDescription').value.trim();
-    const responseType = document.getElementById('activityResponseType').value;
+    const inputType = document.getElementById('activityResponseType').value;
+    const targetEl = document.getElementById('activityTarget');
+    const unitEl = document.getElementById('activityUnit');
+    const target = targetEl ? (parseInt(targetEl.value) || null) : null;
+    const unit = unitEl ? (unitEl.value.trim() || null) : null;
     const submitBtn = document.getElementById('activitySubmitBtn');
 
-    if (!name) return;
+    console.log('[DEBUG] Form values:', { name, description, inputType, target, unit });
+    console.log('[DEBUG] currentUser:', currentUser);
+    console.log('[DEBUG] currentEditingActivityId:', currentEditingActivityId);
+
+    if (!name) {
+        console.log('[DEBUG] Name is empty, returning');
+        return;
+    }
 
     // Disable submit button
     submitBtn.disabled = true;
@@ -2946,34 +2966,52 @@ async function submitActivityForm(event) {
     try {
         if (currentEditingActivityId) {
             // Update existing activity
+            console.log('[DEBUG] Updating existing activity:', currentEditingActivityId);
             const { error } = await supabase
                 .from('activities')
                 .update({
                     name: name,
                     description: description || null,
-                    response_type: responseType
+                    input_type: inputType,
+                    target: target,
+                    unit: unit
                 })
                 .eq('id', currentEditingActivityId);
 
-            if (error) throw error;
+            if (error) {
+                console.error('[DEBUG] Update error:', error);
+                throw error;
+            }
+            console.log('[DEBUG] Activity updated successfully');
         } else {
             // Create new activity
+            console.log('[DEBUG] Creating new activity for group:', currentUser.group_id);
             const groupActivities = allActivities.filter(a => a.group_id === currentUser.group_id);
             const maxOrder = groupActivities.reduce((max, a) => Math.max(max, a.order_index || 0), 0);
+            console.log('[DEBUG] Max order_index:', maxOrder);
+
+            const insertData = {
+                name: name,
+                description: description || null,
+                input_type: inputType,
+                target: target,
+                unit: unit,
+                group_id: currentUser.group_id,
+                order_index: maxOrder + 1
+            };
+            console.log('[DEBUG] Insert data:', insertData);
 
             const { data, error} = await supabase
                 .from('activities')
-                .insert([{
-                    name: name,
-                    description: description || null,
-                    response_type: responseType,
-                    group_id: currentUser.group_id,
-                    order_index: maxOrder + 1
-                }])
+                .insert([insertData])
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('[DEBUG] Insert error:', error);
+                throw error;
+            }
+            console.log('[DEBUG] Activity created successfully:', data);
         }
 
         // Reload data
@@ -3028,6 +3066,17 @@ function closeActivityModal() {
     const modal = document.getElementById("activityModalOverlay");
     modal.classList.remove("active");
     currentEditingActivityId = null;
+    // Reset target fields
+    const targetContainer = document.getElementById('targetFieldsContainer');
+    if (targetContainer) targetContainer.style.display = 'none';
+}
+
+function toggleTargetFields() {
+    const inputType = document.getElementById('activityResponseType').value;
+    const targetContainer = document.getElementById('targetFieldsContainer');
+    if (targetContainer) {
+        targetContainer.style.display = inputType === 'number' ? 'block' : 'none';
+    }
 }
 
 function closeActivityModalOnOverlay(event) {

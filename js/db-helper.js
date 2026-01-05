@@ -341,12 +341,44 @@ window.DatabaseHelper = class DatabaseHelper {
             };
         }
 
-        const activities = await this.getActivities();
+        // Get student to find their group
+        const student = await this.getStudentById(studentId);
+        const groupId = student?.group_id;
+
+        // Get activities for the student's group
+        const activities = groupId ? await this.getActivitiesForGroup(groupId) : [];
         const totalActivitiesPerWeek = activities.length;
+
+        // If no activities, return 0
+        if (totalActivitiesPerWeek === 0) {
+            return {
+                totalWeeks: submissions.length,
+                totalCompletions: 0,
+                averageCompletion: 0,
+                weeklyScores: submissions.map(sub => ({
+                    week: sub.week_start_date,
+                    score: 0,
+                    percentage: 0
+                }))
+            };
+        }
 
         let totalCompletions = 0;
         const weeklyScores = submissions.map(sub => {
-            const completions = Object.values(sub.activity_completions).filter(v => v === true).length;
+            if (!sub.activity_completions) {
+                return { week: sub.week_start_date, score: 0, percentage: 0 };
+            }
+
+            // Count completions properly - both checkbox (true) and number (>= target)
+            let completions = 0;
+            activities.forEach(activity => {
+                const value = sub.activity_completions[activity.id];
+                const target = activity.target || 1;
+                if (value === true || (typeof value === 'number' && value >= target)) {
+                    completions++;
+                }
+            });
+
             totalCompletions += completions;
             return {
                 week: sub.week_start_date,
@@ -399,20 +431,44 @@ window.DatabaseHelper = class DatabaseHelper {
             students = await this.getStudents();
         }
 
-        const activities = await this.getActivities();
+        // Get activities for the specific group
+        const activities = groupId ? await this.getActivitiesForGroup(groupId) : [];
         const totalActivitiesPerWeek = activities.length;
+
+        // If no activities, return students with 0 scores
+        if (totalActivitiesPerWeek === 0) {
+            return students.map(student => ({
+                student,
+                score: 0,
+                percentage: 0
+            }));
+        }
 
         const leaderboardPromises = students.map(async student => {
             if (weekStartDate) {
+                // Weekly leaderboard - count completions for specific week
                 const submission = await this.getWeeklySubmission(student.id, weekStartDate);
-                const score = submission ?
-                    Object.values(submission.activity_completions).filter(v => v === true).length : 0;
+                if (!submission || !submission.activity_completions) {
+                    return { student, score: 0, percentage: 0 };
+                }
+
+                // Count completions properly - both checkbox and number
+                let score = 0;
+                activities.forEach(activity => {
+                    const value = submission.activity_completions[activity.id];
+                    const target = activity.target || 1;
+                    if (value === true || (typeof value === 'number' && value >= target)) {
+                        score++;
+                    }
+                });
+
                 return {
                     student,
                     score,
                     percentage: (score / totalActivitiesPerWeek) * 100
                 };
             } else {
+                // Historical leaderboard - use average from all submissions
                 const stats = await this.getStudentStats(student.id);
                 return {
                     student,
@@ -423,7 +479,7 @@ window.DatabaseHelper = class DatabaseHelper {
         });
 
         const leaderboard = await Promise.all(leaderboardPromises);
-        return leaderboard.sort((a, b) => b.score - a.score);
+        return leaderboard.sort((a, b) => b.percentage - a.percentage);
     }
 
     // ==================== UTILITIES ====================

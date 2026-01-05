@@ -586,13 +586,28 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="activityResponseType">Response Type *</label>
-                    <select id="activityResponseType" class="modal-select" required>
-                        <option value="boolean">Yes/No (Checkbox)</option>
+                    <label for="activityResponseType">Input Type *</label>
+                    <select id="activityResponseType" class="modal-select" required onchange="toggleTargetFields()">
+                        <option value="checkbox">Yes/No (Checkbox)</option>
                         <option value="number">Number (e.g., minutes, count)</option>
                     </select>
                     <div class="field-hint">
                         Choose how students will respond to this activity on their cetele
+                    </div>
+                </div>
+
+                <div id="targetFieldsContainer" class="form-group" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label for="activityTarget">Target Goal</label>
+                            <input type="number" id="activityTarget" class="modal-input" placeholder="e.g., 35" min="1">
+                            <div class="field-hint">The goal students should aim for</div>
+                        </div>
+                        <div>
+                            <label for="activityUnit">Unit</label>
+                            <input type="text" id="activityUnit" class="modal-input" placeholder="e.g., pages, minutes">
+                            <div class="field-hint">Unit of measurement</div>
+                        </div>
                     </div>
                 </div>
 

@@ -55,12 +55,15 @@ async function init() {
         // Load activities for this student's group only
         if (currentStudent.group_id) {
             activities = await DatabaseHelper.getActivitiesForGroup(currentStudent.group_id);
+            console.log('[DEBUG] Loaded activities for group', currentStudent.group_id, ':', activities.length);
         } else {
             // Fallback: if no group, show no activities (mentor needs to set up cetele)
             activities = [];
+            console.log('[DEBUG] No group_id, activities empty');
         }
 
         if (activities.length === 0) {
+            console.log('[DEBUG] Warning: No activities found for this group');
         }
 
         currentWeek = DatabaseHelper.getWeekStartDate();
@@ -674,9 +677,10 @@ async function loadPersonalStats() {
             currentActivityIds.forEach(actId => {
                 const activity = activities.find(a => a.id === actId);
                 const value = sub.activity_completions[actId];
+                const target = activity?.target || 1;
                 if (value === true) {
                     score++;
-                } else if (typeof value === 'number' && activity && value >= activity.target) {
+                } else if (typeof value === 'number' && value >= target) {
                     score++;
                 }
             });
@@ -694,7 +698,7 @@ async function loadPersonalStats() {
 
         // Calculate rank
         const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id);
-        const myRank = leaderboard.findIndex(item => item.id === currentStudentId) + 1;
+        const myRank = leaderboard.findIndex(item => item.student?.id === currentStudentId) + 1;
 
         // Update UI
         document.getElementById('totalWeeks').textContent = totalWeeks;
@@ -738,10 +742,9 @@ function calculateStreak(submissions) {
 
 async function loadLeaderboard() {
     try {
-        // Get leaderboard for current student's group (rolling average of last 1-4 weeks)
-        console.log('Loading leaderboard for group:', currentStudent.group_id);
-        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id, 10);
-        console.log('Leaderboard results:', leaderboard.map(l => l.student?.name));
+        // Get leaderboard for current student's group (overall averages)
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id);
+        console.log('[DEBUG] Leaderboard data:', leaderboard.map(l => ({ name: l.student?.name, percentage: l.percentage })));
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
 
@@ -783,12 +786,14 @@ async function loadLeaderboard() {
             container.appendChild(div);
         });
     } catch (error) {
+        console.error('[DEBUG] Leaderboard error:', error);
     }
 }
 
 async function loadTopPerformers() {
     try {
-        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek);
+        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
+        console.log('[DEBUG] Top Performers - Submissions for week', currentWeek, ':', submissions?.length || 0);
 
         // Get current activity IDs for accurate counting
         const currentActivityIds = activities.map(a => a.id);
@@ -799,11 +804,13 @@ async function loadTopPerformers() {
                 return { student: sub.students, score: 0, percentage: 0 };
             }
 
-            // Only count completions for current activities
+            // Only count completions for current activities (must meet target)
             let score = 0;
             currentActivityIds.forEach(actId => {
+                const activity = activities.find(a => a.id === actId);
                 const value = sub.activity_completions[actId];
-                if (value === true || (typeof value === 'number' && value > 0)) {
+                const target = activity?.target || 1;
+                if (value === true || (typeof value === 'number' && value >= target)) {
                     score++;
                 }
             });
@@ -940,15 +947,21 @@ function updateWeekNavigationState() {
 async function renderProgressChart() {
     try {
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
+        console.log('[DEBUG] Progress Chart - Submissions:', allMySubmissions?.length || 0);
+        console.log('[DEBUG] Progress Chart - Activities:', activities?.length || 0);
 
         // Get current activity IDs for accurate counting
         const currentActivityIds = activities.map(a => a.id);
 
         // Get last 8 weeks
         const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+        console.log('[DEBUG] Progress Chart - Looking for weeks:', weeks);
+        console.log('[DEBUG] Progress Chart - Submission dates (normalized):', allMySubmissions?.map(s => DatabaseHelper.getWeekStartDate(new Date(s.week_start_date))));
+
         const weeklyScores = weeks.map(week => {
             const submission = allMySubmissions.find(sub => {
-                const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+                // Normalize submission date to its week start (Monday) for proper matching
+                const subWeek = DatabaseHelper.getWeekStartDate(new Date(sub.week_start_date));
                 return subWeek === week;
             });
 
@@ -960,9 +973,8 @@ async function renderProgressChart() {
             currentActivityIds.forEach(actId => {
                 const activity = activities.find(a => a.id === actId);
                 const value = submission.activity_completions[actId];
-                if (value === true) {
-                    completions++;
-                } else if (typeof value === 'number' && activity && value >= activity.target) {
+                const target = activity?.target || 1;
+                if (value === true || (typeof value === 'number' && value >= target)) {
                     completions++;
                 }
             });
@@ -970,6 +982,8 @@ async function renderProgressChart() {
             const percentage = Math.round((completions / activities.length) * 100);
             return Math.min(percentage, 100); // Cap at 100%
         });
+
+        console.log('[DEBUG] Progress Chart - Weekly scores:', weeklyScores);
 
         const ctx = document.getElementById('progressChart');
         if (!ctx) return;
@@ -1046,33 +1060,40 @@ async function renderProgressChart() {
             }
         });
     } catch (error) {
+        console.error('[DEBUG] Progress Chart error:', error);
     }
 }
 
 async function renderConsistencyChart() {
     try {
         const allMySubmissions = await DatabaseHelper.getAllSubmissionsForStudent(currentStudentId);
+        console.log('[DEBUG] Consistency Chart - Submissions:', allMySubmissions?.length || 0);
+        console.log('[DEBUG] Consistency Chart - Submission dates (normalized):', allMySubmissions?.map(s => DatabaseHelper.getWeekStartDate(new Date(s.week_start_date))));
 
         // Get current activity IDs for accurate counting
         const currentActivityIds = activities.map(a => a.id);
 
         // Get last 8 weeks
         const weeks = DatabaseHelper.getLastNWeeks(8).reverse();
+        console.log('[DEBUG] Consistency Chart - Looking for weeks:', weeks);
 
         // Calculate completion count for each week (only for current activities)
         const completionRates = weeks.map(week => {
             const submission = allMySubmissions.find(sub => {
-                const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+                // Normalize submission date to its week start (Monday) for proper matching
+                const subWeek = DatabaseHelper.getWeekStartDate(new Date(sub.week_start_date));
                 return subWeek === week;
             });
 
             if (!submission || !submission.activity_completions) return 0;
 
-            // Only count completions for current activities
+            // Only count completions for current activities (must meet target)
             let completions = 0;
             currentActivityIds.forEach(actId => {
+                const activity = activities.find(a => a.id === actId);
                 const value = submission.activity_completions[actId];
-                if (value === true || (typeof value === 'number' && value > 0)) {
+                const target = activity?.target || 1;
+                if (value === true || (typeof value === 'number' && value >= target)) {
                     completions++;
                 }
             });
@@ -1080,6 +1101,8 @@ async function renderConsistencyChart() {
             // Cap at max activities
             return Math.min(completions, activities.length);
         });
+
+        console.log('[DEBUG] Consistency Chart - Completion rates:', completionRates);
 
         const ctx = document.getElementById('consistencyChart');
         if (!ctx) return;
@@ -1158,6 +1181,7 @@ async function renderConsistencyChart() {
             }
         });
     } catch (error) {
+        console.error('[DEBUG] Consistency Chart error:', error);
     }
 }
 
@@ -1165,28 +1189,18 @@ async function renderGroupComparisonChart() {
     try {
         if (!currentStudent.group_id) return;
 
-        const students = await DatabaseHelper.getStudents(currentStudent.group_id);
-        const submissions = await DatabaseHelper.getAllSubmissionsForWeek(currentWeek, currentStudent.group_id);
+        // Use historical leaderboard data (all-time averages)
+        const leaderboard = await DatabaseHelper.getLeaderboard(currentStudent.group_id);
 
         // Use first name only for compact display
-        const studentNames = students.map(s => {
-            const firstName = s.name.split(' ')[0];
-            return s.id == currentStudentId ? `${firstName} (You)` : firstName;
+        const studentNames = leaderboard.map(item => {
+            const student = item.student;
+            const firstName = student.name.split(' ')[0];
+            return student.id == currentStudentId ? `${firstName} (You)` : firstName;
         });
 
-        const scores = students.map(student => {
-            const submission = submissions.find(sub => sub.student_id === student.id);
-            if (!submission) return 0;
-            // Count proper completions
-            let count = 0;
-            activities.forEach(activity => {
-                const value = submission.activity_completions[activity.id];
-                if (value === true || (typeof value === 'number' && value >= activity.target)) {
-                    count++;
-                }
-            });
-            return count;
-        });
+        // Use average completion percentage (0-100)
+        const scores = leaderboard.map(item => Math.round(item.percentage || 0));
 
         const ctx = document.getElementById('groupComparisonChart');
         if (!ctx) return;
@@ -1196,8 +1210,8 @@ async function renderGroupComparisonChart() {
         }
 
         // Highlight current student's bar
-        const backgroundColors = students.map(student =>
-            student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)'
+        const backgroundColors = leaderboard.map(item =>
+            item.student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)'
         );
 
         charts.comparison = new Chart(ctx, {
@@ -1205,11 +1219,11 @@ async function renderGroupComparisonChart() {
             data: {
                 labels: studentNames,
                 datasets: [{
-                    label: 'Activities Completed',
+                    label: 'Avg Completion %',
                     data: scores,
                     backgroundColor: backgroundColors,
-                    borderColor: students.map(student =>
-                        student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.5)'
+                    borderColor: leaderboard.map(item =>
+                        item.student.id == currentStudentId ? '#8b5cf6' : 'rgba(139, 92, 246, 0.5)'
                     ),
                     borderWidth: 1,
                     borderRadius: 4,
@@ -1233,17 +1247,17 @@ async function renderGroupComparisonChart() {
                         borderWidth: 1,
                         padding: 10,
                         callbacks: {
-                            label: context => `${context.parsed.x}/${activities.length} activities`
+                            label: context => `${context.parsed.x}% average completion`
                         }
                     }
                 },
                 scales: {
                     x: {
                         beginAtZero: true,
-                        max: activities.length,
+                        max: 100,
                         ticks: {
                             color: '#94a3b8',
-                            stepSize: 1,
+                            callback: value => value + '%',
                             font: { size: 9 }
                         },
                         grid: {
@@ -1263,6 +1277,7 @@ async function renderGroupComparisonChart() {
             }
         });
     } catch (error) {
+        console.error('[DEBUG] Group Comparison error:', error);
     }
 }
 

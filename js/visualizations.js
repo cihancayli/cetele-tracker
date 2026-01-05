@@ -23,7 +23,8 @@ async function renderActivityHeatmap() {
         // Week rows
         weeks.forEach((weekStart, weekIndex) => {
             const submission = allMySubmissions.find(sub => {
-                const subWeek = new Date(sub.week_start_date).toISOString().split('T')[0];
+                // Normalize submission date to its week start (Monday) for proper matching
+                const subWeek = DatabaseHelper.getWeekStartDate(new Date(sub.week_start_date));
                 return subWeek === weekStart;
             });
 
@@ -85,7 +86,8 @@ function calculateTrophiesForWeek(submission, hasSubmission = true) {
     let completed = 0;
     activities.forEach(activity => {
         const value = submission.activity_completions[activity.id];
-        if (value === true || (typeof value === 'number' && value >= activity.target)) {
+        const target = activity.target || 1;
+        if (value === true || (typeof value === 'number' && value >= target)) {
             completed++;
         }
     });
@@ -294,10 +296,12 @@ async function renderActivityBalanceChart() {
         });
 
         allMySubmissions.forEach(sub => {
+            if (!sub.activity_completions) return;
             activities.forEach(activity => {
                 const value = sub.activity_completions[activity.id];
+                const target = activity.target || 1;
                 if (activity.input_type === 'number' && value !== null && value !== undefined) {
-                    const percentage = Math.min((value / activity.target) * 100, 100);
+                    const percentage = Math.min((value / target) * 100, 100);
                     activityTotals[activity.id].total += percentage;
                     activityTotals[activity.id].count++;
                 } else if (activity.input_type === 'checkbox') {
