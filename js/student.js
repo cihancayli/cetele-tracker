@@ -1054,8 +1054,10 @@ function isWeekAllowed(weekString) {
 }
 
 function updateWeekNavigationState() {
-    const prevBtn = document.querySelector('.week-nav-btn:first-child');
-    const nextBtn = document.querySelector('.week-nav-btn:last-child');
+    const prevBtn = document.querySelector('.week-nav-left .week-nav-btn');
+    const nextBtn = document.querySelector('.week-nav-right .week-nav-btn');
+
+    if (!prevBtn || !nextBtn) return;
 
     // Check previous week
     const prevWeekDate = new Date(currentWeek);
