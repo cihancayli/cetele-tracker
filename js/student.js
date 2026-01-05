@@ -208,23 +208,50 @@ function updateCountdownTimer() {
     const now = new Date();
     const diff = deadline - now;
 
-    // Check if this is a past week
+    // Calculate end of deadline day (11:59:59 PM)
+    const lateDeadline = new Date(deadline);
+    lateDeadline.setHours(23, 59, 59, 999);
+    const lateDiff = lateDeadline - now;
+
+    // Check if this is a past week (before the current calendar week)
     const currentWeekStart = DatabaseHelper.getWeekStartDate();
     const isPastWeek = currentWeek < currentWeekStart;
 
-    if (isPastWeek) {
-        timerEl.textContent = '⏱️ Past week';
+    // Check if we're past the late submission window
+    const isPastLateWindow = lateDiff <= 0;
+
+    if (isPastWeek && isPastLateWindow) {
+        timerEl.textContent = '📁 Past week';
         timerEl.className = 'countdown-timer expired';
         return;
     }
 
-    if (diff <= 0) {
-        timerEl.textContent = '⏱️ Deadline passed';
+    // Past deadline but still in late submission window (until 11:59 PM)
+    if (diff <= 0 && !isPastLateWindow) {
+        const hours = Math.floor(lateDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((lateDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((lateDiff % (1000 * 60)) / 1000);
+
+        let lateStr = '⚠️ Late: ';
+        if (hours > 0) {
+            lateStr += `${hours}h ${minutes}m left`;
+        } else {
+            lateStr += `${minutes}m ${seconds}s left`;
+        }
+
+        timerEl.textContent = lateStr;
+        timerEl.className = 'countdown-timer warning';
+        return;
+    }
+
+    // Late window has ended for current week
+    if (isPastLateWindow) {
+        timerEl.textContent = '✓ Week closed';
         timerEl.className = 'countdown-timer expired';
         return;
     }
 
-    // Calculate time components
+    // Still before deadline - show countdown
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
