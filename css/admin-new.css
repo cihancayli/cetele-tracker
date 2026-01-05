@@ -283,6 +283,66 @@ body::before {
     gap: 0.5rem;
 }
 
+/* ==================== COLLAPSIBLE CARD ==================== */
+
+.collapsible-card {
+    transition: all 0.3s ease;
+}
+
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.collapsible-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+    margin: -1rem -1.5rem;
+    padding: 1rem 1.5rem;
+    border-radius: 16px 16px 0 0;
+}
+
+.collapsible-card.collapsed .collapsible-header:hover {
+    border-radius: 16px;
+}
+
+.collapse-chevron {
+    font-size: 0.75rem;
+    color: #64748b;
+    transition: transform 0.3s ease;
+}
+
+.collapsible-card.collapsed .collapse-chevron {
+    transform: rotate(-90deg);
+}
+
+.collapse-summary {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #10b981;
+    margin-left: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.collapsible-card.collapsed .collapse-summary {
+    opacity: 1;
+}
+
+.collapsible-body {
+    overflow: hidden;
+    max-height: 500px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+}
+
+.collapsible-card.collapsed .collapsible-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
 /* ==================== STATS GRID ==================== */
 
 .stats-grid {

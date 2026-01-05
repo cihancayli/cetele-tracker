@@ -444,15 +444,17 @@
                 <p class="page-subtitle">Customize activities and deadline for your group's weekly cetele.</p>
             </div>
 
-            <!-- Deadline Settings Card -->
-            <div class="card" style="margin-bottom: 1.5rem;">
-                <div class="card-header">
+            <!-- Deadline Settings Card (Collapsible) -->
+            <div class="card collapsible-card" style="margin-bottom: 1.5rem;" id="deadlineCard">
+                <div class="card-header collapsible-header" onclick="toggleDeadlineCard()">
                     <div class="card-title">
                         <span>⏰</span>
                         <span>Weekly Deadline</span>
+                        <span id="deadlineSummary" class="collapse-summary"></span>
                     </div>
+                    <span class="collapse-chevron" id="deadlineChevron">▼</span>
                 </div>
-                <div class="card-body" style="padding: 1.5rem;">
+                <div class="card-body collapsible-body" id="deadlineCardBody" style="padding: 1.5rem;">
                     <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">
                         Set when students must submit their weekly cetele. After this deadline, submissions will be marked as late.
                     </p>
@@ -496,9 +498,6 @@
                             Save Deadline
                         </button>
                     </div>
-                    <p id="currentDeadlineDisplay" style="color: #64748b; margin-top: 1rem; font-size: 0.85rem;">
-                        Current deadline: Friday at 6:00 PM
-                    </p>
                 </div>
             </div>
 

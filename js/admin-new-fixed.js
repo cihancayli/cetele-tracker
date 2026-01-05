@@ -2700,21 +2700,44 @@ async function loadDeadlineSettings() {
         // Update UI if on Manage Cetele page
         const daySelect = document.getElementById('deadlineDay');
         const hourSelect = document.getElementById('deadlineHour');
-        const displayEl = document.getElementById('currentDeadlineDisplay');
 
         if (daySelect) daySelect.value = groupDeadlineDay;
         if (hourSelect) hourSelect.value = groupDeadlineHour;
-        if (displayEl) {
-            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const hourStr = groupDeadlineHour > 12
-                ? `${groupDeadlineHour - 12}:00 PM`
-                : groupDeadlineHour === 12
-                    ? '12:00 PM'
-                    : `${groupDeadlineHour}:00 AM`;
-            displayEl.textContent = `Current deadline: ${dayNames[groupDeadlineDay]} at ${hourStr}`;
-        }
+
+        // Update summary text
+        updateDeadlineSummary(groupDeadlineDay, groupDeadlineHour);
     } catch (error) {
         console.log('Could not load deadline settings, using defaults');
+    }
+}
+
+// Update the deadline summary shown when card is collapsed
+function updateDeadlineSummary(day, hour) {
+    const summaryEl = document.getElementById('deadlineSummary');
+    if (summaryEl) {
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const hourStr = hour > 12
+            ? `${hour - 12}PM`
+            : hour === 12
+                ? '12PM'
+                : `${hour}AM`;
+        summaryEl.textContent = `${dayNames[day]} ${hourStr}`;
+    }
+}
+
+// Toggle deadline card collapse state
+function toggleDeadlineCard() {
+    const card = document.getElementById('deadlineCard');
+    if (card) {
+        card.classList.toggle('collapsed');
+    }
+}
+
+// Collapse deadline card (called after saving)
+function collapseDeadlineCard() {
+    const card = document.getElementById('deadlineCard');
+    if (card && !card.classList.contains('collapsed')) {
+        card.classList.add('collapsed');
     }
 }
 
@@ -2748,17 +2771,13 @@ async function saveDeadlineSettings() {
         groupDeadlineDay = deadlineDay;
         groupDeadlineHour = deadlineHour;
 
-        // Update display
-        const displayEl = document.getElementById('currentDeadlineDisplay');
-        if (displayEl) {
-            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const hourStr = deadlineHour > 12
-                ? `${deadlineHour - 12}:00 PM`
-                : deadlineHour === 12
-                    ? '12:00 PM'
-                    : `${deadlineHour}:00 AM`;
-            displayEl.textContent = `Current deadline: ${dayNames[deadlineDay]} at ${hourStr}`;
-        }
+        // Update summary and collapse card
+        updateDeadlineSummary(deadlineDay, deadlineHour);
+
+        // Collapse the card after a brief delay for visual feedback
+        setTimeout(() => {
+            collapseDeadlineCard();
+        }, 300);
 
         showToast('Deadline updated successfully!', 'success');
     } catch (error) {
