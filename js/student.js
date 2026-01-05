@@ -144,6 +144,9 @@ function updateWeekDisplay() {
             : `${groupDeadlineHour}AM`;
     const dueDateStr = `${dayNames[dueDate.getDay()]} ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${hourStr}`;
     document.getElementById('dueDate').textContent = dueDateStr;
+
+    // Start/restart countdown timer
+    startCountdownTimer();
 }
 
 // Load group's deadline settings
@@ -178,6 +181,76 @@ function getGroupDeadline(weekStart) {
     deadline.setDate(deadline.getDate() + dayOffset);
     deadline.setHours(groupDeadlineHour, 0, 0, 0);
     return deadline;
+}
+
+// Countdown timer
+let countdownInterval = null;
+
+function startCountdownTimer() {
+    // Clear any existing interval
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+
+    // Update immediately
+    updateCountdownTimer();
+
+    // Update every second
+    countdownInterval = setInterval(updateCountdownTimer, 1000);
+}
+
+function updateCountdownTimer() {
+    const timerEl = document.getElementById('countdownTimer');
+    if (!timerEl) return;
+
+    const weekDate = new Date(currentWeek);
+    const deadline = getGroupDeadline(weekDate);
+    const now = new Date();
+    const diff = deadline - now;
+
+    // Check if this is a past week
+    const currentWeekStart = DatabaseHelper.getWeekStartDate();
+    const isPastWeek = currentWeek < currentWeekStart;
+
+    if (isPastWeek) {
+        timerEl.textContent = '⏱️ Past week';
+        timerEl.className = 'countdown-timer expired';
+        return;
+    }
+
+    if (diff <= 0) {
+        timerEl.textContent = '⏱️ Deadline passed';
+        timerEl.className = 'countdown-timer expired';
+        return;
+    }
+
+    // Calculate time components
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    // Format the countdown string
+    let countdownStr = '⏱️ ';
+    if (days > 0) {
+        countdownStr += `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+        countdownStr += `${hours}h ${minutes}m ${seconds}s`;
+    } else {
+        countdownStr += `${minutes}m ${seconds}s`;
+    }
+
+    timerEl.textContent = countdownStr;
+
+    // Set urgency class
+    const hoursRemaining = diff / (1000 * 60 * 60);
+    if (hoursRemaining <= 2) {
+        timerEl.className = 'countdown-timer urgent';
+    } else if (hoursRemaining <= 24) {
+        timerEl.className = 'countdown-timer warning';
+    } else {
+        timerEl.className = 'countdown-timer';
+    }
 }
 
 async function loadCeteleTable() {
